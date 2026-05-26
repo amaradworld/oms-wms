@@ -80,8 +80,8 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         />
       )}
 
-      {/* Mobile sidebar */}
-      <aside className={`fixed md:sticky top-0 left-0 z-50 h-screen w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 md:translate-x-0 ${
+      {/* Mobile sidebar — only visible on mobile when toggled */}
+      <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-slate-900 text-white flex flex-col transition-transform duration-300 md:hidden ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {nav}
