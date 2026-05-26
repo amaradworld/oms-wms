@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  tenantId      String
+  email         String   @unique
+  passwordHash  String
+  fullName      String?
+  role          String   // SUPER_ADMIN, WAREHOUSE_MGR, PICKER, PACKER
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Warehouse {
+  id        String   @id @default(uuid())
+  tenantId  String
+  name      String
+  location  String?
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  inventory Inventory[]
+  picklists Picklist[]
+
+  @@map("warehouses")
+}
+
+model SkuMaster {
+  id          String   @id @default(uuid())
+  tenantId    String
+  skuCode     String   @unique
+  name        String
+  description String?
+  category    String?
+  hsnCode     String?
+  weight      Decimal?
+  dimensions  String?
+  createdAt   DateTime @default(now())
+  inventory   Inventory[]
+  orderItems  OrderItem[]
+  returns     Return[]
+
+  @@map("sku_master")
+}
+
+model Inventory {
+  id               String   @id @default(uuid())
+  warehouseId      String
+  skuId            String
+  binLocation      String
+  quantityOnHand   Int      @default(0)
+  quantityReserved Int      @default(0)
+  quantityAvailable Int    @default(0)
+  lastUpdated      DateTime @updatedAt
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  sku       SkuMaster @relation(fields: [skuId], references: [id])
+
+  @@unique([warehouseId, skuId, binLocation])
+  @@map("inventory")
+}
+
+model Order {
+  id            String   @id @default(uuid())
+  tenantId      String
+  orderNumber   String   @unique
+  source        String?
+  customerName  String
+  shippingAddress String
+  orderStatus   String   @default("PENDING")
+  paymentStatus String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  items         OrderItem[]
+  tracking      CourierTracking?
+  returns       Return[]
+  rto           Rto?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  skuId     String
+  quantity  Int
+  unitPrice Decimal
+  totalAmount Decimal
+  status    String   @default("PENDING")
+
+  order Order @relation(fields: [orderId], references: [id])
+  sku   SkuMaster @relation(fields: [skuId], references: [id])
+
+  @@map("order_items")
+}
+
+model CourierTracking {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  courierName   String
+  awbNumber     String   @unique
+  shipmentStatus String
+  shippedAt     DateTime?
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("courier_tracking")
+}
+
+model Return {
+  id        String   @id @default(uuid())
+  orderId   String
+  skuId     String
+  quantity  Int
+  reason    String?
+  status    String   // REQUESTED, RECEIVED, QC_FAILED, QC_PASSED
+  receivedAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id])
+  sku   SkuMaster @relation(fields: [skuId], references: [id])
+
+  @@map("returns")
+}
+
+model Rto {
+  id          String   @id @default(uuid())
+  orderId     String   @unique
+  rtoReason   String?
+  receivedDate DateTime @default(now())
+  status      String   @default("PENDING_QC")
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("rto")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String
+  action     String
+  entityType String
+  entityId   String?
+  oldValue   Json?
+  newValue   Json?
+  timestamp  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Picklist {
+  id         String   @id @default(uuid())
+  warehouseId String
+  status     String   @default("PENDING")
+  pickerId   String?
+  createdAt  DateTime @default(now())
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@map("picklists")
+}
