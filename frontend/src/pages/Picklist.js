@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Search, CheckCircle2, AlertCircle, Printer } from 'lucide-react';
+import { Package } from 'lucide-react';
 
 const Picklist = () => {
   const [activeList, setActiveList] = useState('pending');

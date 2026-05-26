@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Package, MoreVertical } from 'lucide-react';
+import { Search, Filter, MoreVertical } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 
 const Inventory = () => {

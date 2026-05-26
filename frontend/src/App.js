@@ -11,7 +11,7 @@ import LoginPage from './pages/LoginPage';
 import { useAuth } from './context/AuthContext';
 
 const App = () => {
-  const { isAuthenticated, loading, company } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   if (loading) {

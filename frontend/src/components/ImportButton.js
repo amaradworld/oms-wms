@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Upload, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 const ImportButton = ({ label = 'Import', endpoint, onSuccess }) => {
   const fileRef = useRef(null);
