@@ -18,7 +18,8 @@ const ImportButton = ({ label = 'Import', endpoint, onSuccess }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/${endpoint}/import`, {
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/${endpoint}/import`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
