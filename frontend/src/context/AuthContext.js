@@ -1,8 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+const COMPANIES = [
+  { id: 'tenant-1', name: 'InfiStyles', slug: 'infi' },
+  { id: 'tenant-2', name: 'Aria Fashion', slug: 'aria' },
+  { id: 'tenant-3', name: 'ZenCart', slug: 'zencart' },
+  { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear' },
+  { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
+];
+
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
+
+export { COMPANIES };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -44,13 +54,22 @@ export const AuthProvider = ({ children }) => {
     const host = window.location.hostname;
     const parts = host.split('.');
     if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'localhost') {
-      return parts[0]; // e.g. "infi" from "infi.omswms.com"
+      return parts[0];
     }
     return null;
   };
 
+  const findCompanyBySubdomain = (subdomain) => {
+    if (!subdomain) return null;
+    return COMPANIES.find(c => c.slug === subdomain) || null;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, company, tenantId, loading, login, logout, detectSubdomain, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{
+      user, company, tenantId, loading, login, logout,
+      detectSubdomain, findCompanyBySubdomain, COMPANIES,
+      isAuthenticated: !!user,
+    }}>
       {children}
     </AuthContext.Provider>
   );

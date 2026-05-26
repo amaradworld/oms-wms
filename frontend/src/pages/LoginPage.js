@@ -1,23 +1,32 @@
-import React, { useState } from 'react';
-import { Building2, Lock, Mail, ArrowRight, Globe } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle } from 'lucide-react';
+import { useAuth, COMPANIES } from '../context/AuthContext';
 import API from '../utils/api';
-
-const COMPANIES = [
-  { id: 'tenant-1', name: 'InfiStyles', slug: 'infi', domain: 'infi.omswms.com' },
-  { id: 'tenant-2', name: 'Aria Fashion', slug: 'aria', domain: 'aria.omswms.com' },
-  { id: 'tenant-3', name: 'ZenCart', slug: 'zencart', domain: 'zencart.omswms.com' },
-  { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear', domain: 'primewear.omswms.com' },
-  { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads', domain: 'ecothreads.omswms.com' },
-];
 
 const LoginPage = () => {
   const { login } = useAuth();
-  const [step, setStep] = useState('company'); // company or credentials
+  const [step, setStep] = useState('company');
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const getSubdomainCompany = () => {
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+      return COMPANIES.find(c => c.slug === parts[0]) || null;
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    const company = getSubdomainCompany();
+    if (company) {
+      setSelectedCompany(company);
+      setStep('credentials');
+    }
+  }, []);
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);
@@ -44,6 +53,10 @@ const LoginPage = () => {
       setError(err.response?.data?.message || 'Invalid credentials');
     }
   };
+
+  const baseDomain = window.location.hostname.includes('globalsupply.in')
+    ? 'globalsupply.in'
+    : 'localhost:3000';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center p-4">
@@ -75,7 +88,7 @@ const LoginPage = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-semibold">{c.name}</p>
-                      <p className="text-xs text-slate-400">{c.domain}</p>
+                      <p className="text-xs text-slate-400">{c.slug}.{baseDomain}</p>
                     </div>
                     <ArrowRight size={18} className="text-slate-300 group-hover:text-blue-600" />
                   </button>
@@ -89,18 +102,23 @@ const LoginPage = () => {
                   <Building2 size={24} className="text-blue-600" />
                 </div>
                 <h2 className="text-xl font-bold">{selectedCompany.name}</h2>
-                <button
-                  type="button"
-                  onClick={() => setStep('company')}
-                  className="text-xs text-blue-600 hover:underline mt-1"
-                >
-                  Change company
-                </button>
+                {!getSubdomainCompany() && (
+                  <button
+                    type="button"
+                    onClick={() => setStep('company')}
+                    className="text-xs text-blue-600 hover:underline mt-1"
+                  >
+                    Change company
+                  </button>
+                )}
+                <p className="text-xs text-slate-400 mt-1">
+                  {selectedCompany.slug}.{baseDomain}
+                </p>
               </div>
 
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-700">
-                  {error}
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-700 flex items-center gap-2">
+                  <AlertCircle size={14} /> {error}
                 </div>
               )}
 
@@ -137,7 +155,7 @@ const LoginPage = () => {
                   type="submit"
                   className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  Sign In <ArrowRight size={18} />
+                  Sign In to {selectedCompany.name} <ArrowRight size={18} />
                 </button>
               </div>
             </form>
@@ -145,7 +163,7 @@ const LoginPage = () => {
         </div>
 
         <p className="text-center text-xs text-slate-500 mt-6">
-          Your data is isolated per company. Each company has its own URL.
+          Access your company directly via <span className="text-slate-300 font-mono">yourcompany.{baseDomain}</span>
         </p>
       </div>
     </div>
