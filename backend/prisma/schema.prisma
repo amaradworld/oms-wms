@@ -171,3 +171,33 @@ model Picklist {
 
   @@map("picklists")
 }
+
+model MarketplaceConfig {
+  id          String   @id @default(uuid())
+  tenantId    String
+  marketplace String   // NYKAA, MYNTRA, TATACLIQ
+  apiKey      String?
+  apiSecret   String?
+  sellerId    String?
+  isActive    Boolean  @default(true)
+  lastSyncAt  DateTime?
+  syncStatus  String   @default("idle") // idle, syncing, error
+  syncMessage String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, marketplace])
+  @@map("marketplace_configs")
+}
+
+model MarketplaceOrderMapping {
+  id              String   @id @default(uuid())
+  tenantId        String
+  marketplace     String   // NYKAA, MYNTRA, TATACLIQ
+  marketplaceOrderId String @unique
+  localOrderId    String   @unique
+  orderData       Json?
+  syncedAt        DateTime @default(now())
+
+  @@map("marketplace_order_mappings")
+}

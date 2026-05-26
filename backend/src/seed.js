@@ -12,6 +12,8 @@ async function main() {
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "orders" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "inventory" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "sku_master" CASCADE');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "marketplace_order_mappings" CASCADE');
+  await prisma.$executeRawUnsafe('TRUNCATE TABLE "marketplace_configs" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "warehouses" CASCADE');
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "users" CASCADE');
 
@@ -128,6 +130,17 @@ async function main() {
     }
   }
   console.log('Created 50 mock orders');
+
+  // Create demo marketplace configs
+  await prisma.marketplaceConfig.createMany({
+    data: [
+      { tenantId: 'tenant-1', marketplace: 'NYKAA', apiKey: 'demo', isActive: true, syncMessage: 'Ready to sync (demo mode)' },
+      { tenantId: 'tenant-1', marketplace: 'MYNTRA', apiKey: 'demo', isActive: true, syncMessage: 'Ready to sync (demo mode)' },
+      { tenantId: 'tenant-1', marketplace: 'TATACLIQ', apiKey: 'demo', isActive: true, syncMessage: 'Ready to sync (demo mode)' },
+    ],
+  });
+  console.log('Created 3 marketplace configs (demo mode)');
+
   console.log('Seeding completed successfully!');
 }
 

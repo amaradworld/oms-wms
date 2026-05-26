@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Package, ShoppingCart, Warehouse, Barcode, ClipboardList, PackageCheck, RotateCcw, BarChart3, Settings, LogOut, Building2 } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Warehouse, Barcode, ClipboardList, PackageCheck, RotateCcw, BarChart3, Settings, LogOut, Building2, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
@@ -26,6 +26,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'packing', label: 'Packing', icon: PackageCheck },
     { id: 'scanning', label: 'Barcode Scan', icon: Barcode },
     { id: 'returns', label: 'Returns/RTO', icon: RotateCcw },
+    { id: 'marketplace', label: 'Marketplace', icon: Globe },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
