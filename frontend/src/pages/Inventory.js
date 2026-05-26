@@ -71,25 +71,29 @@ const Inventory = () => {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b">
-            <tr>
-              <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SKU</th>
-              <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
-              <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</th>
-              <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">HSN</th>
-              <th className="px-4 py-3 text-right"></th>
-            </tr>
+              <tr>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SKU</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">HSN</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">On Hand</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Available</th>
+                <th className="px-4 py-3 text-right"></th>
+              </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="5" className="p-8 text-center text-slate-500">Loading...</td></tr>
+              <tr><td colSpan="7" className="p-8 text-center text-slate-500">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan="5" className="p-8 text-center text-slate-500">No SKUs found</td></tr>
+              <tr><td colSpan="7" className="p-8 text-center text-slate-500">No SKUs found</td></tr>
             ) : filtered.map((item, i) => (
               <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
                 <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>
                 <td className="px-4 py-3 text-sm">{item.name}</td>
                 <td className="px-4 py-3 text-sm">{item.category || '-'}</td>
                 <td className="px-4 py-3 text-sm font-mono text-slate-500">{item.hsnCode || '-'}</td>
+                <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityOnHand ?? '-'}</td>
+                <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityAvailable ?? '-'}</td>
                 <td className="px-4 py-3 text-right">
                   <button className="p-1 hover:bg-slate-200 rounded-full"><MoreVertical size={16} /></button>
                 </td>
