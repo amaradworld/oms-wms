@@ -21,6 +21,8 @@ app.use(cors({
   origin: [
     'https://globalsupply.in',
     'https://www.globalsupply.in',
+    'https://oms-wms-phi.vercel.app',
+    'https://oms-wms-git-main-amaradworlds-projects.vercel.app',
     'http://localhost:3000',
     ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [])
   ],
