@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RotateCcw, Search, Filter, AlertTriangle } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
+import SampleCSVButton from '../components/SampleCSVButton';
 
 const Returns = () => {
   const [tab, setTab] = useState('returns');
@@ -23,6 +24,7 @@ const Returns = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Returns & RTO Management</h1>
         <div className="flex gap-3">
+          <SampleCSVButton type="returns" />
           <ImportButton label="Returns" endpoint="returns" />
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">+ Create Return</button>
         </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, RefreshCw } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
+import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
 
 const statusColors = {
@@ -60,6 +61,7 @@ const Orders = () => {
           <button onClick={fetchOrders} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50">
             <RefreshCw size={16} /> Refresh
           </button>
+          <SampleCSVButton type="orders" />
           <ImportButton label="Orders" endpoint="orders" onSuccess={fetchOrders} />
         </div>
       </div>

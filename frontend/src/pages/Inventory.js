@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Plus, X } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
+import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
 
 const Inventory = () => {
@@ -45,6 +46,7 @@ const Inventory = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Inventory Management</h1>
         <div className="flex gap-3">
+          <SampleCSVButton type="inventory" />
           <ImportButton label="Inventory" endpoint="inventory" onSuccess={fetchInventory} />
           <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
             <Plus size={16} /> Add SKU
