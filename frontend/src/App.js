@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -14,6 +15,7 @@ import { useAuth } from './context/AuthContext';
 const App = () => {
   const { isAuthenticated, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loading) {
     return (
@@ -37,14 +39,24 @@ const App = () => {
       case 'packing': return <PackingScreen />;
       case 'returns': return <Returns />;
       case 'marketplace': return <MarketplaceSettings />;
-      default: return <div className="p-8 text-slate-500">Module {activeTab} is under development...</div>;
+      default: return <div className="p-4 md:p-8 text-slate-500">Module {activeTab} is under development...</div>;
     }
   };
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="flex-1 overflow-y-auto">
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      
+      <main className="flex-1 min-w-0 overflow-y-auto">
+        {/* Mobile header */}
+        <div className="sticky top-0 z-30 md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+          <button onClick={() => setSidebarOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+            <Menu size={22} />
+          </button>
+          <div className="text-lg font-bold tracking-tight">
+            OMS<span className="text-blue-500">WMS</span>
+          </div>
+        </div>
         {renderContent()}
       </main>
     </div>

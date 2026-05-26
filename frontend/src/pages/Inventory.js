@@ -100,8 +100,8 @@ const Inventory = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-md md:mx-4 p-5 md:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">Add New SKU</h2>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-slate-100 rounded-full"><X size={20} /></button>

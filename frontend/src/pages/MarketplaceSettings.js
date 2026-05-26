@@ -205,10 +205,10 @@ const MarketplaceSettings = () => {
   };
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Marketplace Integrations</h1>
-        <p className="text-sm text-slate-500 mt-1">Connect your online stores to automatically import orders</p>
+        <h1 className="text-xl md:text-2xl font-bold">Marketplace Integrations</h1>
+        <p className="text-xs md:text-sm text-slate-500 mt-1">Connect your online stores to automatically import orders</p>
       </div>
 
       <div className="grid gap-4">
