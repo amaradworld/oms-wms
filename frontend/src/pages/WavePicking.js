@@ -26,7 +26,8 @@ const WavePicking = () => {
   useEffect(() => {
     loadWaves();
     loadOrders();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFacility]);
 
   const headers = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
 

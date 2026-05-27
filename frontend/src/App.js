@@ -73,7 +73,7 @@ const App = () => {
       };
       checkOnboarding();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, API, getToken, role, showOnboarding]);
 
   if (loading) {
     return (
