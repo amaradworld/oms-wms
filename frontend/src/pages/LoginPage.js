@@ -59,11 +59,11 @@ const LoginPage = () => {
     : 'localhost:3000';
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-950 to-indigo-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white tracking-tight">
-            OMS<span className="text-blue-400">WMS</span>
+            OMS<span className="text-violet-400">WMS</span>
           </h1>
           <p className="text-slate-300 mt-2">Multi-Tenant Warehouse Management</p>
         </div>
@@ -72,7 +72,7 @@ const LoginPage = () => {
           {step === 'company' ? (
             <>
               <div className="text-center mb-6">
-                <Globe size={32} className="mx-auto text-blue-600 mb-2" />
+                <Globe size={32} className="mx-auto text-violet-600 mb-2" />
                 <h2 className="text-xl font-bold">Select Your Company</h2>
                 <p className="text-sm text-slate-500 mt-1">Choose your organization to continue</p>
               </div>
@@ -81,16 +81,16 @@ const LoginPage = () => {
                   <button
                     key={c.id}
                     onClick={() => handleCompanySelect(c)}
-                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all group"
+                    className="w-full flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-violet-400 hover:bg-violet-50 transition-all group"
                   >
-                    <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-blue-100">
-                      <Building2 size={20} className="text-slate-600 group-hover:text-blue-600" />
+                    <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-violet-100">
+                      <Building2 size={20} className="text-slate-600 group-hover:text-violet-600" />
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-semibold">{c.name}</p>
                       <p className="text-xs text-slate-600">{c.slug}.{baseDomain}</p>
                     </div>
-                    <ArrowRight size={18} className="text-slate-500 group-hover:text-blue-600" />
+                    <ArrowRight size={18} className="text-slate-500 group-hover:text-violet-600" />
                   </button>
                 ))}
               </nav>
@@ -98,15 +98,15 @@ const LoginPage = () => {
           ) : (
             <form onSubmit={handleLogin}>
               <div className="text-center mb-6">
-                <div className="p-2 bg-blue-100 rounded-xl inline-block mb-2">
-                  <Building2 size={24} className="text-blue-600" />
+                <div className="p-2 bg-violet-100 rounded-xl inline-block mb-2">
+                  <Building2 size={24} className="text-violet-600" />
                 </div>
                 <h2 className="text-xl font-bold">{selectedCompany.name}</h2>
                 {!getSubdomainCompany() && (
                   <button
                     type="button"
                     onClick={() => setStep('company')}
-                    className="text-xs text-blue-600 hover:underline mt-1"
+                    className="text-xs text-violet-600 hover:underline mt-1"
                   >
                     Change company
                   </button>
@@ -127,33 +127,33 @@ const LoginPage = () => {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                   <div className="relative">
                     <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="admin@company.com"
-                    />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                        placeholder="admin@company.com"
+                      />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                   <div className="relative">
                     <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="••••••••"
-                    />
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                        placeholder="••••••••"
+                      />
                   </div>
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2.5 gradient-primary text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   Sign In to {selectedCompany.name} <ArrowRight size={18} />
                 </button>

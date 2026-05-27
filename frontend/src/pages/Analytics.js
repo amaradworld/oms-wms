@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BarChart3, TrendingUp, Package, DollarSign } from 'lucide-react';
+import { BarChart3, TrendingUp, Package, IndianRupee } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import API from '../utils/api';
 import { StatsSkeleton } from '../components/Skeleton';
@@ -45,7 +45,7 @@ const Analytics = () => {
           <h3 className="text-xl md:text-2xl font-bold">{stats?.pendingOrders || 0}</h3>
         </div>
         <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
-          <div className="flex items-center gap-2 text-green-600 mb-2"><DollarSign size={18} /><span className="text-xs font-medium text-slate-500">Revenue</span></div>
+          <div className="flex items-center gap-2 text-green-600 mb-2"><IndianRupee size={18} /><span className="text-xs font-medium text-slate-500">Revenue</span></div>
           <h3 className="text-xl md:text-2xl font-bold">₹{(stats?.totalRevenue || 0).toLocaleString()}</h3>
         </div>
         <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">

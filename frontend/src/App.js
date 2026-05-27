@@ -120,14 +120,14 @@ const App = () => {
     <div className="flex min-h-screen">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="sticky top-0 z-30 md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-30 md:hidden bg-white/90 backdrop-blur-sm border-b border-indigo-100/60 px-4 py-3 flex items-center gap-3">
           <button onClick={() => setSidebarOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg">
             <Menu size={22} />
           </button>
-          <div className="text-lg font-bold tracking-tight">OMS<span className="text-blue-500">WMS</span></div>
+          <div className="text-lg font-bold tracking-tight">OMS<span className="text-violet-500">WMS</span></div>
         </div>
         {selectedFacility && (
-          <div className="bg-indigo-600 text-white px-4 py-2 flex items-center justify-between text-sm">
+          <div className="gradient-primary text-white px-4 py-2 flex items-center justify-between text-sm shadow-md shadow-indigo-200/50">
             <div className="flex items-center gap-2">
               <Building2 size={14} />
               <span className="font-medium">{selectedFacility.name}</span>

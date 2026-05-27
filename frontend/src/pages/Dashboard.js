@@ -6,12 +6,12 @@ import { StatsSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
 const StatCard = ({ title, value, change, trend }) => (
-  <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
-    <p className="text-xs md:text-sm text-slate-500 font-medium">{title}</p>
+  <div className="card p-4 md:p-6 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-200">
+    <p className="text-xs md:text-sm text-indigo-500 font-semibold uppercase tracking-wider">{title}</p>
     <div className="flex items-baseline gap-2 mt-1 md:mt-2">
-      <h3 className="text-xl md:text-2xl font-bold">{value}</h3>
+      <h3 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-indigo-700 to-violet-600 bg-clip-text text-transparent">{value}</h3>
       {change && (
-        <span className={`text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>{change}</span>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{change}</span>
       )}
     </div>
   </div>
@@ -51,8 +51,8 @@ const Dashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-sm md:text-base mb-4">Orders by Status</h3>
+            <div className="lg:col-span-2 card p-4 md:p-6">
+              <h3 className="font-bold text-sm md:text-base mb-4 text-indigo-900">Orders by Status</h3>
               {chartData.length === 0 ? (
                 <EmptyState icon="analytics" title="No data yet" description="Orders will appear here once the system starts processing." />
               ) : (
@@ -62,13 +62,13 @@ const Dashboard = () => {
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-sm md:text-base mb-3 md:mb-4">Low Stock Alerts</h3>
+            <div className="card p-4 md:p-6">
+              <h3 className="font-bold text-sm md:text-base mb-3 md:mb-4 text-indigo-900">Low Stock Alerts</h3>
               <div className="space-y-3 overflow-y-auto max-h-72">
                 {!stats.lowStockItems?.length ? (
                   <p className="text-green-600 text-xs md:text-sm">All items sufficiently stocked</p>

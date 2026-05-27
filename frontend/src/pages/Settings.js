@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff } from 'lucide-react';
+import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff, Check, X, UserPlus } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -19,6 +19,13 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [editUserId, setEditUserId] = useState(null);
+  const [editForm, setEditForm] = useState({ role: '', warehouseId: '' });
+  const [savingId, setSavingId] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ email: '', password: '', fullName: '', role: 'PICKER', warehouseId: '' });
+  const [addingUser, setAddingUser] = useState(false);
+  const [warehouses, setWarehouses] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -35,6 +42,50 @@ const Settings = () => {
     } catch { setUsers([]); } finally { setUsersLoading(false); }
   }, []);
 
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const res = await API.get('/warehouses');
+      setWarehouses(Array.isArray(res.data) ? res.data : []);
+    } catch { setWarehouses([]); }
+  }, []);
+
+  const handleEditUser = (u) => {
+    setEditUserId(u.id);
+    setEditForm({ role: u.role || 'PICKER', warehouseId: u.warehouseId || '' });
+  };
+
+  const handleSaveUser = async (id) => {
+    setSavingId(id);
+    try {
+      const res = await API.put(`/users/${id}`, {
+        role: editForm.role,
+        warehouseId: editForm.warehouseId || null,
+      });
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, ...res.data } : u));
+      toast.success('User updated');
+      setEditUserId(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update user');
+    } finally { setSavingId(null); }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    if (!addForm.email || !addForm.password) return toast.error('Email and password are required');
+    setAddingUser(true);
+    try {
+      const res = await API.post('/users', addForm);
+      setUsers(prev => [res.data, ...prev]);
+      toast.success('User created');
+      setShowAddModal(false);
+      setAddForm({ email: '', password: '', fullName: '', role: 'PICKER', warehouseId: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create user');
+    } finally { setAddingUser(false); }
+  };
+
+  const ROLE_OPTIONS = ['SUPER_ADMIN', 'WAREHOUSE_MGR', 'PICKER', 'PACKER'];
+
   const fetchAudit = useCallback(async () => {
     setAuditLoading(true);
     try {
@@ -43,7 +94,7 @@ const Settings = () => {
     } catch { setAuditLogs([]); } finally { setAuditLoading(false); }
   }, []);
 
-  useEffect(() => { if (activeTab === 'users') fetchUsers(); }, [activeTab, fetchUsers]);
+  useEffect(() => { if (activeTab === 'users') { fetchUsers(); fetchWarehouses(); } }, [activeTab, fetchUsers, fetchWarehouses]);
   useEffect(() => { if (activeTab === 'audit') fetchAudit(); }, [activeTab, fetchAudit]);
 
   const handleChangePassword = async (e) => {
@@ -84,7 +135,7 @@ const Settings = () => {
   const tabContent = (
     <div className="space-y-4 md:space-y-6">
       {activeTab === 'profile' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
+        <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Building2 size={20} /> Company Profile</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div><label className="text-xs text-slate-500 block mb-1">Company Name</label><p className="font-medium">{company?.name || '—'}</p></div>
@@ -96,39 +147,140 @@ const Settings = () => {
       )}
 
       {activeTab === 'users' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b flex justify-between items-center">
+        <div className="card overflow-hidden">
+          <div className="p-4 border-b border-indigo-100/60 flex justify-between items-center">
             <h2 className="text-lg font-bold flex items-center gap-2"><Users size={20} /> Team Members</h2>
+            <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-1.5 text-xs md:text-sm px-3 py-1.5 md:px-4 md:py-2">
+              <UserPlus size={16} /> <span className="hidden sm:inline">Add User</span>
+            </button>
           </div>
-          {usersLoading ? <TableSkeleton rows={4} cols={3} /> : users.length === 0 ? (
+          {usersLoading ? <TableSkeleton rows={4} cols={4} /> : users.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-sm">No team members found</div>
           ) : (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm">{u.fullName || '—'}</td>
-                    <td className="px-4 py-3 text-sm font-mono">{u.email}</td>
-                    <td className="px-4 py-3"><span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">{u.role?.replace(/_/g, ' ')}</span></td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr>
+                    <th className="table-header">Name</th>
+                    <th className="table-header">Email</th>
+                    <th className="table-header">Role</th>
+                    <th className="table-header">Warehouse / Facility</th>
+                    <th className="table-header">Created</th>
+                    <th className="table-header">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id} className="hover:bg-indigo-50/40 transition-colors">
+                      <td className="table-cell font-medium">{u.fullName || '—'}</td>
+                      <td className="table-cell font-mono text-xs">{u.email}</td>
+                      <td className="table-cell">
+                        {editUserId === u.id ? (
+                          <select
+                            value={editForm.role}
+                            onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                            className="input-field text-xs py-1.5 px-2"
+                          >
+                            {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+                          </select>
+                        ) : (
+                          <span className="badge-info">{u.role?.replace(/_/g, ' ')}</span>
+                        )}
+                      </td>
+                      <td className="table-cell">
+                        {editUserId === u.id ? (
+                          <select
+                            value={editForm.warehouseId}
+                            onChange={e => setEditForm({ ...editForm, warehouseId: e.target.value })}
+                            className="input-field text-xs py-1.5 px-2"
+                          >
+                            <option value="">— None —</option>
+                            {warehouses.map(w => (
+                              <optgroup key={w.id} label={w.name}>
+                                <option value={w.id}>{w.name} (Main)</option>
+                                {w.children?.map(f => (
+                                  <option key={f.id} value={f.id}>↳ {f.name}</option>
+                                ))}
+                              </optgroup>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-sm text-slate-600">{u.warehouseId ? warehouses.find(w => w.id === u.warehouseId || w.children?.some(c => c.id === u.warehouseId))?.name || 'Assigned' : '—'}</span>
+                        )}
+                      </td>
+                      <td className="table-cell text-slate-500">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                      <td className="table-cell">
+                        {editUserId === u.id ? (
+                          <div className="flex gap-1">
+                            <button onClick={() => handleSaveUser(u.id)} disabled={savingId === u.id} className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"><Check size={14} /></button>
+                            <button onClick={() => setEditUserId(null)} className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200 transition-colors"><X size={14} /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => handleEditUser(u)} disabled={u.id === user?.id} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium disabled:opacity-30 disabled:cursor-not-allowed" title={u.id === user?.id ? 'Cannot edit yourself' : 'Edit role & facility'}>
+                            {u.id === user?.id ? 'You' : 'Edit'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
 
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2"><UserPlus size={20} /> Add Team Member</h3>
+              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Full Name</label>
+                <input value={addForm.fullName} onChange={e => setAddForm({ ...addForm, fullName: e.target.value })} className="input-field" placeholder="John Doe" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email *</label>
+                <input type="email" required value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} className="input-field" placeholder="user@company.com" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Password *</label>
+                <input type="password" required minLength={4} value={addForm.password} onChange={e => setAddForm({ ...addForm, password: e.target.value })} className="input-field" placeholder="Min 4 characters" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Role</label>
+                <select value={addForm.role} onChange={e => setAddForm({ ...addForm, role: e.target.value })} className="input-field">
+                  {ROLE_OPTIONS.map(r => <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Assign to Warehouse / Facility</label>
+                <select value={addForm.warehouseId} onChange={e => setAddForm({ ...addForm, warehouseId: e.target.value })} className="input-field">
+                  <option value="">— None —</option>
+                  {warehouses.map(w => (
+                    <optgroup key={w.id} label={w.name}>
+                      <option value={w.id}>{w.name} (Main)</option>
+                      {w.children?.map(f => <option key={f.id} value={f.id}>↳ {f.name}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary flex-1">Cancel</button>
+                <button type="submit" disabled={addingUser} className="btn-primary flex-1 disabled:opacity-50">
+                  {addingUser ? 'Creating...' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'security' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
+        <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Lock size={20} /> Change Password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
             <div>
@@ -146,7 +298,7 @@ const Settings = () => {
               <label className="block text-xs font-medium text-slate-500 mb-1">Confirm New Password</label>
               <input type="password" value={pwForm.confirmPassword} onChange={e => setPwForm({ ...pwForm, confirmPassword: e.target.value })} required minLength={4} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
             </div>
-            <button disabled={pwSubmitting} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            <button disabled={pwSubmitting} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               {pwSubmitting ? 'Updating...' : <><Save size={16} /> Update Password</>}
             </button>
           </form>
@@ -154,7 +306,7 @@ const Settings = () => {
       )}
 
       {activeTab === 'notifications' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
+        <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Bell size={20} /> Notification Preferences</h2>
           <div className="space-y-3">
             {[
@@ -175,14 +327,14 @@ const Settings = () => {
       )}
 
       {activeTab === 'data' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 space-y-4">
+        <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Download size={20} /> Data Export</h2>
           <p className="text-sm text-slate-500">Download your data as CSV files for backup or analysis.</p>
           <div className="flex flex-wrap gap-3">
-            <button onClick={() => handleExport('orders')} disabled={exporting === 'orders'} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+            <button onClick={() => handleExport('orders')} disabled={exporting === 'orders'} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               {exporting === 'orders' ? 'Exporting...' : <><Download size={16} /> Export Orders</>}
             </button>
-            <button onClick={() => handleExport('inventory')} disabled={exporting === 'inventory'} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+            <button onClick={() => handleExport('inventory')} disabled={exporting === 'inventory'} className="gradient-accent text-white flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md shadow-emerald-200 disabled:opacity-50 disabled:hover:scale-100">
               {exporting === 'inventory' ? 'Exporting...' : <><Download size={16} /> Export Inventory</>}
             </button>
           </div>
@@ -190,7 +342,7 @@ const Settings = () => {
       )}
 
       {activeTab === 'audit' && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="card overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="text-lg font-bold flex items-center gap-2"><Clock size={20} /> Audit Log</h2>
           </div>
@@ -229,9 +381,9 @@ const Settings = () => {
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
 
-      <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+      <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 card p-1">
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab.id ? 'gradient-primary text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
             <tab.icon size={16} /> <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}

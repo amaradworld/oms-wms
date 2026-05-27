@@ -6,7 +6,7 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, indent }) => (
   <div
     onClick={onClick}
     className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-      active ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+      active ? 'bg-violet-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     } ${indent ? 'pl-10' : ''}`}
   >
     <Icon size={20} />
@@ -83,7 +83,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       <div className="p-4 md:p-6 border-b border-slate-800 flex items-center justify-between">
         <div>
           <div className="text-xl md:text-2xl font-bold tracking-tight">
-            OMS<span className="text-blue-500">WMS</span>
+            OMS<span className="text-violet-400">WMS</span>
           </div>
           {company && (
             <div className="flex items-center gap-2 mt-1 md:mt-2 text-xs text-slate-400">
@@ -107,7 +107,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
                 defaultOpen={activeTab === item.id || item.children.some(c => c.id === activeTab)}
               >
                 <div onClick={() => handleClick(item.id)} className={`flex items-center gap-3 px-4 py-2.5 pl-10 cursor-pointer transition-colors ${
-                  activeTab === item.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  activeTab === item.id ? 'bg-violet-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                 }`}>
                   <span className="font-medium text-sm">{item.label}</span>
                 </div>
