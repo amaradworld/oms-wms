@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X, Play } from 'lucide-react';
-import axios from 'axios';
+import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Skeleton from '../components/Skeleton';
 
@@ -14,7 +14,7 @@ const STATUS_BADGE = {
 };
 
 const WavePicking = () => {
-  const { getToken, selectedFacility } = useAuth();
+  const { selectedFacility } = useAuth();
   const [waves, setWaves] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,20 +24,16 @@ const WavePicking = () => {
   const [expanded, setExpanded] = useState(null);
   const [waveOrders, setWaveOrders] = useState(null);
 
-  const API = process.env.REACT_APP_API_URL;
-
   useEffect(() => {
     loadWaves();
     loadOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFacility]);
 
-  const headers = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
-
   const loadWaves = async () => {
     try {
       const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
-      const { data } = await axios.get(`${API}/api/waves`, { ...headers(), params });
+      const { data } = await API.get('/waves', { params });
       setWaves(data);
     } catch (e) { console.error(e); }
     setLoading(false);
@@ -45,7 +41,7 @@ const WavePicking = () => {
 
   const loadOrders = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/orders`, headers());
+      const { data } = await API.get('/orders');
       setOrders((data.orders || []).filter(o => o.orderStatus === 'PENDING' || o.orderStatus === 'PROCESSING'));
     } catch (e) { console.error(e); }
   };
@@ -53,11 +49,11 @@ const WavePicking = () => {
   const createWave = async () => {
     if (!selectedOrders.length) return;
     try {
-      await axios.post(`${API}/api/waves`, {
+      await API.post('/waves', {
         warehouseId: selectedFacility?.id,
         name,
         orderIds: selectedOrders,
-      }, headers());
+      });
       setShowCreate(false); setName(''); setSelectedOrders([]);
       loadWaves();
     } catch (e) { console.error(e); }
@@ -71,21 +67,21 @@ const WavePicking = () => {
     if (expanded === wave.id) { setExpanded(null); setWaveOrders(null); return; }
     setExpanded(wave.id);
     try {
-      const { data } = await axios.get(`${API}/api/waves/${wave.id}/orders`, headers());
+      const { data } = await API.get(`/waves/${wave.id}/orders`);
       setWaveOrders(data);
     } catch (e) { setWaveOrders(null); }
   };
 
   const startWave = async (id) => {
     try {
-      await axios.put(`${API}/api/waves/${id}/start`, {}, headers());
+      await API.put(`/waves/${id}/start`);
       loadWaves();
     } catch (e) { console.error(e); }
   };
 
   const completeWave = async (id) => {
     try {
-      await axios.put(`${API}/api/waves/${id}/complete`, {}, headers());
+      await API.put(`/waves/${id}/complete`);
       loadWaves();
     } catch (e) { console.error(e); }
   };
