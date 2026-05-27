@@ -44,7 +44,17 @@ async function main() {
       location: 'Delhi',
     },
   });
-  console.log('Created 2 warehouses');
+  // Create Facilities under Mumbai WH
+  const mumbaiS1 = await prisma.warehouse.create({
+    data: { tenantId: 'tenant-1', name: 'Mumbai - Section A (Apparel)', location: 'Mumbai', parentId: mumbaiWh.id },
+  });
+  const mumbaiS2 = await prisma.warehouse.create({
+    data: { tenantId: 'tenant-1', name: 'Mumbai - Section B (Footwear)', location: 'Mumbai', parentId: mumbaiWh.id },
+  });
+  const delhiS1 = await prisma.warehouse.create({
+    data: { tenantId: 'tenant-1', name: 'Delhi - East Wing', location: 'Delhi', parentId: delhiWh.id },
+  });
+  console.log('Created 3 facilities');
 
   // Create SKUs
   const skusData = [

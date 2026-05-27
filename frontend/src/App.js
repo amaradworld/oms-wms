@@ -8,6 +8,7 @@ import ScanningScreen from './pages/ScanningScreen';
 import Picklist from './pages/Picklist';
 import PackingScreen from './pages/PackingScreen';
 import Returns from './pages/Returns';
+import Warehouse from './pages/Warehouse';
 import MarketplaceSettings from './pages/MarketplaceSettings';
 import LoginPage from './pages/LoginPage';
 import { useAuth } from './context/AuthContext';
@@ -38,6 +39,7 @@ const App = () => {
       case 'picklist': return <Picklist />;
       case 'packing': return <PackingScreen />;
       case 'returns': return <Returns />;
+      case 'warehouse': return <Warehouse />;
       case 'marketplace': return <MarketplaceSettings />;
       default: return <div className="p-4 md:p-8 text-slate-500">Module {activeTab} is under development...</div>;
     }
