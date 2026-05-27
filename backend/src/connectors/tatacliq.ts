@@ -1,11 +1,13 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
+const TATACLIQ_API_BASE = 'https://api.tatacliq.com/seller';
+
 export class TataCliqConnector implements MarketplaceConnector {
   name = 'TataCliq';
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
     if (config.apiKey && config.apiKey !== 'demo') {
-      const response = await fetch('https://api.tatacliq.com/seller/v2/orders', {
+      const response = await fetch(`${TATACLIQ_API_BASE}/v2/orders`, {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
           'X-Seller-Id': config.sellerId || '',
@@ -56,11 +58,39 @@ export class TataCliqConnector implements MarketplaceConnector {
 
   async updateInventory(config: { apiKey?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    return true;
+    try {
+      const res = await fetch(`${TATACLIQ_API_BASE}/v2/inventory`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Seller-Id': config.sellerId || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map(i => ({ article_code: i.skuCode, qty: i.quantity })) }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    return true;
+    try {
+      const res = await fetch(`${TATACLIQ_API_BASE}/v2/orders/${orderId}/shipment`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          'X-Seller-Id': config.sellerId || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          awb_number: awb,
+          courier_name: courier,
+          shipped_at: new Date().toISOString(),
+        }),
+      });
+      console.log(`[TataCliq pushTracking] ${orderId}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[TataCliq pushTracking] ${orderId}:`, err);
+      return false;
+    }
   }
 }

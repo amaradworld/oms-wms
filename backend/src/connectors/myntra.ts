@@ -1,11 +1,13 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
+const MYNTRA_API_BASE = 'https://partners.myntra.com/v1';
+
 export class MyntraConnector implements MarketplaceConnector {
   name = 'Myntra';
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
     if (config.apiKey && config.apiKey !== 'demo') {
-      const response = await fetch('https://partners.myntra.com/v1/orders', {
+      const response = await fetch(`${MYNTRA_API_BASE}/orders`, {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
           'X-Secret': config.apiSecret || '',
@@ -62,6 +64,25 @@ export class MyntraConnector implements MarketplaceConnector {
 
   async pushTracking(config: { apiKey?: string; apiSecret?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    return true;
+    try {
+      const res = await fetch(`${MYNTRA_API_BASE}/orders/${orderId}/shipments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'X-Secret': config.apiSecret || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          awb_number: awb,
+          courier_name: courier,
+          shipped_at: new Date().toISOString(),
+        }),
+      });
+      console.log(`[Myntra pushTracking] ${orderId}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[Myntra pushTracking] ${orderId}:`, err);
+      return false;
+    }
   }
 }

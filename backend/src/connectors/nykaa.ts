@@ -1,13 +1,13 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
+const NYKAA_API_BASE = 'https://api.nykaa.com/seller';
+
 export class NykaaConnector implements MarketplaceConnector {
   name = 'Nykaa';
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
     if (config.apiKey && config.apiKey !== 'demo') {
-      // Real API integration — replace with actual Nykaa Seller API call
-      // Docs: https://seller.nykaa.com/api/docs
-      const response = await fetch('https://api.nykaa.com/seller/v1/orders', {
+      const response = await fetch(`${NYKAA_API_BASE}/v1/orders`, {
         headers: { Authorization: `Bearer ${config.apiKey}` },
       });
       return this.transformResponse(await response.json());
@@ -55,11 +55,35 @@ export class NykaaConnector implements MarketplaceConnector {
 
   async updateInventory(config: { apiKey?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    return true;
+    try {
+      const res = await fetch(`${NYKAA_API_BASE}/v1/inventory`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items.map(i => ({ sku: i.skuCode, quantity: i.quantity })) }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   async pushTracking(config: { apiKey?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    return true;
+    try {
+      const res = await fetch(`${NYKAA_API_BASE}/v1/orders/${orderId}/tracking`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          awb_number: awb,
+          courier_name: courier,
+          shipped_at: new Date().toISOString(),
+        }),
+      });
+      console.log(`[Nykaa pushTracking] ${orderId}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[Nykaa pushTracking] ${orderId}:`, err);
+      return false;
+    }
   }
 }
