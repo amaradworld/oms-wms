@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, MoreVertical, Plus, X, Download } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
+import BarcodeCell from '../components/BarcodeCell';
 import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -98,9 +99,10 @@ const Inventory = () => {
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[900px]">
+          <table className="w-full text-left min-w-[1000px]">
             <thead className="bg-slate-50 border-b">
               <tr>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Barcode</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SKU</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Style</th>
@@ -116,11 +118,12 @@ const Inventory = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="11" className="p-8 text-center text-slate-500">Loading...</td></tr>
+                <tr><td colSpan="12" className="p-8 text-center text-slate-500">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="11"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
+                <tr><td colSpan="12"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
               ) : filtered.map((item, i) => (
                 <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3"><BarcodeCell value={item.skuCode || item.sku} /></td>
                   <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>
                   <td className="px-4 py-3 text-sm">{item.name}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{item.styleName || '-'}</td>
