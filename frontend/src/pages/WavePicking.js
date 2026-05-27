@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X, Play } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { toast } from '../components/Toast';
 import Skeleton from '../components/Skeleton';
 
 const STATUS_BADGE = {
@@ -48,15 +49,24 @@ const WavePicking = () => {
 
   const createWave = async () => {
     if (!selectedOrders.length) return;
+    if (!selectedFacility?.id) {
+      toast.error('Select a warehouse/facility first');
+      return;
+    }
     try {
       await API.post('/waves', {
-        warehouseId: selectedFacility?.id,
+        warehouseId: selectedFacility.id,
         name,
         orderIds: selectedOrders,
       });
+      toast.success(`Wave "${name || `Wave-${Date.now()}`}" created`);
       setShowCreate(false); setName(''); setSelectedOrders([]);
       loadWaves();
-    } catch (e) { console.error(e); }
+      loadOrders();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to create wave');
+      console.error(e);
+    }
   };
 
   const toggleOrder = (id) => {

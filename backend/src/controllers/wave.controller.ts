@@ -23,17 +23,28 @@ export const createWave = async (req: AuthRequest, res: Response) => {
   const { warehouseId, name, orderIds } = req.body;
   const tenantId = req.user!.tenant_id;
 
-  const wave = await prisma.pickWave.create({
-    data: {
-      tenantId, warehouseId, name: name || `Wave-${Date.now()}`,
-      orders: { create: orderIds.map((oid: string) => ({ orderId: oid })) },
-    },
-    include: { _count: { select: { orders: true } } },
-  });
+  if (!warehouseId) {
+    return res.status(400).json({ message: 'Warehouse ID is required' });
+  }
+  if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+    return res.status(400).json({ message: 'At least one order is required' });
+  }
 
-  await prisma.order.updateMany({
-    where: { id: { in: orderIds } },
-    data: { orderStatus: 'PROCESSING' },
+  const wave = await prisma.$transaction(async (tx) => {
+    const wave = await tx.pickWave.create({
+      data: {
+        tenantId, warehouseId, name: name || `Wave-${Date.now()}`,
+        orders: { create: orderIds.map((oid: string) => ({ orderId: oid })) },
+      },
+      include: { _count: { select: { orders: true } } },
+    });
+
+    await tx.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: { orderStatus: 'PROCESSING' },
+    });
+
+    return wave;
   });
 
   res.status(201).json(wave);
