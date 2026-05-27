@@ -18,7 +18,7 @@ export const checkDeliveries = async (req: AuthRequest, res: Response) => {
 };
 
 export const markDelivered = async (req: AuthRequest, res: Response) => {
-  const id = req.params.id;
+  const id = req.params.id as string;
   try {
     const result = await deliverOrder(id);
     res.json(result);
