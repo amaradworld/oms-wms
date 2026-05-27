@@ -4,6 +4,7 @@ import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import EmptyState from '../components/EmptyState';
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -98,7 +99,7 @@ const Orders = () => {
           {loading ? (
             <div className="p-8 text-center text-slate-500">Loading orders...</div>
           ) : filteredOrders.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">No orders found</div>
+              <EmptyState icon="orders" title="No orders found" description="Orders will appear here once they are created or synced from marketplaces." />
           ) : (
             <table className="w-full text-left min-w-[600px]">
               <thead className="bg-slate-50 border-b border-slate-200">

@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../services/prisma';
 import { AppError } from '../middlewares/error.middleware';
+import { validate } from '../middlewares/validate.middleware';
+import { loginSchema } from '../schemas';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -11,12 +13,9 @@ if (!JWT_SECRET) {
 
 const router = Router();
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password, tenantId } = req.body;
-    if (!email || !password) {
-      throw new AppError('Email and password are required', 400);
-    }
 
     const user = tenantId
       ? await prisma.user.findFirst({ where: { email, tenantId } })

@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { StatsSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const StatCard = ({ title, value, change, trend }) => (
   <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
@@ -53,7 +54,7 @@ const Dashboard = () => {
             <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
               <h3 className="font-bold text-sm md:text-base mb-4">Orders by Status</h3>
               {chartData.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-slate-400 text-sm">No data yet</div>
+                <EmptyState icon="analytics" title="No data yet" description="Orders will appear here once the system starts processing." />
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={chartData}>

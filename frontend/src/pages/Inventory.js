@@ -4,6 +4,7 @@ import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import EmptyState from '../components/EmptyState';
 
 const Inventory = () => {
   const [search, setSearch] = useState('');
@@ -88,7 +89,7 @@ const Inventory = () => {
             {loading ? (
               <tr><td colSpan="7" className="p-8 text-center text-slate-500">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan="7" className="p-8 text-center text-slate-500">No SKUs found</td></tr>
+              <tr><td colSpan="7"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
             ) : filtered.map((item, i) => (
               <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
                 <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>

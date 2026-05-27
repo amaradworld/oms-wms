@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, ChevronDown, ChevronRight, Building2, Package, ShoppingCart, Eye, ArrowRight } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import EmptyState from '../components/EmptyState';
 
 const Warehouse = () => {
   const { selectedFacility, setSelectedFacility } = useAuth();
@@ -85,7 +86,7 @@ const Warehouse = () => {
       {loading ? (
         <div className="text-center py-12 text-slate-500">Loading...</div>
       ) : warehouses.length === 0 ? (
-        <div className="text-center py-12 text-slate-500">No warehouses yet. Create your first one!</div>
+        <EmptyState icon="warehouse" title="No warehouses yet" description="Create your first warehouse to start managing inventory and facilities." action={<button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Create Warehouse</button>} />
       ) : (
         <div className="space-y-3">
           {warehouses.map(wh => (
@@ -107,7 +108,7 @@ const Warehouse = () => {
                   {expandWH === wh.id && (
                 <div className="border-t border-slate-100">
                   {wh.children?.length === 0 ? (
-                    <div className="p-4 text-sm text-slate-400 text-center">No facilities. Click "Add Facility" to create one.</div>
+                    <EmptyState icon="warehouse" title="No facilities" description="Add a facility to organize inventory and orders under this warehouse." />
                   ) : wh.children.map(fac => (
                     <div key={fac.id} className={`px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8 ${selectedFacility?.id === fac.id ? 'bg-indigo-50 border-indigo-200' : ''}`}>
                       <div className="w-2 h-2 rounded-full bg-green-400" />

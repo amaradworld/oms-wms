@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Barcode, CheckCircle2, AlertCircle, PackageCheck, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import EmptyState from '../components/EmptyState';
 
 const ScanningScreen = () => {
   const [scanValue, setScanValue] = useState('');
@@ -56,7 +57,7 @@ const ScanningScreen = () => {
         <div className="p-4 border-b font-bold text-sm flex items-center gap-2"><PackageCheck size={16} /> Scan Logs</div>
         <div className="divide-y">
           {logs.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-sm">No scans recorded yet</div>
+            <EmptyState icon="search" title="No scans recorded" description="Scan a barcode above to begin logging." />
           ) : logs.map(log => (
             <div key={log.id} className="p-3 flex justify-between items-center">
               <div className="min-w-0 flex-1">

@@ -5,6 +5,7 @@ import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const Returns = () => {
   const [tab, setTab] = useState('returns');
@@ -105,7 +106,7 @@ const Returns = () => {
               {loading ? (
                 <tr><td colSpan="7"><TableSkeleton rows={3} cols={7} /></td></tr>
               ) : data.length === 0 ? (
-                <tr><td colSpan="7" className="p-8 text-center text-slate-400 text-sm">No {tab} found</td></tr>
+                <tr><td colSpan="7"><EmptyState icon="returns" title={`No ${tab} found`} description={tab === 'returns' ? 'Returned orders will appear here.' : 'RTO items will appear here.'} /></td></tr>
               ) : data.map(item => (
                 <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm font-mono font-medium">{item.id}</td>

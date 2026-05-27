@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import EmptyState from '../components/EmptyState';
 
 const Picklist = () => {
   const [activeList, setActiveList] = useState('pending');
@@ -81,7 +82,7 @@ const Picklist = () => {
               {loading ? (
                 <tr><td colSpan="5" className="p-8 text-center text-slate-500">Loading...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-500">No picklists found</td></tr>
+                <tr><td colSpan="5"><EmptyState icon="picklist" title="No picklists found" description="Create a picklist to start processing orders." /></td></tr>
               ) : filtered.map(pl => (
                 <tr key={pl.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm font-mono font-medium">{pl.id?.slice(0, 8)}</td>

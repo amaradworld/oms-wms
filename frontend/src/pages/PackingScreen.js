@@ -3,6 +3,7 @@ import { PackageCheck, QrCode, CheckCircle2, XCircle, Truck, Box, Search } from 
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const PackingScreen = () => {
   const [orders, setOrders] = useState([]);
@@ -67,7 +68,7 @@ const PackingScreen = () => {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b font-semibold text-sm flex items-center gap-2"><Search size={16} /> Select Order to Pack</div>
           {loading ? <TableSkeleton rows={5} cols={4} /> : orders.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 text-sm">No pending orders to pack</div>
+            <EmptyState icon="orders" title="No pending orders" description="All orders have been processed or there are no orders yet." />
           ) : orders.map(o => (
             <div key={o.id} onClick={() => selectOrder(o)} className="px-4 py-3 flex items-center justify-between border-b last:border-0 hover:bg-slate-50 cursor-pointer">
               <div>
@@ -123,7 +124,7 @@ const PackingScreen = () => {
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                 <div className="p-4 border-b font-bold text-sm">Packing Log</div>
                 {packedItems.length === 0 ? (
-                  <div className="p-6 text-center text-slate-400 text-sm">No scans yet</div>
+                  <EmptyState icon="search" title="No scans yet" description="Scan SKU barcodes to verify and pack items." />
                 ) : packedItems.map(item => (
                   <div key={item.id} className="px-4 py-3 flex items-center justify-between border-b last:border-0">
                     <span className="font-mono text-sm font-medium truncate mr-2">{item.sku}</span>
