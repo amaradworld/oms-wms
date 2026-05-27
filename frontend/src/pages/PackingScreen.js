@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PackageCheck, QrCode, CheckCircle2, XCircle, Truck, Box, Search } from 'lucide-react';
+import { PackageCheck, QrCode, CheckCircle2, XCircle, Truck, Download, FileText, Box, Search, Printer, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+
+const COURIERS = ['Delhivery', 'Shiprocket', 'BlueDart', 'XpressBees', 'FedEx'];
 
 const PackingScreen = () => {
   const [orders, setOrders] = useState([]);
@@ -12,6 +14,10 @@ const PackingScreen = () => {
   const [packedItems, setPackedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [selectedCourier, setSelectedCourier] = useState('');
+  const [generatingAWB, setGeneratingAWB] = useState(false);
+  const [generatedAWB, setGeneratedAWB] = useState(null);
+  const [invoicing, setInvoicing] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -26,9 +32,11 @@ const PackingScreen = () => {
   const selectOrder = async (order) => {
     setSelectedOrder(order);
     setPackedItems([]);
+    setGeneratedAWB(null);
+    setSelectedCourier('');
     setOrderLoading(true);
     try {
-      const res = await API.get(`/orders`);
+      const res = await API.get('/orders');
       const full = res.data.find(o => o.id === order.id);
       if (full) setSelectedOrder(full);
     } catch {} finally { setOrderLoading(false); }
@@ -45,21 +53,67 @@ const PackingScreen = () => {
     setScanInput('');
   };
 
-  const markShipped = async () => {
+  const handleDownloadInvoice = async () => {
     if (!selectedOrder) return;
+    setInvoicing(true);
     try {
-      await API.patch(`/orders/${selectedOrder.id}/status`, { status: 'SHIPPED' });
-      toast.success(`Order ${selectedOrder.orderNumber} marked as shipped`);
-      setSelectedOrder(null);
-      fetchOrders();
-    } catch { toast.error('Failed to update status'); }
+      const token = localStorage.getItem('token');
+      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${API_BASE}/api/invoice/${selectedOrder.id}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Invoice failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice_${selectedOrder.orderNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Invoice downloaded');
+    } catch { toast.error('Failed to generate invoice'); } finally { setInvoicing(false); }
+  };
+
+  const handleGenerateAWB = async () => {
+    if (!selectedOrder || !selectedCourier) return;
+    setGeneratingAWB(true);
+    try {
+      const res = await API.post('/courier/generate-awb', { orderId: selectedOrder.id, courier: selectedCourier });
+      setGeneratedAWB(res.data.awb);
+      toast.success(`AWB ${res.data.awb} generated`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate AWB');
+    } finally { setGeneratingAWB(false); }
+  };
+
+  const handlePrintLabel = () => {
+    if (!generatedAWB) return;
+    const win = window.open('', '_blank');
+    win.document.write(`
+      <html><head><title>Shipping Label</title>
+      <style>body{font-family:monospace;padding:40px;text-align:center}
+      h1{font-size:24px;letter-spacing:2px;border:2px dashed #333;display:inline-block;padding:30px 50px}
+      .info{text-align:left;margin-top:20px;font-size:14px}
+      </style></head><body>
+      <h1>${generatedAWB}</h1>
+      <div class="info">
+        <p><strong>Courier:</strong> ${selectedCourier}</p>
+        <p><strong>Order:</strong> ${selectedOrder?.orderNumber}</p>
+        <p><strong>Customer:</strong> ${selectedOrder?.customerName}</p>
+        <p><strong>Address:</strong> ${selectedOrder?.shippingAddress}</p>
+      </div>
+      <script>window.print()</script>
+      </body></html>
+    `);
+    win.document.close();
   };
 
   const packedCount = packedItems.filter(i => i.verified).length;
   const totalItems = selectedOrder?.items?.length || 0;
+  const allPacked = packedCount >= totalItems && totalItems > 0;
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-xl md:text-2xl font-bold">Packing Station</h1>
       </div>
@@ -67,9 +121,9 @@ const PackingScreen = () => {
       {!selectedOrder ? (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b font-semibold text-sm flex items-center gap-2"><Search size={16} /> Select Order to Pack</div>
-          {loading ? <TableSkeleton rows={5} cols={4} /> : orders.length === 0 ? (
-            <EmptyState icon="orders" title="No pending orders" description="All orders have been processed or there are no orders yet." />
-          ) : orders.map(o => (
+          {loading ? <TableSkeleton rows={5} cols={4} />
+          : orders.length === 0 ? <EmptyState icon="orders" title="No pending orders" description="All orders have been processed or there are no orders yet." />
+          : orders.map(o => (
             <div key={o.id} onClick={() => selectOrder(o)} className="px-4 py-3 flex items-center justify-between border-b last:border-0 hover:bg-slate-50 cursor-pointer">
               <div>
                 <span className="font-mono text-sm font-medium">{o.orderNumber}</span>
@@ -81,12 +135,9 @@ const PackingScreen = () => {
         </div>
       ) : (
         <>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <button onClick={() => setSelectedOrder(null)} className="text-sm text-blue-600 hover:underline">&larr; Back</button>
             <span className="text-sm text-slate-500">Order #{selectedOrder.orderNumber} • {selectedOrder.customerName}</span>
-            <button onClick={markShipped} disabled={packedCount < totalItems} className="ml-auto flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
-              <Truck size={16} /> Mark Shipped
-            </button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -116,16 +167,15 @@ const PackingScreen = () => {
 
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <form onSubmit={handleScan} className="flex gap-2 md:gap-3">
-                  <input autoFocus className="flex-1 px-4 py-2.5 md:py-3 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200" placeholder="Scan SKU..." value={scanInput} onChange={(e) => setScanInput(e.target.value)} />
+                  <input autoFocus className="flex-1 px-4 py-2.5 md:py-3 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200" placeholder="Scan SKU to pack..." value={scanInput} onChange={(e) => setScanInput(e.target.value)} />
                   <button className="px-4 md:px-6 py-2.5 md:py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700"><QrCode size={18} /></button>
                 </form>
               </div>
 
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
                 <div className="p-4 border-b font-bold text-sm">Packing Log</div>
-                {packedItems.length === 0 ? (
-                  <EmptyState icon="search" title="No scans yet" description="Scan SKU barcodes to verify and pack items." />
-                ) : packedItems.map(item => (
+                {packedItems.length === 0 ? <EmptyState icon="search" title="No scans yet" description="Scan SKU barcodes to verify and pack items." />
+                : packedItems.map(item => (
                   <div key={item.id} className="px-4 py-3 flex items-center justify-between border-b last:border-0">
                     <span className="font-mono text-sm font-medium truncate mr-2">{item.sku}</span>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -137,13 +187,40 @@ const PackingScreen = () => {
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm h-fit">
-              <h3 className="font-bold text-sm md:text-base mb-4">Packing Summary</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Total Items</span><span className="font-medium">{totalItems}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Packed</span><span className="font-medium text-green-600">{packedCount}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Pending</span><span className="font-medium text-amber-600">{totalItems - packedCount}</span></div>
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-sm mb-4">Packing Summary</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Total Items</span><span className="font-medium">{totalItems}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Packed</span><span className="font-medium text-green-600">{packedCount}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Pending</span><span className="font-medium text-amber-600">{totalItems - packedCount}</span></div>
+                </div>
               </div>
+
+              {allPacked && (
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                  <h3 className="font-bold text-sm flex items-center gap-2"><FileText size={16} /> Pre-Shipment</h3>
+
+                  <button onClick={handleDownloadInvoice} disabled={invoicing} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                    {invoicing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} {invoicing ? 'Generating...' : 'Download Invoice'}
+                  </button>
+
+                  <select value={selectedCourier} onChange={e => setSelectedCourier(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm">
+                    <option value="">Select Courier...</option>
+                    {COURIERS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+
+                  <button onClick={handleGenerateAWB} disabled={!selectedCourier || generatingAWB || !!generatedAWB} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                    {generatingAWB ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />} {generatedAWB ? `AWB: ${generatedAWB}` : generatingAWB ? 'Generating...' : 'Generate AWB'}
+                  </button>
+
+                  {generatedAWB && (
+                    <button onClick={handlePrintLabel} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+                      <Printer size={16} /> Print Label
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </>
