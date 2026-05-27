@@ -27,8 +27,26 @@ const FallbackPage = () => (
   </div>
 );
 
+const UNAUTHORIZED = () => (
+  <div className="p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
+    <div className="text-center text-slate-400">
+      <div className="text-5xl mb-4">🔒</div>
+      <p className="text-lg font-medium">Access Denied</p>
+      <p className="text-sm mt-1">You don't have permission to view this page.</p>
+    </div>
+  </div>
+);
+
+const roleAccess = {
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','analytics','settings'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','analytics','settings'],
+  PICKER: ['dashboard','picklist','scanning'],
+  PACKER: ['dashboard','packing','scanning'],
+};
+
 const App = () => {
-  const { isAuthenticated, loading, selectedFacility, clearSelectedFacility } = useAuth();
+  const { user, isAuthenticated, loading, selectedFacility, clearSelectedFacility } = useAuth();
+  const role = user?.role || '';
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -43,6 +61,8 @@ const App = () => {
   if (!isAuthenticated) return <LoginPage />;
 
   const renderContent = () => {
+    const allowed = roleAccess[role] || ['dashboard'];
+    if (!allowed.includes(activeTab)) return <UNAUTHORIZED />;
     switch (activeTab) {
       case 'dashboard': return <Dashboard />;
       case 'orders': return <Orders />;

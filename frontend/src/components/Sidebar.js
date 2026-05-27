@@ -15,9 +15,10 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
 );
 
 const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
-  const { company, logout } = useAuth();
+  const { user, company, logout } = useAuth();
+  const role = user?.role || '';
 
-  const menuItems = [
+  const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'inventory', label: 'Inventory', icon: Package },
@@ -31,6 +32,14 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
+
+  const roleMenuMap = {
+    SUPER_ADMIN: allMenuItems,
+    WAREHOUSE_MGR: allMenuItems,
+    PICKER: allMenuItems.filter(i => ['picklist', 'scanning', 'dashboard'].includes(i.id)),
+    PACKER: allMenuItems.filter(i => ['packing', 'scanning', 'dashboard'].includes(i.id)),
+  };
+  const menuItems = roleMenuMap[role] || allMenuItems;
 
   const handleClick = (id) => {
     setActiveTab(id);
