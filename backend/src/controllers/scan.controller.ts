@@ -3,7 +3,7 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const verifyScan = async (req: AuthRequest, res: Response) => {
-  const { scanValue, type } = req.body; // type: 'SKU' or 'BIN'
+  const { code: scanValue, type } = req.body;
   const { tenant_id } = req.user!;
 
   try {
