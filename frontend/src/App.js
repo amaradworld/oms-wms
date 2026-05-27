@@ -9,6 +9,7 @@ import Picklist from './pages/Picklist';
 import PackingScreen from './pages/PackingScreen';
 import Returns from './pages/Returns';
 import Warehouse from './pages/Warehouse';
+import CycleCount from './pages/CycleCount';
 import Analytics from './pages/Analytics';
 import MarketplaceSettings from './pages/MarketplaceSettings';
 import Settings from './pages/Settings';
@@ -51,6 +52,7 @@ const App = () => {
       case 'packing': return <PackingScreen />;
       case 'returns': return <Returns />;
       case 'warehouse': return <Warehouse />;
+      case 'cyclecount': return <CycleCount />;
       case 'analytics': return <Analytics />;
       case 'marketplace': return <MarketplaceSettings />;
       case 'settings': return <Settings />;

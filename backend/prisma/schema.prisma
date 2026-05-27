@@ -32,9 +32,10 @@ model Warehouse {
   parent    Warehouse?  @relation("FacilityHierarchy", fields: [parentId], references: [id])
   children  Warehouse[] @relation("FacilityHierarchy")
   createdAt DateTime @default(now())
-  inventory Inventory[]
-  picklists Picklist[]
-  orders    Order[]
+  inventory  Inventory[]
+  picklists  Picklist[]
+  orders     Order[]
+  cycleCounts CycleCount[]
 
   @@map("warehouses")
 }
@@ -50,9 +51,10 @@ model SkuMaster {
   weight      Decimal?
   dimensions  String?
   createdAt   DateTime @default(now())
-  inventory   Inventory[]
-  orderItems  OrderItem[]
-  returns     Return[]
+  inventory      Inventory[]
+  orderItems     OrderItem[]
+  returns        Return[]
+  cycleCountItems CycleCountItem[]
 
   @@map("sku_master")
 }
@@ -195,6 +197,40 @@ model MarketplaceConfig {
 
   @@unique([tenantId, marketplace])
   @@map("marketplace_configs")
+}
+
+model CycleCount {
+  id          String   @id @default(uuid())
+  tenantId    String
+  warehouseId String
+  status      String   @default("DRAFT") // DRAFT, IN_PROGRESS, COMPLETED, CANCELLED
+  startedBy   String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  items     CycleCountItem[]
+
+  @@map("cycle_counts")
+}
+
+model CycleCountItem {
+  id            String  @id @default(uuid())
+  cycleCountId  String
+  skuId         String
+  binLocation   String?
+  expectedQty   Int     @default(0)
+  countedQty    Int?
+  variance      Int?
+  status        String  @default("PENDING") // PENDING, COUNTED, VERIFIED
+
+  cycleCount CycleCount @relation(fields: [cycleCountId], references: [id])
+  sku        SkuMaster  @relation(fields: [skuId], references: [id])
+
+  @@unique([cycleCountId, skuId])
+  @@map("cycle_count_items")
 }
 
 model MarketplaceOrderMapping {
