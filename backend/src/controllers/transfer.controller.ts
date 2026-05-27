@@ -25,6 +25,8 @@ export const createTransfer = async (req: AuthRequest, res: Response) => {
   const { fromWarehouseId, toWarehouseId, notes, items } = req.body;
   const tenantId = req.user!.tenant_id;
 
+  if (!items || items.length === 0) return res.status(400).json({ message: 'At least one item is required' });
+
   const skus = await prisma.skuMaster.findMany({
     where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId },
   });

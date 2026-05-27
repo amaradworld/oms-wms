@@ -5,9 +5,10 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 export const verifyScan = async (req: AuthRequest, res: Response) => {
   const { code: scanValue, type } = req.body;
   const { tenant_id } = req.user!;
+  const scanType = type || (scanValue?.startsWith?.('BIN-') ? 'BIN' : 'SKU');
 
   try {
-    if (type === 'SKU') {
+    if (scanType === 'SKU') {
       const sku = await prisma.skuMaster.findFirst({
         where: { skuCode: scanValue, tenantId: tenant_id }
       });
@@ -15,7 +16,7 @@ export const verifyScan = async (req: AuthRequest, res: Response) => {
       return res.json({ status: 'SUCCESS', data: sku });
     }
 
-    if (type === 'BIN') {
+    if (scanType === 'BIN') {
       const bins = await prisma.inventory.findMany({
         where: { binLocation: scanValue }
       });

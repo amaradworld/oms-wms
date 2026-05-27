@@ -1,35 +1,35 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Starting seeding process...');
 
-  // 1. Clear existing data to avoid duplicates
   await prisma.auditLog.deleteMany();
   await prisma.rto.deleteMany();
-  await prisma.returns.deleteMany();
+  await prisma.return.deleteMany();
   await prisma.courierTracking.deleteMany();
   await prisma.orderItem.deleteMany();
-  await prisma.orders.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.inventory.deleteMany();
   await prisma.skuMaster.deleteMany();
-  await prisma.warehouses.deleteMany();
-  await prisma.users.deleteMany();
+  await prisma.warehouse.deleteMany();
+  await prisma.user.deleteMany();
 
-  // 2. Create User (Admin)
+  const passwordHash = await bcrypt.hash('admin123', 10);
+
   const admin = await prisma.user.create({
     data: {
       tenantId: 'tenant-1',
       email: 'admin@oms.com',
-      passwordHash: 'hashed_password',
+      passwordHash,
       fullName: 'Super Admin',
       role: 'SUPER_ADMIN',
     },
   });
 
-  // 3. Create Warehouses
-  const mumbaiWh = await prisma.warehouses.create({
+  const mumbaiWh = await prisma.warehouse.create({
     data: {
       tenantId: 'tenant-1',
       name: 'Mumbai Central Hub',
@@ -38,7 +38,7 @@ async function main() {
     },
   });
 
-  const delhiWh = await prisma.warehouses.create({
+  const delhiWh = await prisma.warehouse.create({
     data: {
       tenantId: 'tenant-1',
       name: 'Delhi Logistics Park',
@@ -47,7 +47,6 @@ async function main() {
     },
   });
 
-  // 4. Create SKUs
   const skus = [
     { skuCode: 'TSH-BLU-S', name: 'Blue Cotton T-Shirt (S)', category: 'Apparel', hsnCode: '6109', weight: 0.2 },
     { skuCode: 'TSH-BLU-M', name: 'Blue Cotton T-Shirt (M)', category: 'Apparel', hsnCode: '6109', weight: 0.2 },
@@ -69,7 +68,6 @@ async function main() {
     createdSkus.push(s);
   }
 
-  // 5. Create Inventory
   for (const sku of createdSkus) {
     await prisma.inventory.create({
       data: {
@@ -91,19 +89,18 @@ async function main() {
     });
   }
 
-  // 6. Create Mock Orders
   const orderSources = ['Shopify', 'Amazon', 'Flipkart', 'Meesho'];
   const orderStatuses = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED'];
 
   for (let i = 1; i <= 50; i++) {
     const source = orderSources[Math.floor(Math.random() * orderSources.length)];
     const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
-    
-    const order = await prisma.orders.create({
+
+    const order = await prisma.order.create({
       data: {
         tenantId: 'tenant-1',
         orderNumber: `ORD-${1000 + i}`,
-        source: source,
+        source,
         customerName: `Customer ${i}`,
         shippingAddress: `Address ${i}, City ${i}, State ${i}`,
         orderStatus: status,
@@ -116,7 +113,7 @@ async function main() {
       const randomSku = createdSkus[Math.floor(Math.random() * createdSkus.length)];
       const price = Math.floor(Math.random() * 2000) + 500;
       const qty = Math.floor(Math.random() * 2) + 1;
-      
+
       await prisma.orderItem.create({
         data: {
           orderId: order.id,
@@ -129,12 +126,12 @@ async function main() {
     }
   }
 
-  console.log('Seeding completed successfully! 🚀');
+  console.log('Seeding completed successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Seed failed:', e);
     process.exit(1);
   })
   .finally(async () => {
