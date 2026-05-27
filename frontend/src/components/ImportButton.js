@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
-const ImportButton = ({ label = 'Import', endpoint, onSuccess }) => {
+const ImportButton = ({ label = 'Import', endpoint, onSuccess, warehouseId }) => {
   const fileRef = useRef(null);
   const [status, setStatus] = useState('idle'); // idle, uploading, success, error
   const [message, setMessage] = useState('');
@@ -19,7 +19,8 @@ const ImportButton = ({ label = 'Import', endpoint, onSuccess }) => {
     try {
       const token = localStorage.getItem('token');
       const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${API_BASE}/api/${endpoint}/import`, {
+      const params = warehouseId ? `?warehouseId=${encodeURIComponent(warehouseId)}` : '';
+      const res = await fetch(`${API_BASE}/api/${endpoint}/import${params}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
