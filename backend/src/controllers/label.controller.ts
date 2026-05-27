@@ -1,17 +1,36 @@
 import { Response } from 'express';
+import PDFDocument from 'pdfkit';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
-export const generateZplLabel = async (req: AuthRequest, res: Response) => {
-  const { skuCode, name, binLocation } = req.body;
+export const generateLabel = async (req: AuthRequest, res: Response) => {
+  const { skuCode, name, binLocation, brand, mrp } = req.body;
 
-  const zpl = `^XA
-^FO50,50^ADN,36,20^FD${skuCode}^FS
-^FO50,100^ADN,18,10^FD${name || ''}^FS
-^FO50,150^ADN,18,10^FDBIN: ${binLocation || 'DEFAULT'}^FS
-^FO50,220^BY3^BCN,80,Y,N,N^FD${skuCode}^FS
-^XZ`;
+  try {
+    const doc = new PDFDocument({ size: [300, 200], margin: 15 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=label_${skuCode}.pdf`);
+    doc.pipe(res);
 
-  res.setHeader('Content-Type', 'application/x-zpl');
-  res.setHeader('Content-Disposition', `attachment; filename=label_${skuCode}.zpl`);
-  res.send(zpl);
+    doc.fontSize(9).font('Helvetica-Bold').text(skuCode, { align: 'center' });
+
+    doc.moveDown(0.3);
+    doc.fontSize(7).font('Helvetica').text(name || '', { align: 'center' });
+
+    if (brand) {
+      doc.fontSize(6).fillColor('#666').text(`Brand: ${brand}`, { align: 'center' }).fillColor('#000');
+    }
+    if (mrp) {
+      doc.fontSize(6).text(`MRP: \u20B9${mrp}`, { align: 'center' });
+    }
+
+    doc.moveDown(0.3);
+    doc.fontSize(6).fillColor('#333').text(`BIN: ${binLocation || 'DEFAULT'}`, { align: 'center' }).fillColor('#000');
+
+    doc.moveDown(0.5);
+    doc.fontSize(5).fillColor('#999').text('globalsupply.in', { align: 'center' });
+
+    doc.end();
+  } catch (error) {
+    res.status(500).json({ message: 'Label generation failed', error: String(error) });
+  }
 };
