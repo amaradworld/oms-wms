@@ -39,6 +39,7 @@ model Warehouse {
   purchaseOrders  PurchaseOrder[]
   transfersFrom   StockTransfer[] @relation("TransferFrom")
   transfersTo     StockTransfer[] @relation("TransferTo")
+  pickWaves       PickWave[]
 
   @@map("warehouses")
 }
@@ -99,7 +100,8 @@ model Order {
   returns       Return[]
   rto           Rto?
 
-  warehouse Warehouse? @relation(fields: [warehouseId], references: [id])
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  pickWaveOrders PickWaveOrder[]
 
   @@map("orders")
 }
@@ -315,6 +317,34 @@ model StockTransferItem {
   sku      SkuMaster     @relation(fields: [skuId], references: [id])
 
   @@map("stock_transfer_items")
+}
+
+model PickWave {
+  id          String   @id @default(uuid())
+  tenantId    String
+  warehouseId String
+  name        String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  warehouse Warehouse     @relation(fields: [warehouseId], references: [id])
+  orders    PickWaveOrder[]
+
+  @@map("pick_waves")
+}
+
+model PickWaveOrder {
+  id        String @id @default(uuid())
+  waveId    String
+  orderId   String
+  status    String @default("PENDING")
+
+  wave  PickWave @relation(fields: [waveId], references: [id])
+  order Order    @relation(fields: [orderId], references: [id])
+
+  @@unique([waveId, orderId])
+  @@map("pick_wave_orders")
 }
 
 model MarketplaceOrderMapping {

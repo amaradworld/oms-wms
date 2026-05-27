@@ -20,6 +20,8 @@ import purchaseRoutes from './routes/purchase.routes';
 import transferRoutes from './routes/transfer.routes';
 import labelRoutes from './routes/label.routes';
 import importRoutes from './routes/import.routes';
+import waveRoutes from './routes/wave.routes';
+import trackRoutes from './routes/track.routes';
 import userRoutes from './routes/user.routes';
 import auditRoutes from './routes/audit.routes';
 import exportRoutes from './routes/export.routes';
@@ -64,6 +66,8 @@ app.use('/api/export', exportRoutes);
 app.use('/api', purchaseRoutes);
 app.use('/api/transfers', transferRoutes);
 app.use('/api/labels', labelRoutes);
+app.use('/api/waves', waveRoutes);
+app.use('/api/tracking', trackRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date().toISOString() });

@@ -55,7 +55,11 @@ export class NykaaConnector implements MarketplaceConnector {
 
   async updateInventory(config: { apiKey?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
-    // Real: POST https://api.nykaa.com/seller/v1/inventory
+    return true;
+  }
+
+  async pushTracking(config: { apiKey?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
     return true;
   }
 }

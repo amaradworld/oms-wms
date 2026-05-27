@@ -58,4 +58,9 @@ export class TataCliqConnector implements MarketplaceConnector {
     if (!config.apiKey || config.apiKey === 'demo') return true;
     return true;
   }
+
+  async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
+    return true;
+  }
 }

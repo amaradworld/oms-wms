@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu, X, Building2 } from 'lucide-react';
+import axios from 'axios';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -14,8 +15,11 @@ import Analytics from './pages/Analytics';
 import MarketplaceSettings from './pages/MarketplaceSettings';
 import PurchaseOrders from './pages/PurchaseOrders';
 import StockTransfer from './pages/StockTransfer';
+import WavePicking from './pages/WavePicking';
+import TrackingPage from './pages/TrackingPage';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
+import OnboardingWizard from './components/OnboardingWizard';
 import ToastContainer from './components/Toast';
 import { useAuth } from './context/AuthContext';
 
@@ -40,17 +44,36 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','analytics','settings'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','analytics','settings'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','analytics','settings'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','analytics','settings'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
 
 const App = () => {
-  const { user, isAuthenticated, loading, selectedFacility, clearSelectedFacility } = useAuth();
+  const { user, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
   const role = user?.role || '';
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const API = process.env.REACT_APP_API_URL;
+
+  useEffect(() => {
+    if (isAuthenticated && !showOnboarding) {
+      const checkOnboarding = async () => {
+        try {
+          const { data } = await axios.get(`${API}/api/warehouses`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (data.length === 0 && (role === 'SUPER_ADMIN' || role === 'WAREHOUSE_MGR')) {
+            setShowOnboarding(true);
+          }
+        } catch {}
+      };
+      checkOnboarding();
+    }
+  }, [isAuthenticated]);
 
   if (loading) {
     return (
@@ -60,7 +83,15 @@ const App = () => {
     );
   }
 
-  if (!isAuthenticated) return <LoginPage />;
+  if (!isAuthenticated) {
+    const isTrackPage = window.location.hash === '#/track' || window.location.pathname.startsWith('/track');
+    if (isTrackPage) return <TrackingPage />;
+    return <LoginPage />;
+  }
+
+  if (showOnboarding) {
+    return <OnboardingWizard onComplete={() => setShowOnboarding(false)} getToken={getToken} />;
+  }
 
   const renderContent = () => {
     const allowed = roleAccess[role] || ['dashboard'];
@@ -79,6 +110,7 @@ const App = () => {
       case 'marketplace': return <MarketplaceSettings />;
       case 'purchaseorders': return <PurchaseOrders />;
       case 'stocktransfer': return <StockTransfer />;
+      case 'waves': return <WavePicking />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }
