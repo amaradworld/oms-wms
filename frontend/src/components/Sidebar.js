@@ -54,7 +54,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
           <X size={20} />
         </button>
       </div>
-      <nav className="flex-1 mt-2 md:mt-4 overflow-y-auto">
+      <nav aria-label="Main navigation" className="flex-1 mt-2 md:mt-4 overflow-y-auto">
         {menuItems.map(item => (
           <SidebarItem 
             key={item.id} 

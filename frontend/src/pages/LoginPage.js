@@ -59,13 +59,13 @@ const LoginPage = () => {
     : 'localhost:3000';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white tracking-tight">
             OMS<span className="text-blue-400">WMS</span>
           </h1>
-          <p className="text-slate-400 mt-2">Multi-Tenant Warehouse Management</p>
+          <p className="text-slate-300 mt-2">Multi-Tenant Warehouse Management</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
@@ -76,7 +76,7 @@ const LoginPage = () => {
                 <h2 className="text-xl font-bold">Select Your Company</h2>
                 <p className="text-sm text-slate-500 mt-1">Choose your organization to continue</p>
               </div>
-              <div className="space-y-3">
+              <nav aria-label="Company selection" className="space-y-3">
                 {COMPANIES.map((c) => (
                   <button
                     key={c.id}
@@ -88,12 +88,12 @@ const LoginPage = () => {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-semibold">{c.name}</p>
-                      <p className="text-xs text-slate-400">{c.slug}.{baseDomain}</p>
+                      <p className="text-xs text-slate-600">{c.slug}.{baseDomain}</p>
                     </div>
-                    <ArrowRight size={18} className="text-slate-300 group-hover:text-blue-600" />
+                    <ArrowRight size={18} className="text-slate-500 group-hover:text-blue-600" />
                   </button>
                 ))}
-              </div>
+              </nav>
             </>
           ) : (
             <form onSubmit={handleLogin}>
@@ -111,7 +111,7 @@ const LoginPage = () => {
                     Change company
                   </button>
                 )}
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-600 mt-1">
                   {selectedCompany.slug}.{baseDomain}
                 </p>
               </div>
@@ -126,7 +126,7 @@ const LoginPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
                   <div className="relative">
-                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="email"
                       required
@@ -140,7 +140,7 @@ const LoginPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
                   <div className="relative">
-                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="password"
                       required
@@ -162,11 +162,11 @@ const LoginPage = () => {
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-500 mt-6">
+        <footer className="text-center text-xs text-slate-400 mt-6">
           Access your company directly via <span className="text-slate-300 font-mono">yourcompany.{baseDomain}</span>
-        </p>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 };
 
