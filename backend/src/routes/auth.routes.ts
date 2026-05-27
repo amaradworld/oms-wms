@@ -33,12 +33,12 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, tenant_id: user.tenantId, role: user.role },
+      { id: user.id, tenant_id: user.tenantId, role: user.role, warehouseId: user.warehouseId },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({ token, role: user.role, name: user.fullName, tenantId: user.tenantId });
+    res.json({ token, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId });
   } catch (error) {
     next(error);
   }

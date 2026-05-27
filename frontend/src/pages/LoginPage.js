@@ -45,7 +45,7 @@ const LoginPage = () => {
         tenantId: selectedCompany.id,
       });
       login(
-        { email, role: res.data.role, name: res.data.name },
+        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
         { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
         res.data.token
       );

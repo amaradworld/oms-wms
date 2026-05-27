@@ -7,7 +7,7 @@ if (!JWT_SECRET) {
 }
 
 export interface AuthRequest extends Request {
-  user?: { id: string; tenant_id: string; role: string };
+  user?: { id: string; tenant_id: string; role: string; warehouseId?: string };
 }
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {

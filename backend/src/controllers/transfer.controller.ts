@@ -12,10 +12,21 @@ export const getTransfers = async (req: AuthRequest, res: Response) => {
   res.json(transfers);
 };
 
+export const getTransfer = async (req: AuthRequest, res: Response) => {
+  const transfer = await prisma.stockTransfer.findFirst({
+    where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
+    include: { fromWarehouse: { select: { name: true } }, toWarehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
+  });
+  if (!transfer) return res.status(404).json({ message: 'Transfer not found' });
+  res.json(transfer);
+};
+
 export const createTransfer = async (req: AuthRequest, res: Response) => {
   const { fromWarehouseId, toWarehouseId, notes, items } = req.body;
+  const tenantId = req.user!.tenant_id;
+
   const skus = await prisma.skuMaster.findMany({
-    where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId: req.user!.tenant_id },
+    where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId },
   });
   const skuMap = new Map(skus.map(s => [s.skuCode, s.id]));
   const missing = items.filter(i => !skuMap.has(i.skuCode));
@@ -23,7 +34,8 @@ export const createTransfer = async (req: AuthRequest, res: Response) => {
 
   const transfer = await prisma.stockTransfer.create({
     data: {
-      tenantId: req.user!.tenant_id, fromWarehouseId, toWarehouseId, notes,
+      tenantId, fromWarehouseId, toWarehouseId, notes,
+      createdBy: req.user!.id,
       items: { create: items.map(i => ({ skuId: skuMap.get(i.skuCode)!, quantity: i.quantity })) },
     },
     include: { fromWarehouse: { select: { name: true } }, toWarehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
@@ -31,25 +43,68 @@ export const createTransfer = async (req: AuthRequest, res: Response) => {
   res.status(201).json(transfer);
 };
 
+export const scanTransferItem = async (req: AuthRequest, res: Response) => {
+  const { skuCode, receivedQty } = req.body;
+  const id = req.params.id as string;
+  const tenantId = req.user!.tenant_id;
+
+  const transfer = await prisma.stockTransfer.findFirst({ where: { id, tenantId } });
+  if (!transfer) return res.status(404).json({ message: 'Transfer not found' });
+  if (transfer.status !== 'DRAFT') return res.status(400).json({ message: 'Transfer already completed' });
+
+  if (req.user!.warehouseId !== transfer.toWarehouseId) {
+    return res.status(403).json({ message: 'Only receiving facility users can scan items' });
+  }
+
+  const sku = await prisma.skuMaster.findFirst({ where: { skuCode, tenantId } });
+  if (!sku) return res.status(404).json({ message: 'SKU not found' });
+
+  const item = await prisma.stockTransferItem.findFirst({
+    where: { transferId: id, skuId: sku.id },
+  });
+  if (!item) return res.status(404).json({ message: 'Item not in this transfer' });
+
+  const updated = await prisma.stockTransferItem.update({
+    where: { id: item.id },
+    data: { receivedQty: receivedQty ?? item.quantity, status: 'RECEIVED' },
+    include: { sku: { select: { skuCode: true, name: true } } },
+  });
+  res.json(updated);
+};
+
 export const completeTransfer = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const tenantId = req.user!.tenant_id;
-  const transfer: any = await prisma.stockTransfer.findFirst({ where: { id, tenantId }, include: { items: true } });
+
+  const transfer: any = await prisma.stockTransfer.findFirst({ where: { id, tenantId }, include: { items: { include: { sku: { select: { skuCode: true } } } } } });
   if (!transfer) return res.status(404).json({ message: 'Transfer not found' });
+
+  if (transfer.status !== 'DRAFT') return res.status(400).json({ message: 'Already completed' });
+
+  if (req.user!.warehouseId !== transfer.toWarehouseId) {
+    return res.status(403).json({ message: 'Only receiving facility users can complete transfers' });
+  }
+
+  const unscanned = transfer.items.filter(i => i.status !== 'RECEIVED');
+  if (unscanned.length) {
+    return res.status(400).json({ message: `Scan all items first. Unscanned: ${unscanned.map(i => i.sku?.skuCode).join(', ')}` });
+  }
 
   for (const item of transfer.items) {
     const fromInv = await prisma.inventory.findFirst({ where: { warehouseId: transfer.fromWarehouseId, skuId: item.skuId } });
-    if (!fromInv || fromInv.quantityAvailable < item.quantity) {
-      return res.status(400).json({ message: `Insufficient stock for ${item.skuId}` });
+    if (!fromInv || fromInv.quantityAvailable < item.receivedQty) {
+      return res.status(400).json({ message: `Insufficient stock for ${item.sku?.skuCode}` });
     }
-    await prisma.inventory.update({ where: { id: fromInv.id }, data: { quantityOnHand: { decrement: item.quantity }, quantityAvailable: { decrement: item.quantity } } });
+    await prisma.inventory.update({ where: { id: fromInv.id }, data: { quantityOnHand: { decrement: item.receivedQty }, quantityAvailable: { decrement: item.receivedQty } } });
     await prisma.inventory.upsert({
       where: { warehouseId_skuId_binLocation: { warehouseId: transfer.toWarehouseId, skuId: item.skuId, binLocation: 'TRANSFERRED' } },
-      update: { quantityOnHand: { increment: item.quantity }, quantityAvailable: { increment: item.quantity } },
-      create: { warehouseId: transfer.toWarehouseId, skuId: item.skuId, binLocation: 'TRANSFERRED', quantityOnHand: item.quantity, quantityAvailable: item.quantity },
+      update: { quantityOnHand: { increment: item.receivedQty }, quantityAvailable: { increment: item.receivedQty } },
+      create: { warehouseId: transfer.toWarehouseId, skuId: item.skuId, binLocation: 'TRANSFERRED', quantityOnHand: item.receivedQty, quantityAvailable: item.receivedQty },
     });
-    await prisma.stockTransferItem.update({ where: { id: item.id }, data: { status: 'TRANSFERRED' } });
   }
-  await prisma.stockTransfer.update({ where: { id }, data: { status: 'COMPLETED' } });
+  await prisma.stockTransfer.update({
+    where: { id },
+    data: { status: 'COMPLETED', receivedBy: req.user!.id, receivedAt: new Date() },
+  });
   res.json({ message: 'Transfer completed' });
 };
