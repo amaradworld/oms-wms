@@ -46,7 +46,7 @@ const WavePicking = () => {
   const loadOrders = async () => {
     try {
       const { data } = await axios.get(`${API}/api/orders`, headers());
-      setOrders(data.filter(o => o.orderStatus === 'PENDING'));
+      setOrders((data.orders || []).filter(o => o.orderStatus === 'PENDING'));
     } catch (e) { console.error(e); }
   };
 

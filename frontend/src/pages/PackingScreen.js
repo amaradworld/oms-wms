@@ -23,7 +23,8 @@ const PackingScreen = () => {
     setLoading(true);
     try {
       const res = await API.get('/orders');
-      setOrders(Array.isArray(res.data) ? res.data.filter(o => o.orderStatus !== 'DELIVERED' && o.orderStatus !== 'CANCELLED') : []);
+      const ordersData = res.data.orders || (Array.isArray(res.data) ? res.data : []);
+      setOrders(ordersData.filter(o => o.orderStatus !== 'DELIVERED' && o.orderStatus !== 'CANCELLED'));
     } catch { setOrders([]); } finally { setLoading(false); }
   }, []);
 
@@ -37,7 +38,8 @@ const PackingScreen = () => {
     setOrderLoading(true);
     try {
       const res = await API.get('/orders');
-      const full = res.data.find(o => o.id === order.id);
+      const ordersData = res.data.orders || (Array.isArray(res.data) ? res.data : []);
+      const full = ordersData.find(o => o.id === order.id);
       if (full) setSelectedOrder(full);
     } catch {} finally { setOrderLoading(false); }
   };
