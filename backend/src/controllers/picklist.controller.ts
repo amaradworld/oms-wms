@@ -15,15 +15,9 @@ export const getPicklists = async (req: AuthRequest, res: Response) => {
 };
 
 export const createPicklist = async (req: AuthRequest, res: Response) => {
-  const { warehouseId, items } = req.body;
-  if (!warehouseId || !items?.length) {
-    return res.status(400).json({ message: 'Warehouse and items are required' });
-  }
+  const { warehouseId } = req.body;
   const picklist = await prisma.picklist.create({
-    data: {
-      warehouseId,
-      status: 'PENDING',
-    },
+    data: { warehouseId, status: 'PENDING' },
   });
   res.status(201).json(picklist);
 };

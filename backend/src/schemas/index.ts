@@ -30,7 +30,6 @@ export const createFacilitySchema = z.object({
 
 export const createPicklistSchema = z.object({
   warehouseId: z.string().min(1, 'Warehouse is required'),
-  items: z.array(z.any()).min(1, 'At least one item is required'),
 });
 
 export const createOrderSchema = z.object({

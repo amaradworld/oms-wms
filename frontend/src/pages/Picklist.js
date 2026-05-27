@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { toast } from '../components/Toast';
+import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
 const Picklist = () => {
@@ -10,6 +12,7 @@ const Picklist = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const [warehouses, setWarehouses] = useState([]);
   const { selectedFacility } = useAuth();
 
   const fetchPicklists = useCallback(async () => {
@@ -17,25 +20,25 @@ const Picklist = () => {
     try {
       const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
       const res = await API.get('/picklists', { params });
-      setPicklists(res.data);
-    } catch {
-      setPicklists([]);
-    } finally {
-      setLoading(false);
-    }
+      setPicklists(Array.isArray(res.data) ? res.data : []);
+    } catch { setPicklists([]); } finally { setLoading(false); }
   }, [selectedFacility]);
 
   useEffect(() => { fetchPicklists(); }, [fetchPicklists]);
 
+  useEffect(() => {
+    API.get('/warehouses').then(r => setWarehouses(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+  }, []);
+
   const handleCreate = async () => {
     if (!selectedWarehouse) return;
     try {
-      await API.post('/picklists', { warehouseId: selectedWarehouse, items: [] });
+      await API.post('/picklists', { warehouseId: selectedWarehouse });
       setShowModal(false);
       setSelectedWarehouse('');
       fetchPicklists();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create picklist');
+      toast.error(err.response?.data?.message || 'Failed to create picklist');
     }
   };
 
@@ -54,13 +57,7 @@ const Picklist = () => {
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {['pending', 'picking', 'completed', 'all'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveList(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              activeList === tab ? 'bg-blue-600 text-white' : 'bg-white border text-slate-600 hover:bg-slate-50'
-            }`}
-          >
+          <button key={tab} onClick={() => setActiveList(tab)} className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeList === tab ? 'bg-blue-600 text-white' : 'bg-white border text-slate-600 hover:bg-slate-50'}`}>
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
@@ -79,19 +76,14 @@ const Picklist = () => {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-500">Loading...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan="5"><EmptyState icon="picklist" title="No picklists found" description="Create a picklist to start processing orders." /></td></tr>
-              ) : filtered.map(pl => (
+              {loading ? <tr><td colSpan="5"><TableSkeleton rows={4} cols={5} /></td></tr>
+              : filtered.length === 0 ? <tr><td colSpan="5"><EmptyState icon="picklist" title="No picklists found" description="Create a picklist to start processing orders." /></td></tr>
+              : filtered.map(pl => (
                 <tr key={pl.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm font-mono font-medium">{pl.id?.slice(0, 8)}</td>
                   <td className="px-4 py-3 text-sm">{pl.warehouse?.name || '-'}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      pl.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
-                      pl.status === 'PICKING' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                    }`}>{pl.status}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${pl.status === 'PENDING' ? 'bg-amber-100 text-amber-700' : pl.status === 'PICKING' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>{pl.status}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">{pl.pickerId || '—'}</td>
                   <td className="px-4 py-3 text-sm text-slate-500">{pl.createdAt ? new Date(pl.createdAt).toLocaleDateString() : '-'}</td>
@@ -111,23 +103,16 @@ const Picklist = () => {
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">Select Warehouse</label>
-              <select
-                value={selectedWarehouse}
-                onChange={e => setSelectedWarehouse(e.target.value)}
-                className="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              >
+              <select value={selectedWarehouse} onChange={e => setSelectedWarehouse(e.target.value)} className="w-full px-3 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 <option value="">Choose warehouse...</option>
-                <option value="wh-1">Mumbai Central Hub</option>
-                <option value="wh-2">Delhi Logistics Park</option>
+                {warehouses.filter(w => !w.parentId || (selectedFacility && w.id === selectedFacility.id)).map(w => (
+                  <option key={w.id} value={w.id}>{w.name}{w.parentId ? ' (facility)' : ''}</option>
+                ))}
               </select>
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={handleCreate} disabled={!selectedWarehouse} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
-                Create Picklist
-              </button>
-              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-slate-50">
-                Cancel
-              </button>
+              <button onClick={handleCreate} disabled={!selectedWarehouse} className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">Create Picklist</button>
+              <button onClick={() => setShowModal(false)} className="px-4 py-2.5 border rounded-lg text-sm font-medium hover:bg-slate-50">Cancel</button>
             </div>
           </div>
         </div>
