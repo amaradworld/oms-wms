@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { getConnector } from '../connectors';
 
 const COURIER_API_KEYS: Record<string, string> = {
   SHIPROCKET: process.env.SHIPROCKET_TOKEN || '',
@@ -27,6 +28,18 @@ export const generateAWB = async (req: AuthRequest, res: Response) => {
     });
 
     await prisma.order.update({ where: { id: orderId }, data: { orderStatus: 'SHIPPED' } });
+
+    const connector = order.source ? getConnector(order.source) : null;
+    if (connector?.pushTracking) {
+      const config = {
+        apiKey: process.env[`${order.source.toUpperCase()}_API_KEY`] || undefined,
+        apiSecret: process.env[`${order.source.toUpperCase()}_API_SECRET`] || undefined,
+        sellerId: process.env[`${order.source.toUpperCase()}_SELLER_ID`] || undefined,
+      };
+      connector.pushTracking(config, order.orderNumber, awb, courier).catch(err => {
+        console.error(`[pushTracking] Failed for ${order.orderNumber}:`, err);
+      });
+    }
 
     res.json({ message: 'AWB generated', tracking, awb, courier });
   } catch (error) {

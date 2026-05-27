@@ -25,6 +25,7 @@ import trackRoutes from './routes/track.routes';
 import userRoutes from './routes/user.routes';
 import auditRoutes from './routes/audit.routes';
 import exportRoutes from './routes/export.routes';
+import deliveryRoutes from './routes/delivery.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -68,6 +69,7 @@ app.use('/api/transfers', transferRoutes);
 app.use('/api/labels', labelRoutes);
 app.use('/api/waves', waveRoutes);
 app.use('/api/tracking', trackRoutes);
+app.use('/api/delivery', deliveryRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date().toISOString() });

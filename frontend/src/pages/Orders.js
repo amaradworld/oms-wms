@@ -88,6 +88,21 @@ const Orders = () => {
     setOpenMenuId(null);
   };
 
+  const handleMarkDelivered = async (order) => {
+    if (!window.confirm(`Mark order ${order.orderNumber} as delivered?`)) return;
+    try {
+      await API.patch(`/delivery/orders/${order.id}/deliver`);
+      toast.success(`Order ${order.orderNumber} marked delivered`);
+      fetchOrders();
+      if (detailOrder?.id === order.id) {
+        setDetailOrder({ ...detailOrder, orderStatus: 'DELIVERED' });
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to mark delivered');
+    }
+    setOpenMenuId(null);
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -177,6 +192,11 @@ const Orders = () => {
                           <button onClick={() => handleCancelOrder(order)} disabled={order.orderStatus === 'CANCELLED' || order.orderStatus === 'DELIVERED'} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                             <XCircle size={15} /> Cancel Order
                           </button>
+                          {order.orderStatus === 'SHIPPED' && (
+                            <button onClick={() => handleMarkDelivered(order)} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-emerald-600 hover:bg-emerald-50 transition-colors">
+                              <span className="text-lg leading-none">&#10003;</span> Mark Delivered
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>
@@ -230,6 +250,11 @@ const Orders = () => {
                     ))}
                   </div>
                 </div>
+              )}
+              {detailOrder.orderStatus === 'SHIPPED' && (
+                <button onClick={() => { handleMarkDelivered(detailOrder); setDetailOrder(null); }} className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 transition-colors">
+                  Mark Delivered
+                </button>
               )}
             </div>
           </div>
