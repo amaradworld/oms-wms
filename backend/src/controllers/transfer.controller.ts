@@ -14,10 +14,17 @@ export const getTransfers = async (req: AuthRequest, res: Response) => {
 
 export const createTransfer = async (req: AuthRequest, res: Response) => {
   const { fromWarehouseId, toWarehouseId, notes, items } = req.body;
+  const skus = await prisma.skuMaster.findMany({
+    where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId: req.user!.tenant_id },
+  });
+  const skuMap = new Map(skus.map(s => [s.skuCode, s.id]));
+  const missing = items.filter(i => !skuMap.has(i.skuCode));
+  if (missing.length) return res.status(400).json({ message: `SKU not found: ${missing.map(i => i.skuCode).join(', ')}` });
+
   const transfer = await prisma.stockTransfer.create({
     data: {
       tenantId: req.user!.tenant_id, fromWarehouseId, toWarehouseId, notes,
-      items: { create: items.map(i => ({ skuId: i.skuId, quantity: i.quantity })) },
+      items: { create: items.map(i => ({ skuId: skuMap.get(i.skuCode)!, quantity: i.quantity })) },
     },
     include: { fromWarehouse: { select: { name: true } }, toWarehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
   });

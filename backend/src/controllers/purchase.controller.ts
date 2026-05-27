@@ -32,10 +32,17 @@ export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
   const count = await prisma.purchaseOrder.count({ where: { tenantId } });
   const poNumber = `PO-${String(count + 1).padStart(5, '0')}`;
 
+  const skus = await prisma.skuMaster.findMany({
+    where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId },
+  });
+  const skuMap = new Map(skus.map(s => [s.skuCode, s.id]));
+  const missing = items.filter(i => !skuMap.has(i.skuCode));
+  if (missing.length) return res.status(400).json({ message: `SKU not found: ${missing.map(i => i.skuCode).join(', ')}` });
+
   const po = await prisma.purchaseOrder.create({
     data: {
       tenantId, poNumber, supplierId, warehouseId, expectedDate: expectedDate ? new Date(expectedDate) : null, notes,
-      items: { create: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, unitPrice: i.unitPrice || 0 })) },
+      items: { create: items.map(i => ({ skuId: skuMap.get(i.skuCode)!, quantity: i.quantity, unitPrice: i.unitPrice || 0 })) },
     },
     include: { supplier: { select: { name: true } }, warehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
   });
