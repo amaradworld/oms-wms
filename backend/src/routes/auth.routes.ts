@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../services/prisma';
 import { AppError } from '../middlewares/error.middleware';
+import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { loginSchema } from '../schemas';
+import { changePassword } from '../controllers/user.controller';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -41,6 +43,8 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     next(error);
   }
 });
+
+router.post('/change-password', authenticate, changePassword);
 
 router.get('/tenant/:slug', async (req, res) => {
   try {

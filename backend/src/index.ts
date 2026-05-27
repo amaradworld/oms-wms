@@ -16,6 +16,9 @@ import courierRoutes from './routes/courier.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import importRoutes from './routes/import.routes';
+import userRoutes from './routes/user.routes';
+import auditRoutes from './routes/audit.routes';
+import exportRoutes from './routes/export.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -50,6 +53,9 @@ app.use('/api/courier', courierRoutes);
 app.use('/api/invoice', invoiceRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api', importRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/audit-logs', auditRoutes);
+app.use('/api/export', exportRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date().toISOString() });

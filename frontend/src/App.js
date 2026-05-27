@@ -11,6 +11,7 @@ import Returns from './pages/Returns';
 import Warehouse from './pages/Warehouse';
 import Analytics from './pages/Analytics';
 import MarketplaceSettings from './pages/MarketplaceSettings';
+import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
 import ToastContainer from './components/Toast';
 import { useAuth } from './context/AuthContext';
@@ -52,6 +53,7 @@ const App = () => {
       case 'warehouse': return <Warehouse />;
       case 'analytics': return <Analytics />;
       case 'marketplace': return <MarketplaceSettings />;
+      case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }
   };
