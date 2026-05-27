@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, MoreVertical, RefreshCw } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -28,20 +29,22 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const { selectedFacility } = useAuth();
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get('/orders');
+      const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
+      const res = await API.get('/orders', { params });
       setOrders(res.data);
     } catch {
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedFacility]);
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const filteredOrders = orders.filter(o => {
     const matchSearch = !searchTerm || 

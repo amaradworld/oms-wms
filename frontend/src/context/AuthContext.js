@@ -50,6 +50,21 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('auth');
   };
 
+  const [selectedFacility, setSelectedFacility] = useState(() => {
+    const saved = localStorage.getItem('selectedFacility');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleSetFacility = (facility) => {
+    setSelectedFacility(facility);
+    localStorage.setItem('selectedFacility', JSON.stringify(facility));
+  };
+
+  const clearSelectedFacility = () => {
+    setSelectedFacility(null);
+    localStorage.removeItem('selectedFacility');
+  };
+
   const detectSubdomain = () => {
     const host = window.location.hostname;
     const parts = host.split('.');
@@ -68,6 +83,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{
       user, company, tenantId, loading, login, logout,
       detectSubdomain, findCompanyBySubdomain, COMPANIES,
+      selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
     }}>
       {children}

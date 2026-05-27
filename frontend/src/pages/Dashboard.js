@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const StatCard = ({ title, value, change, trend }) => (
   <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
@@ -17,23 +18,28 @@ const StatCard = ({ title, value, change, trend }) => (
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
+  const { selectedFacility } = useAuth();
 
-  useEffect(() => {
-    API.get('/dashboard/stats')
-      .then(res => setStats(res.data))
-      .catch(() => {
-        setStats({
-          totalOrders: 1284,
-          pendingOrders: 432,
-          totalRevenue: 452800,
-          lowStockItems: [
-            { sku: { skuCode: 'TSH-BLU-S', name: 'Blue T-Shirt (S)' } },
-            { sku: { skuCode: 'SHK-WHT-10', name: 'White Sneakers (10)' } },
-            { sku: { skuCode: 'ACC-WLT-BRW', name: 'Brown Wallet' } },
-          ]
-        });
+  const fetchStats = useCallback(async () => {
+    const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
+    try {
+      const res = await API.get('/dashboard/stats', { params });
+      setStats(res.data);
+    } catch {
+      setStats({
+        totalOrders: 1284,
+        pendingOrders: 432,
+        totalRevenue: 452800,
+        lowStockItems: [
+          { sku: { skuCode: 'TSH-BLU-S', name: 'Blue T-Shirt (S)' } },
+          { sku: { skuCode: 'SHK-WHT-10', name: 'White Sneakers (10)' } },
+          { sku: { skuCode: 'ACC-WLT-BRW', name: 'Brown Wallet' } },
+        ]
       });
-  }, []);
+    }
+  }, [selectedFacility]);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-8">

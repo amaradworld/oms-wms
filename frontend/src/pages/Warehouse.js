@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, ChevronDown, ChevronRight, Building2, Package, ShoppingCart, Eye } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronRight, Building2, Package, ShoppingCart, Eye, ArrowRight } from 'lucide-react';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const Warehouse = () => {
+  const { selectedFacility, setSelectedFacility } = useAuth();
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -70,6 +72,16 @@ const Warehouse = () => {
         </div>
       </div>
 
+      {selectedFacility && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <Building2 size={16} className="text-indigo-600" />
+            <span className="font-medium text-indigo-800">Active Facility:</span>
+            <span className="text-indigo-700">{selectedFacility.name}</span>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-12 text-slate-500">Loading...</div>
       ) : warehouses.length === 0 ? (
@@ -92,18 +104,20 @@ const Warehouse = () => {
                 </button>
               </div>
 
-              {expandWH === wh.id && (
+                  {expandWH === wh.id && (
                 <div className="border-t border-slate-100">
                   {wh.children?.length === 0 ? (
                     <div className="p-4 text-sm text-slate-400 text-center">No facilities. Click "Add Facility" to create one.</div>
                   ) : wh.children.map(fac => (
-                    <div key={fac.id} className="px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8">
+                    <div key={fac.id} className={`px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8 ${selectedFacility?.id === fac.id ? 'bg-indigo-50 border-indigo-200' : ''}`}>
                       <div className="w-2 h-2 rounded-full bg-green-400" />
                       <div className="flex-1">
                         <div className="text-sm font-medium">{fac.name}</div>
                         <div className="text-xs text-slate-400">{fac.location || '—'}</div>
                       </div>
-                      <span className="text-xs text-slate-400">Facility</span>
+                      <button onClick={() => setSelectedFacility({ id: fac.id, name: fac.name })} className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 font-medium transition-colors">
+                        Load <ArrowRight size={12} />
+                      </button>
                     </div>
                   ))}
                 </div>

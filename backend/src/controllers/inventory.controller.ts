@@ -4,11 +4,15 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getInventory = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
+  const warehouseId = req.query.warehouseId as string | undefined;
+
+  const invWhere: any = { warehouse: { tenantId } };
+  if (warehouseId) invWhere.warehouseId = warehouseId;
 
   const [skus, invItems] = await Promise.all([
     prisma.skuMaster.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } }),
     prisma.inventory.findMany({
-      where: { warehouse: { tenantId } },
+      where: invWhere,
       include: { sku: true, warehouse: true },
       orderBy: { lastUpdated: 'desc' },
     }),

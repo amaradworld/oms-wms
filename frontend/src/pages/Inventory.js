@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, MoreVertical, Plus, X } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const Inventory = () => {
   const [search, setSearch] = useState('');
@@ -10,20 +11,22 @@ const Inventory = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ skuCode: '', name: '', category: '', hsnCode: '', weight: '' });
+  const { selectedFacility } = useAuth();
 
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get('/inventory');
+      const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
+      const res = await API.get('/inventory', { params });
       setItems(Array.isArray(res.data) ? res.data : []);
     } catch {
       setItems([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedFacility]);
 
-  useEffect(() => { fetchInventory(); }, []);
+  useEffect(() => { fetchInventory(); }, [fetchInventory]);
 
   const handleAddSku = async () => {
     try {

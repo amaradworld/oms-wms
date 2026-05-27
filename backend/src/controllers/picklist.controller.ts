@@ -3,8 +3,11 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getPicklists = async (req: AuthRequest, res: Response) => {
+  const warehouseId = req.query.warehouseId as string | undefined;
+  const where: any = { warehouse: { tenantId: req.user!.tenant_id } };
+  if (warehouseId) where.warehouseId = warehouseId;
   const picklists = await prisma.picklist.findMany({
-    where: { warehouse: { tenantId: req.user!.tenant_id } },
+    where,
     include: { warehouse: true },
     orderBy: { createdAt: 'desc' },
   });

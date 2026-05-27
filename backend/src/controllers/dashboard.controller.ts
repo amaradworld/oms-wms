@@ -4,19 +4,24 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getDashboardStats = async (req: AuthRequest, res: Response) => {
   const { tenant_id } = req.user!;
+  const warehouseId = req.query.warehouseId as string | undefined;
 
   try {
-    const totalOrders = await prisma.order.count({ where: { tenantId: tenant_id } });
-    const pendingOrders = await prisma.order.count({ where: { tenantId: tenant_id, orderStatus: 'PENDING' } });
+    const orderWhere: any = { tenantId: tenant_id };
+    const invWhere: any = {};
+    if (warehouseId) { orderWhere.warehouseId = warehouseId; invWhere.warehouseId = warehouseId; }
+
+    const totalOrders = await prisma.order.count({ where: orderWhere });
+    const pendingOrders = await prisma.order.count({ where: { ...orderWhere, orderStatus: 'PENDING' } });
     const totalRevenue = await prisma.orderItem.aggregate({ _sum: { totalAmount: true } });
     const ordersByStatus = await prisma.order.groupBy({
       by: ['orderStatus'],
       _count: true,
-      where: { tenantId: tenant_id },
+      where: orderWhere,
     });
 
     const lowStockItems = await prisma.inventory.findMany({
-      where: { quantityAvailable: { lte: 10 } },
+      where: { ...invWhere, quantityAvailable: { lte: 10 } },
       include: { sku: true, warehouse: true },
       take: 5,
     });

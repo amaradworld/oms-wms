@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, X } from 'lucide-react';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const Picklist = () => {
   const [activeList, setActiveList] = useState('pending');
@@ -8,20 +9,22 @@ const Picklist = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
+  const { selectedFacility } = useAuth();
 
-  const fetchPicklists = async () => {
+  const fetchPicklists = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get('/picklists');
+      const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
+      const res = await API.get('/picklists', { params });
       setPicklists(res.data);
     } catch {
       setPicklists([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedFacility]);
 
-  useEffect(() => { fetchPicklists(); }, []);
+  useEffect(() => { fetchPicklists(); }, [fetchPicklists]);
 
   const handleCreate = async () => {
     if (!selectedWarehouse) return;

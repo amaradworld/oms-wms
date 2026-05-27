@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, X, Building2 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -14,7 +14,7 @@ import LoginPage from './pages/LoginPage';
 import { useAuth } from './context/AuthContext';
 
 const App = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, selectedFacility, clearSelectedFacility } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -59,6 +59,18 @@ const App = () => {
             OMS<span className="text-blue-500">WMS</span>
           </div>
         </div>
+        {selectedFacility && (
+          <div className="bg-indigo-600 text-white px-4 py-2 flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <Building2 size={14} />
+              <span className="font-medium">{selectedFacility.name}</span>
+              <span className="text-indigo-200 text-xs ml-1">(filtered view)</span>
+            </div>
+            <button onClick={clearSelectedFacility} className="flex items-center gap-1 text-indigo-200 hover:text-white transition-colors">
+              <X size={14} /> Show All
+            </button>
+          </div>
+        )}
         {renderContent()}
       </main>
     </div>
