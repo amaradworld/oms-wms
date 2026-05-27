@@ -6,14 +6,23 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
     const { tenant_id } = req.user!;
     const warehouseId = req.query.warehouseId as string | undefined;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const where: any = { tenantId: tenant_id };
     if (warehouseId) where.warehouseId = warehouseId;
-    const orders = await prisma.order.findMany({
-      where,
-      include: { items: { include: { sku: { select: { skuCode: true, name: true } } } }, warehouse: { select: { name: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(orders);
+
+    const [orders, total] = await Promise.all([
+      prisma.order.findMany({
+        where,
+        include: { items: { include: { sku: { select: { skuCode: true, name: true } } } }, warehouse: { select: { name: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    res.json({ orders, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching orders', error });
   }

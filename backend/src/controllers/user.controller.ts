@@ -32,9 +32,14 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   res.json(updated);
 };
 
+const VALID_ROLES = ['SUPER_ADMIN', 'WAREHOUSE_MGR', 'PICKER', 'PACKER'];
+
 export const createUser = async (req: AuthRequest, res: Response) => {
   const { email, password, fullName, role, warehouseId } = req.body;
   if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+
+  const finalRole = role || 'PICKER';
+  if (!VALID_ROLES.includes(finalRole)) return res.status(400).json({ message: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` });
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return res.status(409).json({ message: 'Email already in use' });
@@ -45,7 +50,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       email,
       passwordHash,
       fullName: fullName || null,
-      role: role || 'PICKER',
+      role: finalRole,
       warehouseId: warehouseId || null,
       tenantId: req.user!.tenant_id,
     },

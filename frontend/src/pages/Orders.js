@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import EmptyState from '../components/EmptyState';
+import { TableSkeleton } from '../components/Skeleton';
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -31,17 +32,23 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
-  const menuRef = useRef(null);
   const { selectedFacility } = useAuth();
 
-  const fetchOrders = useCallback(async () => {
+  const fetchOrders = useCallback(async (targetPage) => {
     setLoading(true);
     try {
-      const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
+      const pg = targetPage || 1;
+      const params = { page: pg, limit: 50 };
+      if (selectedFacility) params.warehouseId = selectedFacility.id;
       const res = await API.get('/orders', { params });
-      setOrders(res.data);
+      const data = res.data;
+      setOrders(data.orders || []);
+      setTotalPages(data.totalPages || 1);
+      setPage(pg);
     } catch {
       setOrders([]);
     } finally {
@@ -49,7 +56,7 @@ const Orders = () => {
     }
   }, [selectedFacility]);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  useEffect(() => { fetchOrders(1); }, [fetchOrders]);
 
   const filteredOrders = orders.filter(o => {
     const matchSearch = !searchTerm || 
@@ -63,7 +70,7 @@ const Orders = () => {
 
   useEffect(() => {
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpenMenuId(null);
+      if (!e.target.closest('[data-menu]')) setOpenMenuId(null);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -86,7 +93,7 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-xl md:text-2xl font-bold">Order Management</h1>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          <button onClick={fetchOrders} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs md:text-sm font-medium hover:bg-slate-50">
+          <button onClick={() => fetchOrders(1)} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs md:text-sm font-medium hover:bg-slate-50">
             <RefreshCw size={14} /> Refresh
           </button>
           <SampleCSVButton type="orders" />
@@ -109,7 +116,7 @@ const Orders = () => {
           <Filter size={16} className="text-slate-400 flex-shrink-0" />
           <select
             value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
+            onChange={(e) => { setSourceFilter(e.target.value); fetchOrders(1); }}
             className="input-field w-full sm:w-auto"
           >
             <option value="ALL">All Sources</option>
@@ -121,7 +128,7 @@ const Orders = () => {
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-8 text-center text-slate-500">Loading orders...</div>
+            <TableSkeleton rows={8} cols={7} />
           ) : filteredOrders.length === 0 ? (
               <EmptyState icon="orders" title="No orders found" description="Orders will appear here once they are created or synced from marketplaces." />
           ) : (
@@ -163,7 +170,7 @@ const Orders = () => {
                         <MoreVertical size={16} className="text-slate-400" />
                       </button>
                       {openMenuId === order.id && (
-                        <div ref={menuRef} className="absolute right-2 top-10 z-40 w-44 bg-white rounded-xl shadow-xl border border-indigo-100/60 py-1 animate-fade-in">
+                        <div data-menu className="absolute right-2 top-10 z-40 w-44 bg-white rounded-xl shadow-xl border border-indigo-100/60 py-1 animate-fade-in">
                           <button onClick={() => { setDetailOrder(order); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 transition-colors">
                             <Eye size={15} className="text-indigo-500" /> View Details
                           </button>
@@ -180,6 +187,20 @@ const Orders = () => {
           )}
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-500">Page {page} of {totalPages}</p>
+          <div className="flex gap-2">
+            <button onClick={() => fetchOrders(page - 1)} disabled={page <= 1} className="flex items-center gap-1 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
+              <ChevronLeft size={14} /> Previous
+            </button>
+            <button onClick={() => fetchOrders(page + 1)} disabled={page >= totalPages} className="flex items-center gap-1 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {detailOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDetailOrder(null)}>
