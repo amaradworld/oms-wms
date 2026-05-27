@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, CheckCircle2, XCircle, Eye, Play } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, CheckCircle2, XCircle, Eye, Play, QrCode } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -14,6 +14,12 @@ const CycleCount = () => {
   const [countDetails, setCountDetails] = useState(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [countValues, setCountValues] = useState({});
+  const [scanInput, setScanInput] = useState('');
+  const scanRef = useRef(null);
+
+  useEffect(() => {
+    if (countDetails && scanRef.current) scanRef.current.focus();
+  }, [countDetails]);
 
   const fetchCounts = useCallback(async () => {
     setLoading(true);
@@ -64,6 +70,39 @@ const CycleCount = () => {
     }
   };
 
+  const handleScan = async (e) => {
+    e.preventDefault();
+    if (!scanInput || !countDetails) return;
+    const code = scanInput.trim();
+
+    const matchedItem = countDetails.items.find(item =>
+      item.sku.skuCode === code || item.skuCode === code
+    );
+
+    if (!matchedItem) {
+      toast.error(`SKU ${code} not found in this cycle count`);
+      setScanInput('');
+      return;
+    }
+
+    const current = parseInt(countValues[matchedItem.skuId], 10) || 0;
+    const newQty = current + 1;
+    setCountValues(prev => ({ ...prev, [matchedItem.skuId]: newQty }));
+
+    try {
+      await API.put('/cycle-counts/item', {
+        cycleCountId: selectedCount,
+        skuId: matchedItem.skuId,
+        countedQty: newQty,
+      });
+      openDetails(selectedCount);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update count');
+    }
+    setScanInput('');
+    scanRef.current?.focus();
+  };
+
   const handleComplete = async () => {
     try {
       await API.put(`/cycle-counts/${selectedCount}/complete`);
@@ -109,6 +148,27 @@ const CycleCount = () => {
             )}
           </div>
         </div>
+
+        {countDetails.status === 'IN_PROGRESS' && (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <form onSubmit={handleScan} className="flex gap-2">
+              <div className="relative flex-1">
+                <QrCode size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  ref={scanRef}
+                  autoFocus
+                  type="text"
+                  value={scanInput}
+                  onChange={e => setScanInput(e.target.value)}
+                  placeholder="Scan SKU barcode to count..."
+                  className="w-full pl-9 pr-3 py-2.5 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200"
+                />
+              </div>
+              <button type="submit" className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700">+1</button>
+            </form>
+            <p className="text-xs text-slate-400 mt-2 ml-1">Each scan increments the count by 1 for the matching SKU</p>
+          </div>
+        )}
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b flex justify-between items-center">
