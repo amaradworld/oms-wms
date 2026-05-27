@@ -16,6 +16,9 @@ import courierRoutes from './routes/courier.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import cycleCountRoutes from './routes/cyclecount.routes';
+import purchaseRoutes from './routes/purchase.routes';
+import transferRoutes from './routes/transfer.routes';
+import labelRoutes from './routes/label.routes';
 import importRoutes from './routes/import.routes';
 import userRoutes from './routes/user.routes';
 import auditRoutes from './routes/audit.routes';
@@ -58,6 +61,9 @@ app.use('/api', importRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/audit-logs', auditRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api', purchaseRoutes);
+app.use('/api/transfers', transferRoutes);
+app.use('/api/labels', labelRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date().toISOString() });

@@ -34,8 +34,11 @@ model Warehouse {
   createdAt DateTime @default(now())
   inventory  Inventory[]
   picklists  Picklist[]
-  orders     Order[]
-  cycleCounts CycleCount[]
+  orders          Order[]
+  cycleCounts     CycleCount[]
+  purchaseOrders  PurchaseOrder[]
+  transfersFrom   StockTransfer[] @relation("TransferFrom")
+  transfersTo     StockTransfer[] @relation("TransferTo")
 
   @@map("warehouses")
 }
@@ -53,8 +56,10 @@ model SkuMaster {
   createdAt   DateTime @default(now())
   inventory      Inventory[]
   orderItems     OrderItem[]
-  returns        Return[]
-  cycleCountItems CycleCountItem[]
+  returns           Return[]
+  cycleCountItems   CycleCountItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockTransferItems StockTransferItem[]
 
   @@map("sku_master")
 }
@@ -64,6 +69,7 @@ model Inventory {
   warehouseId      String
   skuId            String
   binLocation      String
+  reorderPoint     Int      @default(0)
   quantityOnHand   Int      @default(0)
   quantityReserved Int      @default(0)
   quantityAvailable Int    @default(0)
@@ -231,6 +237,84 @@ model CycleCountItem {
 
   @@unique([cycleCountId, skuId])
   @@map("cycle_count_items")
+}
+
+model Supplier {
+  id             String   @id @default(uuid())
+  tenantId       String
+  name           String
+  contactPerson  String?
+  email          String?
+  phone          String?
+  address        String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id          String   @id @default(uuid())
+  tenantId    String
+  poNumber    String   @unique
+  supplierId  String
+  warehouseId String
+  status      String   @default("DRAFT")
+  orderDate   DateTime @default(now())
+  expectedDate DateTime?
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  supplier  Supplier           @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse          @relation(fields: [warehouseId], references: [id])
+  items     PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id          String  @id @default(uuid())
+  poId        String
+  skuId       String
+  quantity    Int
+  unitPrice   Decimal @default(0)
+  receivedQty Int     @default(0)
+  status      String  @default("PENDING")
+
+  po  PurchaseOrder @relation(fields: [poId], references: [id])
+  sku SkuMaster     @relation(fields: [skuId], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+model StockTransfer {
+  id              String   @id @default(uuid())
+  tenantId        String
+  fromWarehouseId String
+  toWarehouseId   String
+  status          String   @default("DRAFT")
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  fromWarehouse Warehouse @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse @relation("TransferTo", fields: [toWarehouseId], references: [id])
+  items         StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id       String @id @default(uuid())
+  transferId String
+  skuId    String
+  quantity Int
+  status   String @default("PENDING")
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id])
+  sku      SkuMaster     @relation(fields: [skuId], references: [id])
+
+  @@map("stock_transfer_items")
 }
 
 model MarketplaceOrderMapping {
