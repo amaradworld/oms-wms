@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { Barcode, CheckCircle2, AlertCircle, PackageCheck } from 'lucide-react';
+import { Barcode, CheckCircle2, AlertCircle, PackageCheck, Loader2 } from 'lucide-react';
+import API from '../utils/api';
+import { toast } from '../components/Toast';
 
 const ScanningScreen = () => {
   const [scanValue, setScanValue] = useState('');
   const [status, setStatus] = useState('idle');
+  const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
 
-  const handleScan = (e) => {
+  const handleScan = async (e) => {
     e.preventDefault();
     if (!scanValue) return;
-    if (scanValue.startsWith('SKU-')) {
+    setLoading(true);
+    try {
+      const res = await API.post('/scan/verify', { code: scanValue });
       setStatus('success');
-      setLogs([{id: Date.now(), value: scanValue, time: new Date().toLocaleTimeString(), type: 'SUCCESS'}, ...logs]);
-    } else {
+      setLogs([{ id: Date.now(), value: scanValue, time: new Date().toLocaleTimeString(), type: 'SUCCESS', msg: res.data.message }, ...logs]);
+      toast.success(res.data.message || 'Verified');
+    } catch (err) {
       setStatus('error');
-      setLogs([{id: Date.now(), value: scanValue, time: new Date().toLocaleTimeString(), type: 'ERROR'}, ...logs]);
+      setLogs([{ id: Date.now(), value: scanValue, time: new Date().toLocaleTimeString(), type: 'ERROR', msg: err.response?.data?.message || 'Invalid' }, ...logs]);
+      toast.error(err.response?.data?.message || 'Invalid scan');
+    } finally {
+      setLoading(false);
+      setScanValue('');
     }
-    setScanValue('');
   };
 
   return (
@@ -31,47 +40,35 @@ const ScanningScreen = () => {
         status === 'success' ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
       }`}>
         <div className="flex justify-center mb-4 md:mb-6">
-          {status === 'idle' && <Barcode size={48} className="text-slate-300" />}
-          {status === 'success' && <CheckCircle2 size={48} className="text-green-500" />}
-          {status === 'error' && <AlertCircle size={48} className="text-red-500" />}
+          {loading ? <Loader2 size={48} className="text-slate-400 animate-spin" /> :
+           status === 'idle' ? <Barcode size={48} className="text-slate-300" /> :
+           status === 'success' ? <CheckCircle2 size={48} className="text-green-500" /> :
+           <AlertCircle size={48} className="text-red-500" />}
         </div>
 
         <form onSubmit={handleScan} className="flex flex-col sm:flex-row gap-2 md:gap-3">
-          <input 
-            autoFocus
-            className="flex-1 px-4 py-3 border-2 rounded-xl text-base md:text-lg font-mono outline-none focus:ring-4 focus:ring-blue-200"
-            placeholder="Scan now..."
-            value={scanValue}
-            onChange={(e) => setScanValue(e.target.value)}
-          />
-          <button className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800">
-            Verify
-          </button>
+          <input autoFocus className="flex-1 px-4 py-3 border-2 rounded-xl text-base md:text-lg font-mono outline-none focus:ring-4 focus:ring-blue-200" placeholder="Scan now..." value={scanValue} onChange={(e) => setScanValue(e.target.value)} />
+          <button disabled={loading} className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 disabled:opacity-50">{loading ? 'Verifying...' : 'Verify'}</button>
         </form>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b font-bold text-sm flex items-center gap-2">
-          <PackageCheck size={16} /> Scan Logs
-        </div>
+        <div className="p-4 border-b font-bold text-sm flex items-center gap-2"><PackageCheck size={16} /> Scan Logs</div>
         <div className="divide-y">
           {logs.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-sm">No scans recorded yet</div>
-          ) : (
-            logs.map(log => (
-              <div key={log.id} className="p-3 flex justify-between items-center">
-                <span className="font-mono text-sm font-medium truncate mr-2">{log.value}</span>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-slate-400">{log.time}</span>
-                  <span className={`text-xs font-bold px-2 py-1 rounded ${
-                    log.type === 'SUCCESS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {log.type}
-                  </span>
-                </div>
+          ) : logs.map(log => (
+            <div key={log.id} className="p-3 flex justify-between items-center">
+              <div className="min-w-0 flex-1">
+                <span className="font-mono text-sm font-medium truncate mr-2 block">{log.value}</span>
+                {log.msg && <span className="text-xs text-slate-400">{log.msg}</span>}
               </div>
-            ))
-          )}
+              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                <span className="text-xs text-slate-400">{log.time}</span>
+                <span className={`text-xs font-bold px-2 py-1 rounded ${log.type === 'SUCCESS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{log.type}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

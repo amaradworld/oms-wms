@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
@@ -15,6 +16,7 @@ import courierRoutes from './routes/courier.routes';
 import invoiceRoutes from './routes/invoice.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import importRoutes from './routes/import.routes';
+import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
 
@@ -33,9 +35,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan('dev'));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { message: 'Too many requests' } }));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/scan', scanRoutes);
@@ -52,6 +54,8 @@ app.use('/api', importRoutes);
 app.get('/health', (req, res) => {
   res.json({ status: 'UP', timestamp: new Date().toISOString() });
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

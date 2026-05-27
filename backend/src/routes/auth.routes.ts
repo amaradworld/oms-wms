@@ -1,47 +1,48 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import prisma from '../services/prisma';
+import { AppError } from '../middlewares/error.middleware';
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 const router = Router();
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password, tenantId } = req.body;
-
-    // Find user by email and tenant
-    let user = null;
-    if (tenantId) {
-      user = await prisma.user.findFirst({
-        where: { email, tenantId },
-      });
-    } else {
-      user = await prisma.user.findFirst({
-        where: { email },
-      });
+    if (!email || !password) {
+      throw new AppError('Email and password are required', 400);
     }
 
+    const user = tenantId
+      ? await prisma.user.findFirst({ where: { email, tenantId } })
+      : await prisma.user.findFirst({ where: { email } });
+
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials for this company' });
+      throw new AppError('Invalid credentials', 401);
+    }
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      throw new AppError('Invalid credentials', 401);
     }
 
     const token = jwt.sign(
       { id: user.id, tenant_id: user.tenantId, role: user.role },
-      process.env.JWT_SECRET || 'secret',
+      JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({
-      token,
-      role: user.role,
-      name: user.fullName,
-      tenantId: user.tenantId,
-    });
+    res.json({ token, role: user.role, name: user.fullName, tenantId: user.tenantId });
   } catch (error) {
-    res.status(500).json({ message: 'Login error' });
+    next(error);
   }
 });
 
-// Tenant info endpoint
 router.get('/tenant/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
@@ -50,7 +51,7 @@ router.get('/tenant/:slug', async (req, res) => {
       name: `${slug.charAt(0).toUpperCase() + slug.slice(1)}`,
       slug,
     });
-  } catch (error) {
+  } catch {
     res.status(404).json({ message: 'Tenant not found' });
   }
 });

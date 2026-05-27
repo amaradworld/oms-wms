@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
@@ -18,16 +19,17 @@ async function main() {
   await prisma.$executeRawUnsafe('TRUNCATE TABLE "users" CASCADE');
 
   // Create User
+  const passwordHash = await bcrypt.hash('admin123', 10);
   const admin = await prisma.user.create({
     data: {
       tenantId: 'tenant-1',
       email: 'admin@oms.com',
-      passwordHash: 'hashed_password',
+      passwordHash,
       fullName: 'Super Admin',
       role: 'SUPER_ADMIN',
     },
   });
-  console.log('Created admin user');
+  console.log('Created admin user (password: admin123)');
 
   // Create Warehouses
   const mumbaiWh = await prisma.warehouse.create({
