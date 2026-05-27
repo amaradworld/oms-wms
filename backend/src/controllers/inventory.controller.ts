@@ -33,6 +33,7 @@ export const getInventory = async (req: AuthRequest, res: Response) => {
       binLocation: inv?.binLocation || null,
       quantityOnHand: inv?.quantityOnHand ?? 0,
       quantityAvailable: inv?.quantityAvailable ?? 0,
+      lastUpdated: inv?.lastUpdated || null,
     };
   });
 

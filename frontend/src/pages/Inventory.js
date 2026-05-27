@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, MoreVertical, Plus, X } from 'lucide-react';
+import { Search, Filter, MoreVertical, Plus, X, Download } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
+import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import EmptyState from '../components/EmptyState';
@@ -13,6 +14,7 @@ const Inventory = () => {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ skuCode: '', name: '', category: '', hsnCode: '', weight: '' });
   const { selectedFacility } = useAuth();
+  const [exporting, setExporting] = useState(false);
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
@@ -40,6 +42,20 @@ const Inventory = () => {
     }
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await API.get('/export/inventory', { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'inventory.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Inventory exported');
+    } catch { toast.error('Export failed'); } finally { setExporting(false); }
+  };
+
   const filtered = items.filter(i =>
     (i.skuCode || i.sku || '').toLowerCase().includes(search.toLowerCase()) ||
     (i.name || '').toLowerCase().includes(search.toLowerCase())
@@ -50,6 +66,9 @@ const Inventory = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Inventory Management</h1>
         <div className="flex gap-3">
+          <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
+            <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
+          </button>
           <SampleCSVButton type="inventory" />
           <ImportButton label="Inventory" endpoint="inventory" onSuccess={fetchInventory} />
           <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
@@ -82,14 +101,15 @@ const Inventory = () => {
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">HSN</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">On Hand</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Available</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Updated</th>
                 <th className="px-4 py-3 text-right"></th>
               </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="7" className="p-8 text-center text-slate-500">Loading...</td></tr>
+              <tr><td colSpan="8" className="p-8 text-center text-slate-500">Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan="7"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
+              <tr><td colSpan="8"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
             ) : filtered.map((item, i) => (
               <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
                 <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>
@@ -98,6 +118,7 @@ const Inventory = () => {
                 <td className="px-4 py-3 text-sm font-mono text-slate-500">{item.hsnCode || '-'}</td>
                 <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityOnHand ?? '-'}</td>
                 <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityAvailable ?? '-'}</td>
+                <td className="px-4 py-3 text-sm text-slate-500">{item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : '—'}</td>
                 <td className="px-4 py-3 text-right">
                   <button className="p-1 hover:bg-slate-200 rounded-full"><MoreVertical size={16} /></button>
                 </td>

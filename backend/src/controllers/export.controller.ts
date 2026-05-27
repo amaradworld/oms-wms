@@ -44,6 +44,7 @@ export const exportInventory = async (req: AuthRequest, res: Response) => {
     binLocation: i.binLocation || '',
     quantityOnHand: i.quantityOnHand,
     quantityAvailable: i.quantityAvailable,
+    lastUpdated: i.lastUpdated?.toISOString() || '',
   }));
   res.setHeader('Content-Type', 'text/csv');
   res.setHeader('Content-Disposition', 'attachment; filename=inventory.csv');
