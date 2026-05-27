@@ -31,7 +31,20 @@ export const importInventory = async (req: AuthRequest, res: Response) => {
       let sku = await prisma.skuMaster.findUnique({ where: { skuCode } });
       if (!sku) {
         sku = await prisma.skuMaster.create({
-          data: { skuCode, name: row.name || row.Product || skuCode, tenantId, hsnCode: row.hsnCode || '' },
+          data: {
+            skuCode, tenantId,
+            name: row.name || row.Product || skuCode,
+            styleName: row.styleName || '',
+            size: row.size || '',
+            color: row.color || '',
+            brand: row.brand || '',
+            category: row.category || '',
+            material: row.material || '',
+            gender: row.gender || '',
+            unitType: row.unitType || '',
+            mrp: row.mrp ? parseFloat(row.mrp) : null,
+            hsnCode: row.hsnCode || '',
+          },
         });
       }
 

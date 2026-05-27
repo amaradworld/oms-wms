@@ -49,8 +49,16 @@ model SkuMaster {
   tenantId    String
   skuCode     String   @unique
   name        String
-  description String?
+  styleName   String?
+  size        String?
+  color       String?
+  brand       String?
   category    String?
+  material    String?
+  gender      String?
+  unitType    String?
+  mrp         Decimal?
+  description String?
   hsnCode     String?
   weight      Decimal?
   dimensions  String?

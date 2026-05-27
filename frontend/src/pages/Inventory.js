@@ -12,7 +12,7 @@ const Inventory = () => {
   const [items, setItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ skuCode: '', name: '', category: '', hsnCode: '', weight: '' });
+  const [form, setForm] = useState({ skuCode: '', name: '', styleName: '', size: '', color: '', brand: '', category: '', material: '', gender: '', unitType: '', mrp: '', hsnCode: '', weight: '' });
   const { selectedFacility } = useAuth();
   const [exporting, setExporting] = useState(false);
 
@@ -35,7 +35,7 @@ const Inventory = () => {
     try {
       await API.post('/skus', form);
       setShowModal(false);
-      setForm({ skuCode: '', name: '', category: '', hsnCode: '', weight: '' });
+      setForm({ skuCode: '', name: '', styleName: '', size: '', color: '', brand: '', category: '', material: '', gender: '', unitType: '', mrp: '', hsnCode: '', weight: '' });
       fetchInventory();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to create SKU');
@@ -56,9 +56,14 @@ const Inventory = () => {
     } catch { toast.error('Export failed'); } finally { setExporting(false); }
   };
 
+  const searchStr = search.toLowerCase();
   const filtered = items.filter(i =>
-    (i.skuCode || i.sku || '').toLowerCase().includes(search.toLowerCase()) ||
-    (i.name || '').toLowerCase().includes(search.toLowerCase())
+    (i.skuCode || i.sku || '').toLowerCase().includes(searchStr) ||
+    (i.name || '').toLowerCase().includes(searchStr) ||
+    (i.styleName || '').toLowerCase().includes(searchStr) ||
+    (i.brand || '').toLowerCase().includes(searchStr) ||
+    (i.color || '').toLowerCase().includes(searchStr) ||
+    (i.size || '').toLowerCase().includes(searchStr)
   );
 
   return (
@@ -82,7 +87,7 @@ const Inventory = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input
             type="text"
-            placeholder="Search by SKU or Product Name..."
+            placeholder="Search by SKU, name, style, brand, color..."
             className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -92,45 +97,53 @@ const Inventory = () => {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 border-b">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead className="bg-slate-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SKU</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Style</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Size</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Color</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Brand</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Category</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">HSN</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">On Hand</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Available</th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Last Updated</th>
                 <th className="px-4 py-3 text-right"></th>
               </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="8" className="p-8 text-center text-slate-500">Loading...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan="8"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
-            ) : filtered.map((item, i) => (
-              <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>
-                <td className="px-4 py-3 text-sm">{item.name}</td>
-                <td className="px-4 py-3 text-sm">{item.category || '-'}</td>
-                <td className="px-4 py-3 text-sm font-mono text-slate-500">{item.hsnCode || '-'}</td>
-                <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityOnHand ?? '-'}</td>
-                <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityAvailable ?? '-'}</td>
-                <td className="px-4 py-3 text-sm text-slate-500">{item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : '—'}</td>
-                <td className="px-4 py-3 text-right">
-                  <button className="p-1 hover:bg-slate-200 rounded-full"><MoreVertical size={16} /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="11" className="p-8 text-center text-slate-500">Loading...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan="11"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
+              ) : filtered.map((item, i) => (
+                <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="px-4 py-3 text-sm font-mono font-medium">{item.skuCode || item.sku}</td>
+                  <td className="px-4 py-3 text-sm">{item.name}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{item.styleName || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{item.size || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{item.color || '-'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{item.brand || '-'}</td>
+                  <td className="px-4 py-3 text-sm">{item.category || '-'}</td>
+                  <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityOnHand ?? '-'}</td>
+                  <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityAvailable ?? '-'}</td>
+                  <td className="px-4 py-3 text-sm text-slate-500">{item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : '—'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <button className="p-1 hover:bg-slate-200 rounded-full"><MoreVertical size={16} /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
-          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-md md:mx-4 p-5 md:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-lg md:mx-4 p-5 md:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">Add New SKU</h2>
               <button onClick={() => setShowModal(false)} className="p-1 hover:bg-slate-100 rounded-full"><X size={20} /></button>
@@ -145,8 +158,64 @@ const Inventory = () => {
                 <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Blue Cotton T-Shirt (XL)" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
-                <input type="text" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-xs font-medium text-slate-500 mb-1">Style Name</label>
+                <input type="text" value={form.styleName} onChange={e => setForm({ ...form, styleName: e.target.value })} placeholder="e.g. Classic Fit T-Shirt" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Size</label>
+                  <input type="text" value={form.size} onChange={e => setForm({ ...form, size: e.target.value })} placeholder="e.g. XL, 32, 10" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Color</label>
+                  <input type="text" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} placeholder="e.g. Blue" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Brand</label>
+                  <input type="text" value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} placeholder="e.g. Nike, NoName" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Category</label>
+                  <input type="text" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="e.g. Apparel" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Gender</label>
+                  <select value={form.gender} onChange={e => setForm({ ...form, gender: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">Select</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Unisex">Unisex</option>
+                    <option value="Kids">Kids</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Material</label>
+                  <input type="text" value={form.material} onChange={e => setForm({ ...form, material: e.target.value })} placeholder="e.g. Cotton" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">MRP (₹)</label>
+                  <input type="number" step="0.01" value={form.mrp} onChange={e => setForm({ ...form, mrp: e.target.value })} placeholder="e.g. 999" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Unit Type</label>
+                  <select value={form.unitType} onChange={e => setForm({ ...form, unitType: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="">Select</option>
+                    <option value="Pieces">Pieces</option>
+                    <option value="Pair">Pair</option>
+                    <option value="Kg">Kg</option>
+                    <option value="Meter">Meter</option>
+                    <option value="Pack">Pack</option>
+                    <option value="Set">Set</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Weight (kg)</label>
+                  <input type="number" step="0.1" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} placeholder="e.g. 0.2" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -154,8 +223,8 @@ const Inventory = () => {
                   <input type="text" value={form.hsnCode} onChange={e => setForm({ ...form, hsnCode: e.target.value })} placeholder="e.g. 6109" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1">Weight (kg)</label>
-                  <input type="number" step="0.1" value={form.weight} onChange={e => setForm({ ...form, weight: e.target.value })} placeholder="e.g. 0.2" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-xs font-medium text-slate-500 mb-1">Description</label>
+                  <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Optional product details" className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" rows={2} />
                 </div>
               </div>
             </div>

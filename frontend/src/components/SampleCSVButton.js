@@ -3,7 +3,7 @@ import { FileDown } from 'lucide-react';
 
 const SAMPLES = {
   orders: 'orderNumber,customerName,shippingAddress,source,skuId,quantity,price,total\nORD-2001,Rajesh Kumar,42 MG Road Bangalore 560001,Shopify,TSH-BLU-M,2,899,1798\nORD-2002,Sunita Patel,15 Linking Road Mumbai 400050,Amazon,JNS-BLK-32,1,2499,2499',
-  inventory: 'skuCode,name,category,hsnCode,warehouseId,binLocation,quantity\nTSH-BLU-L,Blue Cotton T-Shirt (L),Apparel,6109,wh-1,BIN-01,50\nSHK-BLK-10,Black Running Shoes (10),Footwear,6403,wh-2,BIN-15,30',
+  inventory: 'skuCode,name,styleName,size,color,brand,category,material,gender,unitType,mrp,hsnCode,binLocation,quantityOnHand\nTSH-BLU-L,Blue Cotton T-Shirt (L),Classic Fit T-Shirt,L,Blue,NoName,Apparel,Cotton,Male,Pieces,999,6109,BIN-01,50\nSHK-BLK-10,Black Running Shoes (10),Air Run 2000,10,Black,SportWear,Footwear, Mesh,Male,Pair,4499,6403,BIN-15,30',
   returns: 'orderId,skuId,quantity,reason\nORD-ORD-1001,TSH-BLU-M,1,Wrong size delivered\nORD-ORD-1002,JNS-BLK-32,1,Defective product',
 };
 

@@ -39,6 +39,10 @@ export const exportInventory = async (req: AuthRequest, res: Response) => {
   const rows = items.map(i => ({
     skuCode: i.sku.skuCode,
     name: i.sku.name,
+    styleName: i.sku.styleName || '',
+    size: i.sku.size || '',
+    color: i.sku.color || '',
+    brand: i.sku.brand || '',
     category: i.sku.category || '',
     warehouse: i.warehouse.name,
     binLocation: i.binLocation || '',

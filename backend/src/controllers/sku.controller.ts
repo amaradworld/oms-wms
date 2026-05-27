@@ -11,13 +11,20 @@ export const getSkus = async (req: AuthRequest, res: Response) => {
 };
 
 export const createSku = async (req: AuthRequest, res: Response) => {
-  const { skuCode, name, description, category, hsnCode, weight, dimensions } = req.body;
+  const { skuCode, name, styleName, size, color, brand, category, material, gender, unitType, mrp, description, hsnCode, weight, dimensions } = req.body;
   try {
     const existing = await prisma.skuMaster.findUnique({ where: { skuCode } });
     if (existing) return res.status(400).json({ message: 'SKU code already exists' });
 
     const sku = await prisma.skuMaster.create({
-      data: { skuCode, name, description, category, hsnCode, weight: weight ? parseFloat(weight) : null, dimensions, tenantId: req.user!.tenant_id },
+      data: {
+        skuCode, name, styleName, size, color, brand, category, material, gender, unitType,
+        mrp: mrp ? parseFloat(mrp) : null,
+        description, hsnCode,
+        weight: weight ? parseFloat(weight) : null,
+        dimensions,
+        tenantId: req.user!.tenant_id,
+      },
     });
     res.status(201).json(sku);
   } catch (error) {
