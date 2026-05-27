@@ -30,6 +30,12 @@ export const createWave = async (req: AuthRequest, res: Response) => {
     },
     include: { _count: { select: { orders: true } } },
   });
+
+  await prisma.order.updateMany({
+    where: { id: { in: orderIds } },
+    data: { orderStatus: 'PROCESSING' },
+  });
+
   res.status(201).json(wave);
 };
 
@@ -53,8 +59,39 @@ export const getWaveOrders = async (req: AuthRequest, res: Response) => {
   res.json(wave);
 };
 
+export const startWave = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const wave = await prisma.pickWave.findUnique({
+    where: { id },
+    include: { orders: { select: { orderId: true } } },
+  });
+  if (!wave) return res.status(404).json({ message: 'Wave not found' });
+  if (wave.status !== 'PENDING') return res.status(400).json({ message: 'Wave already started' });
+
+  await prisma.$transaction([
+    prisma.pickWave.update({ where: { id }, data: { status: 'IN_PROGRESS' } }),
+    prisma.order.updateMany({
+      where: { id: { in: wave.orders.map(o => o.orderId) } },
+      data: { orderStatus: 'PICKING' },
+    }),
+  ]);
+  res.json({ message: 'Wave started' });
+};
+
 export const completeWave = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
-  await prisma.pickWave.update({ where: { id }, data: { status: 'COMPLETED', completedAt: new Date() } });
+  const wave = await prisma.pickWave.findUnique({
+    where: { id },
+    include: { orders: { select: { orderId: true } } },
+  });
+  if (!wave) return res.status(404).json({ message: 'Wave not found' });
+
+  await prisma.$transaction([
+    prisma.pickWave.update({ where: { id }, data: { status: 'COMPLETED', completedAt: new Date() } }),
+    prisma.order.updateMany({
+      where: { id: { in: wave.orders.map(o => o.orderId) } },
+      data: { orderStatus: 'PACKING' },
+    }),
+  ]);
   res.json({ message: 'Wave completed' });
 };

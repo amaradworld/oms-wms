@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X } from 'lucide-react';
+import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X, Play } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import Skeleton from '../components/Skeleton';
 
 const STATUS_BADGE = {
   PENDING: 'bg-yellow-100 text-yellow-800',
+  PROCESSING: 'bg-blue-100 text-blue-800',
+  PICKING: 'bg-indigo-100 text-indigo-800',
+  PACKING: 'bg-cyan-100 text-cyan-800',
   IN_PROGRESS: 'bg-blue-100 text-blue-800',
   COMPLETED: 'bg-green-100 text-green-800',
 };
@@ -73,6 +76,13 @@ const WavePicking = () => {
     } catch (e) { setWaveOrders(null); }
   };
 
+  const startWave = async (id) => {
+    try {
+      await axios.put(`${API}/api/waves/${id}/start`, {}, headers());
+      loadWaves();
+    } catch (e) { console.error(e); }
+  };
+
   const completeWave = async (id) => {
     try {
       await axios.put(`${API}/api/waves/${id}/complete`, {}, headers());
@@ -117,7 +127,12 @@ const WavePicking = () => {
                     </div>
                   </div>
                 </div>
-                {wave.status !== 'COMPLETED' && (
+                {wave.status === 'PENDING' && (
+                  <button onClick={(e) => { e.stopPropagation(); startWave(wave.id); }} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium px-3 py-1.5 rounded-lg hover:bg-indigo-50">
+                    <Play size={14} /> Start Picking
+                  </button>
+                )}
+                {wave.status === 'IN_PROGRESS' && (
                   <button onClick={(e) => { e.stopPropagation(); completeWave(wave.id); }} className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium px-3 py-1.5 rounded-lg hover:bg-green-50">
                     <CheckCircle size={14} /> Complete
                   </button>
@@ -125,15 +140,18 @@ const WavePicking = () => {
               </div>
               {expanded === wave.id && waveOrders && (
                 <div className="border-t border-slate-100 px-4 py-3 bg-slate-50">
-                  {waveOrders.orders?.map(wo => (
-                    <div key={wo.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                      <div>
-                        <span className="text-sm font-medium text-slate-700">{wo.order?.orderNumber}</span>
-                        <span className="text-xs text-slate-400 ml-2">{wo.order?.customerName}</span>
+                  {waveOrders.orders?.map(wo => {
+                    const orderStatus = wo.order?.orderStatus || wo.status;
+                    return (
+                      <div key={wo.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                        <div>
+                          <span className="text-sm font-medium text-slate-700">{wo.order?.orderNumber}</span>
+                          <span className="text-xs text-slate-400 ml-2">{wo.order?.customerName}</span>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[orderStatus] || 'bg-slate-100 text-slate-600'}`}>{orderStatus}</span>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[wo.status] || 'bg-slate-100 text-slate-600'}`}>{wo.status}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

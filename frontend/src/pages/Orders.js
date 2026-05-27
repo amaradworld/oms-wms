@@ -11,6 +11,8 @@ import { TableSkeleton } from '../components/Skeleton';
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
   PROCESSING: 'bg-blue-100 text-blue-700',
+  PICKING: 'bg-indigo-100 text-indigo-700',
+  PACKING: 'bg-cyan-100 text-cyan-700',
   SHIPPED: 'bg-green-100 text-green-700',
   DELIVERED: 'bg-emerald-100 text-emerald-700',
   CANCELLED: 'bg-red-100 text-red-700',

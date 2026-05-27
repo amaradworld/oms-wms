@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getWaves, createWave, getWaveOrders, completeWave } from '../controllers/wave.controller';
+import { getWaves, createWave, getWaveOrders, startWave, completeWave } from '../controllers/wave.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -7,6 +7,7 @@ const router = Router();
 router.get('/', authenticate, getWaves);
 router.post('/', authenticate, createWave);
 router.get('/:id/orders', authenticate, getWaveOrders);
+router.put('/:id/start', authenticate, startWave);
 router.put('/:id/complete', authenticate, completeWave);
 
 export default router;
