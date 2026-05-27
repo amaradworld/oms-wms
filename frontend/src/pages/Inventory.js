@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, MoreVertical, Plus, X, Download } from 'lucide-react';
+import { Search, Filter, MoreVertical, Plus, X, Download, Printer, Loader2 } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import BarcodeCell from '../components/BarcodeCell';
@@ -16,6 +16,7 @@ const Inventory = () => {
   const [form, setForm] = useState({ skuCode: '', name: '', styleName: '', size: '', color: '', brand: '', category: '', material: '', gender: '', unitType: '', mrp: '', hsnCode: '', weight: '' });
   const { selectedFacility } = useAuth();
   const [exporting, setExporting] = useState(false);
+  const [printingLabel, setPrintingLabel] = useState(null);
 
   const fetchInventory = useCallback(async () => {
     setLoading(true);
@@ -41,6 +42,20 @@ const Inventory = () => {
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to create SKU');
     }
+  };
+
+  const handlePrintLabel = async (skuCode, name) => {
+    setPrintingLabel(skuCode);
+    try {
+      const res = await API.post('/labels/zpl', { skuCode, name }, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `label_${skuCode}.zpl`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Label ${skuCode} downloaded`);
+    } catch { toast.error('Failed to generate label'); } finally { setPrintingLabel(null); }
   };
 
   const handleExport = async () => {
@@ -135,7 +150,12 @@ const Inventory = () => {
                   <td className="px-4 py-3 text-sm font-mono text-right">{item.quantityAvailable ?? '-'}</td>
                   <td className="px-4 py-3 text-sm text-slate-500">{item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : '—'}</td>
                   <td className="px-4 py-3 text-right">
-                    <button className="p-1 hover:bg-slate-200 rounded-full"><MoreVertical size={16} /></button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handlePrintLabel(item.skuCode || item.sku, item.name)} disabled={printingLabel === (item.skuCode || item.sku)} className="p-1.5 hover:bg-indigo-100 rounded-lg transition-colors" title="Download ZPL barcode label">
+                        {printingLabel === (item.skuCode || item.sku) ? <Loader2 size={15} className="text-indigo-500 animate-spin" /> : <Printer size={15} className="text-slate-400" />}
+                      </button>
+                      <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"><MoreVertical size={15} className="text-slate-400" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}

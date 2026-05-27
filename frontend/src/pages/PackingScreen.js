@@ -197,11 +197,10 @@ const PackingScreen = () => {
                 </div>
               </div>
 
-              {allPacked && (
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                  <h3 className="font-bold text-sm flex items-center gap-2"><FileText size={16} /> Pre-Shipment</h3>
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                  <h3 className="font-bold text-sm flex items-center gap-2"><FileText size={16} /> Pre-Shipment {!allPacked && <span className="text-xs font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-1">Pack all items first</span>}</h3>
 
-                  <button onClick={handleDownloadInvoice} disabled={invoicing} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                  <button onClick={handleDownloadInvoice} disabled={invoicing || !allPacked} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                     {invoicing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />} {invoicing ? 'Generating...' : 'Download Invoice'}
                   </button>
 
@@ -210,7 +209,7 @@ const PackingScreen = () => {
                     {COURIERS.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
 
-                  <button onClick={handleGenerateAWB} disabled={!selectedCourier || generatingAWB || !!generatedAWB} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                  <button onClick={handleGenerateAWB} disabled={!selectedCourier || generatingAWB || !!generatedAWB || !allPacked} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
                     {generatingAWB ? <Loader2 size={16} className="animate-spin" /> : <Truck size={16} />} {generatedAWB ? `AWB: ${generatedAWB}` : generatingAWB ? 'Generating...' : 'Generate AWB'}
                   </button>
 
@@ -220,7 +219,6 @@ const PackingScreen = () => {
                     </button>
                   )}
                 </div>
-              )}
             </div>
           </div>
         </>
