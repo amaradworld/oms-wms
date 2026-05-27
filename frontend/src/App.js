@@ -12,6 +12,8 @@ import Warehouse from './pages/Warehouse';
 import CycleCount from './pages/CycleCount';
 import Analytics from './pages/Analytics';
 import MarketplaceSettings from './pages/MarketplaceSettings';
+import PurchaseOrders from './pages/PurchaseOrders';
+import StockTransfer from './pages/StockTransfer';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
 import ToastContainer from './components/Toast';
@@ -38,8 +40,8 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','analytics','settings'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','analytics','settings'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','analytics','settings'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','analytics','settings'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -75,6 +77,8 @@ const App = () => {
       case 'cyclecount': return <CycleCount />;
       case 'analytics': return <Analytics />;
       case 'marketplace': return <MarketplaceSettings />;
+      case 'purchaseorders': return <PurchaseOrders />;
+      case 'stocktransfer': return <StockTransfer />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }

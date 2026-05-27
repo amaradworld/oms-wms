@@ -20,11 +20,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       where: orderWhere,
     });
 
-    const lowStockItems = await prisma.inventory.findMany({
-      where: { ...invWhere, quantityAvailable: { lte: 10 } },
+    const lowStockItems = (await prisma.inventory.findMany({
+      where: invWhere,
       include: { sku: true, warehouse: true },
-      take: 5,
-    });
+    })).filter(i => i.reorderPoint > 0 && i.quantityAvailable <= i.reorderPoint).slice(0, 5);
 
     res.json({
       totalOrders: totalOrders || 0,
