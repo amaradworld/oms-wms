@@ -60,6 +60,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
     { id: 'marketplace', label: 'Marketplace', icon: Globe },
     { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
     { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
+    { id: 'gatepass', label: 'Gatepass', icon: FileText },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];

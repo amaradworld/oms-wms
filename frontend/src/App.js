@@ -20,6 +20,7 @@ import WavePicking from './pages/WavePicking';
 import NdrDashboard from './pages/NdrDashboard';
 import CourierRouting from './pages/CourierRouting';
 import InventoryAlerts from './pages/InventoryAlerts';
+import Gatepasses from './pages/Gatepasses';
 import TrackingPage from './pages/TrackingPage';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
@@ -119,6 +120,7 @@ const App = () => {
       case 'ndr': return <NdrDashboard />;
       case 'courier-routing': return <CourierRouting />;
       case 'inventory-alerts': return <InventoryAlerts />;
+      case 'gatepass': return <Gatepasses />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }

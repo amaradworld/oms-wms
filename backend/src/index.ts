@@ -31,6 +31,7 @@ import manifestRoutes from './routes/manifest.routes';
 import ndrRoutes from './routes/ndr.routes';
 import routingRoutes from './routes/routing.routes';
 import backupRoutes from './routes/backup.routes';
+import gatepassRoutes from './routes/gatepass.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -79,6 +80,7 @@ app.use('/api/manifests', manifestRoutes);
 app.use('/api/ndr', ndrRoutes);
 app.use('/api/courier/routing', routingRoutes);
 app.use('/api', backupRoutes);
+app.use('/api/gatepass', gatepassRoutes);
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';
