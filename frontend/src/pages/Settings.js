@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff, Check, X, UserPlus } from 'lucide-react';
+import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff, Check, X, UserPlus, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -330,13 +330,22 @@ const Settings = () => {
         <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Download size={20} /> Data Export</h2>
           <p className="text-sm text-slate-500">Download your data as CSV files for backup or analysis.</p>
-          <div className="flex flex-wrap gap-3">
-            <button onClick={() => handleExport('orders')} disabled={exporting === 'orders'} className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-md shadow-indigo-200 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 bg-indigo-600 text-white hover:bg-indigo-700">
-              {exporting === 'orders' ? 'Exporting...' : <><Download size={16} /> Export Orders</>}
-            </button>
-            <button onClick={() => handleExport('inventory')} disabled={exporting === 'inventory'} className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-md shadow-emerald-200 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 bg-emerald-600 text-white hover:bg-emerald-700">
-              {exporting === 'inventory' ? 'Exporting...' : <><Download size={16} /> Export Inventory</>}
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { key: 'orders', label: 'Orders Report', color: 'bg-indigo-600 hover:bg-indigo-700' },
+              { key: 'inventory', label: 'Inventory Report', color: 'bg-emerald-600 hover:bg-emerald-700' },
+              { key: 'inventory-added', label: 'Inventory Added Report', color: 'bg-teal-600 hover:bg-teal-700' },
+              { key: 'stock-transfers', label: 'Stock Transfer Report', color: 'bg-blue-600 hover:bg-blue-700' },
+              { key: 'returns', label: 'Returns Report', color: 'bg-rose-600 hover:bg-rose-700' },
+              { key: 'purchase-orders', label: 'Purchase Orders Report', color: 'bg-amber-600 hover:bg-amber-700' },
+              { key: 'cycle-counts', label: 'Cycle Count Report', color: 'bg-cyan-600 hover:bg-cyan-700' },
+              { key: 'pick-waves', label: 'Pick Wave Report', color: 'bg-purple-600 hover:bg-purple-700' },
+              { key: 'audit-logs', label: 'Audit Log Report', color: 'bg-slate-600 hover:bg-slate-700' },
+            ].map(btn => (
+              <button key={btn.key} onClick={() => handleExport(btn.key)} disabled={exporting === btn.key} className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium text-white shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 ${btn.color}`}>
+                {exporting === btn.key ? <><Loader2 size={16} className="animate-spin" /> Exporting...</> : <><Download size={16} /> {btn.label}</>}
+              </button>
+            ))}
           </div>
         </div>
       )}
