@@ -7,6 +7,7 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
     const { tenant_id } = req.user!;
     const warehouseId = req.query.warehouseId as string | undefined;
     const source = req.query.source as string | undefined;
+    const orderStatus = req.query.orderStatus as string | undefined;
     const dateFrom = req.query.dateFrom as string | undefined;
     const dateTo = req.query.dateTo as string | undefined;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
@@ -14,6 +15,7 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
     const where: any = { tenantId: tenant_id };
     if (warehouseId) where.warehouseId = warehouseId;
     if (source && source !== 'ALL') where.source = source;
+    if (orderStatus && orderStatus !== 'ALL') where.orderStatus = orderStatus;
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);

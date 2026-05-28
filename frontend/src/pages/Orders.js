@@ -35,6 +35,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,7 @@ const Orders = () => {
       const params = { page: pg, limit: 50 };
       if (selectedFacility) params.warehouseId = selectedFacility.id;
       if (sourceFilter !== 'ALL') params.source = sourceFilter;
+      if (statusFilter !== 'ALL') params.orderStatus = statusFilter;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
       const res = await API.get('/orders', { params });
@@ -67,7 +69,7 @@ const Orders = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedFacility, sourceFilter, dateFrom, dateTo]);
+  }, [selectedFacility, sourceFilter, statusFilter, dateFrom, dateTo]);
 
   useEffect(() => { fetchOrders(1); }, [fetchOrders]);
 
@@ -141,10 +143,14 @@ const Orders = () => {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter size={16} className="text-slate-400 flex-shrink-0" />
-          <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); fetchOrders(1); }} className="input-field w-full sm:w-32">
+          <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); }} className="input-field w-full sm:w-28">
             <option value="ALL">All Sources</option>
             {allSources.map(s => <option key={s} value={s}>{s}</option>)}
             <option value="MANUAL">MANUAL</option>
+          </select>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); }} className="input-field w-full sm:w-28">
+            <option value="ALL">All Status</option>
+            {Object.keys(statusColors).map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); }} className="input-field w-full sm:w-36 text-xs" title="From date" />
           <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); }} className="input-field w-full sm:w-36 text-xs" title="To date" />
