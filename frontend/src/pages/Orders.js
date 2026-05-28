@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors, Plus, Loader2 } from 'lucide-react';
+import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors, Plus, Loader2, Clock, DollarSign, Hash, MapPin, Package, Tag, Truck, User, Building2, CreditCard } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import { toast } from '../components/Toast';
@@ -240,57 +240,12 @@ const Orders = () => {
       )}
 
       {detailOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setDetailOrder(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Order {detailOrder.orderNumber}</h3>
-              <button onClick={() => setDetailOrder(null)} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div><span className="text-slate-500">Customer</span><p className="font-medium">{detailOrder.customerName}</p></div>
-                <div><span className="text-slate-500">Status</span><p><span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[detailOrder.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{detailOrder.orderStatus}</span></p></div>
-                <div className="col-span-2"><span className="text-slate-500">Shipping Address</span><p className="font-medium">{detailOrder.shippingAddress || '—'}</p></div>
-                <div><span className="text-slate-500">Source</span><p className="font-medium">{detailOrder.source || '—'}</p></div>
-                <div><span className="text-slate-500">Date</span><p className="font-medium">{detailOrder.createdAt ? new Date(detailOrder.createdAt).toLocaleDateString() : '—'}</p></div>
-                {detailOrder.trackingAWB && <div className="col-span-2"><span className="text-slate-500">Tracking AWB</span><p className="font-mono text-xs">{detailOrder.trackingAWB}</p></div>}
-                {detailOrder.ewayBillNumber && <div><span className="text-slate-500">E-way Bill</span><p className="font-mono text-xs font-medium">{detailOrder.ewayBillNumber}</p></div>}
-                {detailOrder.irn && <div><span className="text-slate-500">IRN</span><p className="font-mono text-xs truncate" title={detailOrder.irn}>{detailOrder.irn.substring(0, 20)}...</p></div>}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={(e) => { e.stopPropagation(); const v = prompt('Enter E-way Bill number:'); if (v) { API.patch(`/invoice/${detailOrder.id}/eway-bill`, { ewayBillNumber: v }).then(() => { toast.success('E-way bill saved'); setDetailOrder({ ...detailOrder, ewayBillNumber: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
-                  <FileText size={13} /> Set E-way Bill
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); const v = prompt('Enter IRN:'); if (v) { API.patch(`/invoice/${detailOrder.id}/eway-bill`, { irn: v }).then(() => { toast.success('IRN saved'); setDetailOrder({ ...detailOrder, irn: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
-                  <FileText size={13} /> Set IRN
-                </button>
-                {(detailOrder.orderStatus === 'PENDING' || detailOrder.orderStatus === 'PROCESSING') && detailOrder.items?.length > 1 && (
-                  <button onClick={(e) => { e.stopPropagation(); const wh = prompt('Split into how many orders? (comma-separated item counts, e.g. "2,3" means 2 items in first, 3 in second):'); if (wh) { toast.info('Split feature: contact admin for warehouse mapping'); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 text-amber-600">
-                    <Scissors size={13} /> Split
-                  </button>
-                )}
-              </div>
-              {detailOrder.items?.length > 0 && (
-                <div>
-                  <span className="text-slate-500 block mb-2">Items ({detailOrder.items.length})</span>
-                  <div className="bg-slate-50 rounded-xl p-3 space-y-2">
-                    {detailOrder.items.map((item, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span>{item.sku?.skuCode || item.skuId} {item.sku?.name ? `- ${item.sku.name}` : ''}</span>
-                        <span className="text-slate-500">x{item.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {detailOrder.orderStatus === 'SHIPPED' && (
-                <button onClick={() => { handleMarkDelivered(detailOrder); setDetailOrder(null); }} className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 transition-colors">
-                  Mark Delivered
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <OrderDetailModal
+          order={detailOrder}
+          onClose={() => setDetailOrder(null)}
+          onUpdate={(updated) => setDetailOrder(updated)}
+          onMarkDelivered={handleMarkDelivered}
+        />
       )}
 
       {showManualOrder && (
@@ -434,5 +389,167 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
     </div>
   );
 };
+
+const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered }) => {
+  const [activeTab, setActiveTab] = useState('details');
+
+  const tr = order.tracking || {};
+  const fmt = (d) => d ? new Date(d).toLocaleString() : '—';
+
+  const tabs = [
+    { id: 'details', label: 'Order Details' },
+    { id: 'items', label: 'Order Items' },
+    { id: 'shipments', label: 'Shipments' },
+    { id: 'invoices', label: 'Invoices' },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-5 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">Order #{order.orderNumber}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+        </div>
+
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit overflow-x-auto">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${activeTab === t.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'details' && (
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <DetailField icon={Hash} label="Order No." value={order.orderNumber} />
+            <DetailField icon={Hash} label="Display Order No." value={order.displayOrderCode || order.orderNumber} />
+            <DetailField icon={Clock} label="Fulfillment TAT" value={order.slaDeadline ? new Date(order.slaDeadline).toLocaleString() : '—'} highlight />
+            <DetailField icon={Tag} label="Priority" value={order.priority || 'Normal'} />
+            <DetailField icon={Clock} label="Order Date" value={fmt(order.createdAt)} />
+            <DetailField label="Status" value={<span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[order.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{order.orderStatus}</span>} />
+            <DetailField icon={User} label="Customer" value={order.customerName} />
+            <DetailField icon={Building2} label="Customer GSTIN" value={order.customerGstin || '—'} />
+            <DetailField icon={Tag} label="Channel" value={order.source || '—'} />
+            <DetailField icon={CreditCard} label="Payment Method" value={order.paymentMode || order.paymentStatus || '—'} />
+            <DetailField icon={DollarSign} label="Order Amount" value={order.orderAmount ? `₹${Number(order.orderAmount).toFixed(2)}` : '—'} />
+            <DetailField icon={Clock} label="Channel Created" value={fmt(order.createdAt)} />
+            <DetailField icon={Clock} label="Uniware Created" value={fmt(order.createdAt)} />
+            <DetailField icon={Clock} label="Channel Processing Time" value={order.channelProcessingTime ? fmt(order.channelProcessingTime) : '—'} />
+            <DetailField icon={Clock} label="Updated at" value={fmt(order.updatedAt)} />
+            <DetailField icon={Package} label="Notification Email" value={order.notificationEmail || '—'} />
+            <DetailField icon={Package} label="Notification Mobile" value={order.notificationMobile || '—'} />
+            <DetailField icon={FileText} label="PDF Attachment" value={order.pdfAttachment || '—'} />
+            <DetailField icon={Truck} label="deliverMode" value={order.deliverMode || '—'} />
+            <div className="col-span-2"><DetailField icon={MapPin} label="Shipping Address" value={order.shippingAddress || '—'} /></div>
+          </div>
+        )}
+
+        {activeTab === 'items' && (
+          <div>
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-500">Item</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-500">SKU</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Qty</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Unit Price</th>
+                  <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items?.map((item, i) => (
+                  <tr key={i} className="border-b border-slate-100">
+                    <td className="px-3 py-2 text-slate-600">{item.sku?.name || '—'}</td>
+                    <td className="px-3 py-2 font-mono text-xs">{item.sku?.skuCode || item.skuId}</td>
+                    <td className="px-3 py-2 text-right">{item.quantity}</td>
+                    <td className="px-3 py-2 text-right">₹{Number(item.unitPrice || 0).toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right font-medium">₹{Number(item.totalAmount || 0).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex gap-2 mt-3">
+              {(order.orderStatus === 'PENDING' || order.orderStatus === 'PROCESSING') && order.items?.length > 1 && (
+                <button onClick={() => { const v = prompt('Split: enter order numbers for each split (comma-separated):'); if (v) toast.info('Split feature invoked'); }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 text-amber-600">
+                  <Scissors size={13} /> Split Order
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'shipments' && (
+          <div className="space-y-4 text-sm">
+            {order.tracking ? (
+              <>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                  <DetailField label="Shipment Id" value={tr.id?.slice(0, 8) || '—'} />
+                  <DetailField label="Shipment Status" value={tr.shipmentStatus || '—'} />
+                  <DetailField label="Created On" value={tr.shippedAt ? fmt(tr.shippedAt) : '—'} />
+                  <DetailField label="Picklist Number" value={tr.picklistNumber || '—'} />
+                  <DetailField label="Shipment Manifest" value={tr.shipmentManifest || '—'} />
+                  <DetailField label="Return Manifest" value={tr.returnManifest || '—'} />
+                  <DetailField label="Invoice Number" value={tr.invoiceNumber || '—'} />
+                  <DetailField label="RTO Facility" value={tr.rtoFacility || '—'} />
+                  <DetailField label="Shipping Method" value={tr.shippingMethod || '—'} />
+                  <DetailField label="Courier Status" value={tr.courierStatus || '—'} />
+                  <DetailField label="Courier Name" value={tr.courierName || '—'} />
+                  <DetailField label="Dispatched Date" value={tr.shippedAt ? fmt(tr.shippedAt) : '—'} />
+                  <DetailField label="Delivery Date" value={tr.deliveredAt ? fmt(tr.deliveredAt) : '—'} />
+                  <DetailField label="No. of Items" value={order.items?.length || 0} />
+                  <DetailField label="Shipping Carrier" value={tr.courierName || '—'} />
+                  <DetailField label="AWB No." value={tr.awbNumber || '—'} />
+                  <DetailField label="No. of Boxes" value={tr.noOfBoxes || 1} />
+                  <DetailField label="Shipping Package Type" value={tr.shippingPackageType || '—'} />
+                  <DetailField label="Package Code" value={tr.shippingPackageCode || '—'} />
+                  <DetailField label="Package Dimension (mm)" value={tr.packageDimensions || '—'} />
+                  <DetailField label="Weight (Kg)" value={tr.packageWeight ? Number(tr.packageWeight).toFixed(3) : '—'} />
+                  <DetailField label="Zone" value={tr.zone || '—'} />
+                  <DetailField label="E-waybill Number" value={order.ewayBillNumber || '—'} />
+                  <DetailField label="E-waybill Valid Till" value={tr.ewaybillValidTill ? fmt(tr.ewaybillValidTill) : '—'} />
+                  <DetailField label="E-waybill Date" value={tr.ewaybillDate ? fmt(tr.ewaybillDate) : '—'} />
+                  <DetailField label="deliverMode" value={order.deliverMode || '—'} />
+                </div>
+                {order.orderStatus === 'SHIPPED' && (
+                  <button onClick={() => { onMarkDelivered(order); onClose(); }} className="w-full py-2.5 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 transition-colors">
+                    Mark Delivered
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8 text-slate-400 text-sm">No shipment tracking data available</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'invoices' && (
+          <div className="space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <DetailField label="E-way Bill Number" value={order.ewayBillNumber || '—'} />
+              <DetailField label="IRN" value={order.irn || '—'} />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { const v = prompt('Enter E-way Bill number:'); if (v) { API.patch(`/invoice/${order.id}/eway-bill`, { ewayBillNumber: v }).then(() => { toast.success('E-way bill saved'); onUpdate({ ...order, ewayBillNumber: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                <FileText size={13} /> Set E-way Bill
+              </button>
+              <button onClick={() => { const v = prompt('Enter IRN:'); if (v) { API.patch(`/invoice/${order.id}/eway-bill`, { irn: v }).then(() => { toast.success('IRN saved'); onUpdate({ ...order, irn: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                <FileText size={13} /> Set IRN
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const DetailField = ({ icon: Icon, label, value, highlight }) => (
+  <div>
+    <span className="text-slate-400 text-xs flex items-center gap-1 mb-0.5">
+      {Icon && <Icon size={11} />} {label}
+    </span>
+    <p className={`font-medium ${highlight ? 'text-amber-600' : ''}`}>{value}</p>
+  </div>
+);
 
 export default Orders;

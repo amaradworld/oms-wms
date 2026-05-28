@@ -107,24 +107,34 @@ model Inventory {
 }
 
 model Order {
-  id            String   @id @default(uuid())
-  tenantId      String
-  warehouseId   String?
-  orderNumber   String   @unique
-  source        String?
-  customerName  String
-  shippingAddress String
-  orderStatus   String   @default("PENDING")
-  paymentStatus String?
-  slaDeadline   DateTime?
-  ewayBillNumber String?
-  irn           String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  items         OrderItem[]
-  tracking      CourierTracking?
-  returns       Return[]
-  rto           Rto?
+  id                  String    @id @default(uuid())
+  tenantId            String
+  warehouseId         String?
+  orderNumber         String    @unique
+  displayOrderCode    String?
+  source              String?
+  customerName        String
+  customerGstin       String?
+  notificationEmail   String?
+  notificationMobile  String?
+  shippingAddress     String
+  orderStatus         String    @default("PENDING")
+  paymentStatus       String?
+  paymentMode         String?
+  slaDeadline         DateTime?
+  channelProcessingTime DateTime?
+  deliverMode         String?
+  pdfAttachment       String?
+  priority            String?
+  orderAmount         Decimal?
+  ewayBillNumber      String?
+  irn                 String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  items               OrderItem[]
+  tracking            CourierTracking?
+  returns             Return[]
+  rto                 Rto?
 
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
   pickWaveOrders PickWaveOrder[]
@@ -150,12 +160,30 @@ model OrderItem {
 }
 
 model CourierTracking {
-  id            String   @id @default(uuid())
-  orderId       String   @unique
-  courierName   String
-  awbNumber     String   @unique
-  shipmentStatus String
-  shippedAt     DateTime?
+  id                  String   @id @default(uuid())
+  orderId             String   @unique
+  courierName         String
+  awbNumber           String   @unique
+  shipmentStatus      String
+  courierStatus       String?
+  shippedAt           DateTime?
+  estimatedDelivery   DateTime?
+  deliveredAt         DateTime?
+  picklistNumber      String?
+  shipmentManifest    String?
+  returnManifest      String?
+  invoiceNumber       String?
+  rtoFacility         String?
+  shippingMethod      String?
+  noOfBoxes           Int      @default(1)
+  shippingPackageType String?
+  shippingPackageCode String?
+  packageDimensions   String?
+  packageWeight       Decimal?
+  zone                String?
+  ewaybillValidTill   DateTime?
+  ewaybillDate        DateTime?
+  trackingUrl         String?
 
   order Order @relation(fields: [orderId], references: [id])
 
