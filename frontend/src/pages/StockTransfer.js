@@ -15,8 +15,10 @@ const StockTransfer = () => {
   const [detailTransfer, setDetailTransfer] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanInput, setScanInput] = useState('');
+  const [createScanInput, setCreateScanInput] = useState('');
   const scanRef = useRef(null);
-  const [form, setForm] = useState({ fromWarehouseId: selectedFacility?.id || '', toWarehouseId: '', notes: '', items: [{ skuCode: '', quantity: 1 }] });
+  const createScanRef = useRef(null);
+  const [form, setForm] = useState({ fromWarehouseId: selectedFacility?.id || '', toWarehouseId: '', notes: '', items: [] });
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -29,18 +31,48 @@ const StockTransfer = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  useEffect(() => { if (showModal) setTimeout(() => createScanRef.current?.focus(), 100); }, [showModal]);
+
+  const [creating, setCreating] = useState(false);
+
+  const handleCreateScan = async () => {
+    const code = createScanInput.trim();
+    if (!code) return;
+    setScanning(true);
+    try {
+      const res = await API.get('/skus', { params: { search: code } });
+      const skus = res.data?.skus || [];
+      const sku = skus.find(s => s.skuCode === code);
+      if (!sku) { toast.error(`SKU "${code}" not found`); setCreateScanInput(''); return; }
+      const existing = form.items.find(i => i.skuCode === code);
+      if (existing) {
+        setForm({ ...form, items: form.items.map(i => i.skuCode === code ? { ...i, quantity: i.quantity + 1 } : i) });
+        toast.success(`${code} qty → ${existing.quantity + 1}`);
+      } else {
+        setForm({ ...form, items: [...form.items, { skuCode: code, quantity: 1 }] });
+        toast.success(`${code} added`);
+      }
+      setCreateScanInput('');
+    } catch {
+      toast.error('Error looking up SKU');
+    } finally {
+      setScanning(false);
+      createScanRef.current?.focus();
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.fromWarehouseId || !form.toWarehouseId) return toast.error('Select source and destination');
+    setCreating(true);
     try {
       await API.post('/transfers', form);
       toast.success('Transfer created');
       setShowModal(false);
-      setForm({ fromWarehouseId: selectedFacility?.id || '', toWarehouseId: '', notes: '', items: [{ skuCode: '', quantity: 1 }] });
+      setForm({ fromWarehouseId: selectedFacility?.id || '', toWarehouseId: '', notes: '', items: [] });
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setCreating(false); }
   };
-
-  const addItem = () => setForm({ ...form, items: [...form.items, { skuCode: '', quantity: 1 }] });
 
   const openDetail = async (t) => {
     try {
@@ -218,15 +250,35 @@ const StockTransfer = () => {
               <textarea placeholder="Notes" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} />
             </div>
             <div className="space-y-2">
-              <div className="flex justify-between items-center"><span className="text-sm font-semibold">Items</span><button onClick={addItem} className="text-xs text-blue-600">+ Add item</button></div>
+              <div className="flex justify-between items-center"><span className="text-sm font-semibold">Items ({form.items.reduce((s, i) => s + i.quantity, 0)} total)</span></div>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  {scanning && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 px-3 py-2 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200"
+                  placeholder="Scan barcode to add item..."
+                  value={createScanInput}
+                  onChange={e => setCreateScanInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCreateScan(); } }}
+                  ref={createScanRef}
+                />
+              </div>
               {form.items.map((item, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input placeholder="SKU Code" value={item.skuCode} onChange={e => { const items = [...form.items]; items[i].skuCode = e.target.value; setForm({ ...form, items }); }} className="flex-1 px-2 py-1.5 border rounded text-sm" />
-                  <input type="number" placeholder="Qty" value={item.quantity} onChange={e => { const items = [...form.items]; items[i].quantity = parseInt(e.target.value) || 0; setForm({ ...form, items }); }} className="w-20 px-2 py-1.5 border rounded text-sm" />
+                <div key={i} className="flex gap-2 items-center bg-slate-50 rounded-lg px-3 py-2">
+                  <span className="flex-1 text-sm font-mono font-medium">{item.skuCode}</span>
+                  <span className="w-10 text-xs text-center font-semibold text-blue-600">x{item.quantity}</span>
+                  <button onClick={() => { const items = form.items.filter((_, idx) => idx !== i); setForm({ ...form, items }); }} className="p-1 hover:bg-red-100 rounded-lg text-red-500"><X size={14} /></button>
                 </div>
               ))}
             </div>
-            <button onClick={handleCreate} disabled={!form.fromWarehouseId || !form.toWarehouseId} className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">Create Transfer</button>
+            <button onClick={handleCreate} disabled={!form.fromWarehouseId || !form.toWarehouseId || form.items.length === 0 || creating} className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              {creating && <Loader2 size={16} className="animate-spin" />}
+              {creating ? 'Creating...' : 'Create Transfer'}
+            </button>
           </div>
         </div>
       )}
