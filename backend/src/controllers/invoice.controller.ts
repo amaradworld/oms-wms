@@ -3,6 +3,24 @@ import PDFDocument from 'pdfkit';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
+export const setEwayBill = async (req: AuthRequest, res: Response) => {
+  const id = req.params.orderId as string;
+  const { ewayBillNumber, irn } = req.body;
+
+  const order = await prisma.order.findFirst({ where: { id, tenantId: req.user!.tenant_id } });
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: {
+      ...(ewayBillNumber ? { ewayBillNumber } : {}),
+      ...(irn ? { irn } : {}),
+    },
+  });
+
+  res.json({ message: 'E-way bill updated', ewayBillNumber: updated.ewayBillNumber, irn: updated.irn });
+};
+
 export const generateInvoice = async (req: AuthRequest, res: Response) => {
   const orderId = req.params.orderId as string;
 
@@ -71,6 +89,18 @@ export const generateInvoice = async (req: AuthRequest, res: Response) => {
     y += 8;
     doc.fontSize(11).font('Helvetica-Bold');
     doc.text(`Grand Total: \u20B9 ${grandTotal.toFixed(2)}`, 380, y, { width: 150, align: 'right' });
+
+    y += 12;
+    if (order.ewayBillNumber) {
+      doc.fontSize(8).font('Helvetica').fillColor('#333');
+      doc.text(`E-way Bill: ${order.ewayBillNumber}`, 50, y);
+      y += 12;
+    }
+    if (order.irn) {
+      doc.fontSize(8).font('Helvetica').fillColor('#333');
+      doc.text(`IRN: ${order.irn}`, 50, y);
+      y += 12;
+    }
 
     doc.moveDown(2);
     doc.fontSize(8).font('Helvetica').fillColor('#888');

@@ -1,6 +1,19 @@
 import { Response } from 'express';
 import PDFDocument from 'pdfkit';
+import path from 'path';
+import fs from 'fs';
 import { AuthRequest } from '../middlewares/auth.middleware';
+
+const LOGO_PATH = path.join(__dirname, '../../assets/logo.png');
+
+function tryAddLogo(doc: typeof PDFDocument.prototype) {
+  try {
+    if (fs.existsSync(LOGO_PATH)) {
+      doc.image(LOGO_PATH, doc.x, doc.y, { width: 60 });
+      doc.moveDown(3);
+    }
+  } catch {}
+}
 
 export const generateLabel = async (req: AuthRequest, res: Response) => {
   const { skuCode, name, binLocation, brand, mrp } = req.body;
@@ -10,6 +23,8 @@ export const generateLabel = async (req: AuthRequest, res: Response) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=label_${skuCode}.pdf`);
     doc.pipe(res);
+
+    tryAddLogo(doc);
 
     doc.fontSize(9).font('Helvetica-Bold').text(skuCode, { align: 'center' });
 

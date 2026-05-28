@@ -28,9 +28,24 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+const SLA_HOURS: Record<string, number> = {
+  NYKAA: 24,
+  MYNTRA: 24,
+  TATACLIQ: 48,
+  SHOPIFY: 48,
+  AMAZON: 24,
+  FLIPKART: 24,
+  MEESHO: 48,
+};
+
+function computeSlaDeadline(source?: string): Date {
+  const hours = (source ? SLA_HOURS[source.toUpperCase()] : null) || 48;
+  return new Date(Date.now() + hours * 60 * 60 * 1000);
+}
+
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { orderNumber, customerName, shippingAddress, items, tenantId, warehouseId } = req.body;
+    const { orderNumber, customerName, shippingAddress, items, tenantId, warehouseId, source } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: 'At least one item is required' });
@@ -43,6 +58,8 @@ export const createOrder = async (req: Request, res: Response) => {
           customerName,
           shippingAddress,
           tenantId,
+          source: source || null,
+          slaDeadline: computeSlaDeadline(source),
           warehouseId: warehouseId || null,
           items: {
             create: items.map(i => ({
@@ -93,6 +110,68 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(404).json({ message: 'Order not found' });
   }
+};
+
+export const splitOrder = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const { splits } = req.body;
+  // splits: [{ warehouseId, itemIds: [orderItemId, ...] }, ...]
+
+  if (!splits || !Array.isArray(splits) || splits.length < 2) {
+    return res.status(400).json({ message: 'At least 2 splits required' });
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id, tenantId: req.user!.tenant_id },
+    include: { items: true },
+  });
+  if (!order) return res.status(404).json({ message: 'Order not found' });
+  if (order.orderStatus !== 'PENDING' && order.orderStatus !== 'PROCESSING') {
+    return res.status(400).json({ message: 'Can only split pending/processing orders' });
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const newOrders: any[] = [];
+
+    for (let i = 0; i < splits.length; i++) {
+      const split = splits[i];
+      const splitItems = order.items.filter(item => split.itemIds.includes(item.id));
+      if (splitItems.length === 0) continue;
+
+      const isOriginal = i === 0;
+
+      if (isOriginal) {
+        const remaining = order.items.filter(item => !split.itemIds.includes(item.id));
+        await tx.orderItem.deleteMany({ where: { orderId: order.id, id: { in: remaining.map(r => r.id) } } });
+      } else {
+        const newOrder = await tx.order.create({
+          data: {
+            tenantId: order.tenantId,
+            warehouseId: split.warehouseId || order.warehouseId,
+            orderNumber: `${order.orderNumber}-SPLIT-${i}`,
+            source: order.source,
+            customerName: order.customerName,
+            shippingAddress: order.shippingAddress,
+            orderStatus: 'PENDING',
+            slaDeadline: order.slaDeadline,
+            items: {
+              create: splitItems.map(item => ({
+                skuId: item.skuId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalAmount: item.totalAmount,
+              })),
+            },
+          },
+        });
+        newOrders.push(newOrder);
+      }
+    }
+
+    return newOrders;
+  });
+
+  res.status(201).json({ message: `Order split into ${result.length + 1} orders`, splitOrders: result });
 };
 
 export const cancelOrder = async (req: Request, res: Response) => {

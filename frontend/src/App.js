@@ -13,9 +13,13 @@ import Warehouse from './pages/Warehouse';
 import CycleCount from './pages/CycleCount';
 import Analytics from './pages/Analytics';
 import MarketplaceSettings from './pages/MarketplaceSettings';
+import Manifests from './pages/Manifests';
 import PurchaseOrders from './pages/PurchaseOrders';
 import StockTransfer from './pages/StockTransfer';
 import WavePicking from './pages/WavePicking';
+import NdrDashboard from './pages/NdrDashboard';
+import CourierRouting from './pages/CourierRouting';
+import InventoryAlerts from './pages/InventoryAlerts';
 import TrackingPage from './pages/TrackingPage';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
@@ -44,8 +48,8 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','analytics','settings'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','analytics','settings'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -111,6 +115,10 @@ const App = () => {
       case 'purchaseorders': return <PurchaseOrders />;
       case 'stocktransfer': return <StockTransfer />;
       case 'waves': return <WavePicking />;
+      case 'manifests': return <Manifests />;
+      case 'ndr': return <NdrDashboard />;
+      case 'courier-routing': return <CourierRouting />;
+      case 'inventory-alerts': return <InventoryAlerts />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }

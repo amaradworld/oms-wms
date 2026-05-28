@@ -25,12 +25,36 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       include: { sku: true, warehouse: true },
     })).filter(i => i.reorderPoint > 0 && i.quantityAvailable <= i.reorderPoint).slice(0, 5);
 
+    const now = new Date();
+    const slaWhere = { ...orderWhere, slaDeadline: { not: null }, orderStatus: { notIn: ['DELIVERED', 'DISPATCHED', 'CANCELLED', 'RETURNED'] } };
+    const allSlaOrders = await prisma.order.findMany({
+      where: slaWhere,
+      select: { id: true, orderNumber: true, customerName: true, orderStatus: true, slaDeadline: true, source: true, createdAt: true },
+      orderBy: { slaDeadline: 'asc' },
+    });
+
+    const slaBreached = allSlaOrders.filter(o => o.slaDeadline! < now);
+    const slaAtRisk = allSlaOrders.filter(o => o.slaDeadline! >= now && o.slaDeadline! < new Date(now.getTime() + 2 * 60 * 60 * 1000));
+    const slaOnTrack = allSlaOrders.filter(o => o.slaDeadline! >= new Date(now.getTime() + 2 * 60 * 60 * 1000));
+    const noSla = await prisma.order.count({
+      where: { ...orderWhere, slaDeadline: null, orderStatus: { notIn: ['DELIVERED', 'DISPATCHED', 'CANCELLED', 'RETURNED'] } },
+    });
+
     res.json({
       totalOrders: totalOrders || 0,
       pendingOrders: pendingOrders || 0,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
       ordersByStatus: ordersByStatus || [],
       lowStockItems: lowStockItems || [],
+      sla: {
+        breached: slaBreached.length,
+        atRisk: slaAtRisk.length,
+        onTrack: slaOnTrack.length,
+        noDeadline: noSla,
+        total: allSlaOrders.length + noSla,
+        breachedOrders: slaBreached.slice(0, 5),
+        atRiskOrders: slaAtRisk.slice(0, 5),
+      },
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching dashboard', error });

@@ -104,6 +104,9 @@ model Order {
   shippingAddress String
   orderStatus   String   @default("PENDING")
   paymentStatus String?
+  slaDeadline   DateTime?
+  ewayBillNumber String?
+  irn           String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   items         OrderItem[]
@@ -113,6 +116,8 @@ model Order {
 
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
   pickWaveOrders PickWaveOrder[]
+  manifestShipments ManifestShipment[]
+  ndrCases NdrCase[]
 
   @@map("orders")
 }
@@ -172,6 +177,24 @@ model Rto {
   @@map("rto")
 }
 
+model NdrCase {
+  id              String    @id @default(uuid())
+  tenantId        String
+  orderId         String
+  courierName     String
+  awbNumber       String?
+  failureReason   String?
+  status          String    @default("OPEN") // OPEN, REATTEMPT_SCHEDULED, RESOLVED, CLOSED
+  reattemptDate   DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("ndr_cases")
+}
+
 model AuditLog {
   id         String   @id @default(uuid())
   tenantId   String
@@ -216,6 +239,25 @@ model MarketplaceConfig {
 
   @@unique([tenantId, marketplace])
   @@map("marketplace_configs")
+}
+
+model CourierConfig {
+  id             String   @id @default(uuid())
+  tenantId       String
+  courierName    String
+  isActive       Boolean  @default(true)
+  priority       Int      @default(10)
+  pincodePrefixes String? // comma-separated, e.g. "10,11,12" or "*" for all
+  minWeight      Decimal?
+  maxWeight      Decimal?
+  minOrderValue  Decimal?
+  maxOrderValue  Decimal?
+  speedTier      String   @default("standard") // express, standard, economy
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, courierName])
+  @@map("courier_configs")
 }
 
 model CycleCount {
@@ -360,6 +402,35 @@ model PickWaveOrder {
 
   @@unique([waveId, orderId])
   @@map("pick_wave_orders")
+}
+
+model Manifest {
+  id              String             @id @default(uuid())
+  tenantId        String
+  manifestNumber  String             @unique
+  courierName     String
+  status          String             @default("OPEN") // OPEN, CLOSED
+  totalShipments  Int                @default(0)
+  closedAt        DateTime?
+  createdAt       DateTime           @default(now())
+
+  shipments ManifestShipment[]
+
+  @@map("manifests")
+}
+
+model ManifestShipment {
+  id          String   @id @default(uuid())
+  manifestId  String
+  orderId     String
+  awbNumber   String
+  courierName String
+
+  manifest Manifest @relation(fields: [manifestId], references: [id])
+  order    Order    @relation(fields: [orderId], references: [id])
+
+  @@unique([manifestId, orderId])
+  @@map("manifest_shipments")
 }
 
 model MarketplaceOrderMapping {

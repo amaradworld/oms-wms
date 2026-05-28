@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import { toast } from '../components/Toast';
@@ -14,6 +14,7 @@ const statusColors = {
   PICKING: 'bg-indigo-100 text-indigo-700',
   PACKING: 'bg-cyan-100 text-cyan-700',
   SHIPPED: 'bg-green-100 text-green-700',
+  DISPATCHED: 'bg-teal-100 text-teal-700',
   DELIVERED: 'bg-emerald-100 text-emerald-700',
   CANCELLED: 'bg-red-100 text-red-700',
   RETURNED: 'bg-purple-100 text-purple-700',
@@ -239,6 +240,21 @@ const Orders = () => {
                 <div><span className="text-slate-500">Source</span><p className="font-medium">{detailOrder.source || '—'}</p></div>
                 <div><span className="text-slate-500">Date</span><p className="font-medium">{detailOrder.createdAt ? new Date(detailOrder.createdAt).toLocaleDateString() : '—'}</p></div>
                 {detailOrder.trackingAWB && <div className="col-span-2"><span className="text-slate-500">Tracking AWB</span><p className="font-mono text-xs">{detailOrder.trackingAWB}</p></div>}
+                {detailOrder.ewayBillNumber && <div><span className="text-slate-500">E-way Bill</span><p className="font-mono text-xs font-medium">{detailOrder.ewayBillNumber}</p></div>}
+                {detailOrder.irn && <div><span className="text-slate-500">IRN</span><p className="font-mono text-xs truncate" title={detailOrder.irn}>{detailOrder.irn.substring(0, 20)}...</p></div>}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={(e) => { e.stopPropagation(); const v = prompt('Enter E-way Bill number:'); if (v) { API.patch(`/invoice/${detailOrder.id}/eway-bill`, { ewayBillNumber: v }).then(() => { toast.success('E-way bill saved'); setDetailOrder({ ...detailOrder, ewayBillNumber: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                  <FileText size={13} /> Set E-way Bill
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); const v = prompt('Enter IRN:'); if (v) { API.patch(`/invoice/${detailOrder.id}/eway-bill`, { irn: v }).then(() => { toast.success('IRN saved'); setDetailOrder({ ...detailOrder, irn: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                  <FileText size={13} /> Set IRN
+                </button>
+                {(detailOrder.orderStatus === 'PENDING' || detailOrder.orderStatus === 'PROCESSING') && detailOrder.items?.length > 1 && (
+                  <button onClick={(e) => { e.stopPropagation(); const wh = prompt('Split into how many orders? (comma-separated item counts, e.g. "2,3" means 2 items in first, 3 in second):'); if (wh) { toast.info('Split feature: contact admin for warehouse mapping'); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 text-amber-600">
+                    <Scissors size={13} /> Split
+                  </button>
+                )}
               </div>
               {detailOrder.items?.length > 0 && (
                 <div>

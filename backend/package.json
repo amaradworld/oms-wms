@@ -9,6 +9,7 @@
     "dev": "nodemon src/index.ts",
     "migrate": "npx prisma db push",
     "seed": "node src/seed.js",
+    "backfill-sla": "npx ts-node src/scripts/backfill-sla.ts",
     "test": "jest --testPathPattern='__tests__/'"
   },
   "keywords": [],
@@ -19,6 +20,8 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1054.0",
+    "@aws-sdk/lib-storage": "^3.1054.0",
     "@prisma/client": "^6.4.1",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",

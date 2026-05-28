@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import prisma from './services/prisma';
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import scanRoutes from './routes/scan.routes';
@@ -26,6 +27,10 @@ import userRoutes from './routes/user.routes';
 import auditRoutes from './routes/audit.routes';
 import exportRoutes from './routes/export.routes';
 import deliveryRoutes from './routes/delivery.routes';
+import manifestRoutes from './routes/manifest.routes';
+import ndrRoutes from './routes/ndr.routes';
+import routingRoutes from './routes/routing.routes';
+import backupRoutes from './routes/backup.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -70,9 +75,18 @@ app.use('/api/labels', labelRoutes);
 app.use('/api/waves', waveRoutes);
 app.use('/api/tracking', trackRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/manifests', manifestRoutes);
+app.use('/api/ndr', ndrRoutes);
+app.use('/api/courier/routing', routingRoutes);
+app.use('/api', backupRoutes);
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'UP', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  let db = 'unknown';
+  try {
+    await prisma.$queryRawUnsafe('SELECT 1');
+    db = 'connected';
+  } catch { db = 'disconnected'; }
+  res.json({ status: 'UP', db, timestamp: new Date().toISOString() });
 });
 
 app.use(errorHandler);
