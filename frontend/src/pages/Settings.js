@@ -331,10 +331,10 @@ const Settings = () => {
           <h2 className="text-lg font-bold flex items-center gap-2"><Download size={20} /> Data Export</h2>
           <p className="text-sm text-slate-500">Download your data as CSV files for backup or analysis.</p>
           <div className="flex flex-wrap gap-3">
-            <button onClick={() => handleExport('orders')} disabled={exporting === 'orders'} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+            <button onClick={() => handleExport('orders')} disabled={exporting === 'orders'} className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-md shadow-indigo-200 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 bg-indigo-600 text-white hover:bg-indigo-700">
               {exporting === 'orders' ? 'Exporting...' : <><Download size={16} /> Export Orders</>}
             </button>
-            <button onClick={() => handleExport('inventory')} disabled={exporting === 'inventory'} className="gradient-accent text-white flex items-center gap-2 px-4 py-2 rounded-lg font-medium hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-md shadow-emerald-200 disabled:opacity-50 disabled:hover:scale-100">
+            <button onClick={() => handleExport('inventory')} disabled={exporting === 'inventory'} className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium shadow-md shadow-emerald-200 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 bg-emerald-600 text-white hover:bg-emerald-700">
               {exporting === 'inventory' ? 'Exporting...' : <><Download size={16} /> Export Inventory</>}
             </button>
           </div>
