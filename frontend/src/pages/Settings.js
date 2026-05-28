@@ -381,9 +381,9 @@ const Settings = () => {
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
       <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
 
-      <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 card p-1">
+      <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 bg-indigo-50/60 border border-indigo-100/60 rounded-xl p-1">
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${activeTab === tab.id ? 'gradient-primary text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-md' : 'bg-white/80 text-indigo-700 hover:bg-white hover:shadow-sm'}`}>
             <tab.icon size={16} /> <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
