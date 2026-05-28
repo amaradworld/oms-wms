@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors, Plus, Loader2, Clock, DollarSign, Hash, MapPin, Package, Tag, Truck, User, Building2, CreditCard } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
@@ -271,44 +271,44 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
     shippingAddress: '',
   });
   const [items, setItems] = useState([]);
-  const [skuSearch, setSkuSearch] = useState('');
-  const [skuResults, setSkuResults] = useState([]);
-  const [searchingSku, setSearchingSku] = useState(false);
+  const [barcode, setBarcode] = useState('');
+  const [scanning, setScanning] = useState(false);
   const [creating, setCreating] = useState(false);
+  const scanRef = useRef(null);
 
-  const searchSkus = useCallback(async (q) => {
-    if (!q || q.length < 2) { setSkuResults([]); return; }
-    setSearchingSku(true);
+  useEffect(() => { scanRef.current?.focus(); }, []);
+
+  const handleScan = async () => {
+    const code = barcode.trim();
+    if (!code) return;
+    setScanning(true);
     try {
-      const res = await API.get('/skus', { params: { search: q } });
-      setSkuResults(res.data?.skus || res.data || []);
+      const res = await API.get('/skus', { params: { search: code } });
+      const skus = res.data?.skus || [];
+      const sku = skus.find(s => s.skuCode === code);
+      if (!sku) { toast.error(`SKU "${code}" not found`); setBarcode(''); return; }
+      const existing = items.find(i => i.skuId === sku.id);
+      if (existing) {
+        setItems(items.map(i => i.skuId === sku.id ? { ...i, quantity: i.quantity + 1 } : i));
+        toast.success(`${sku.skuCode} qty → ${existing.quantity + 1}`);
+      } else {
+        setItems([...items, { skuId: sku.id, skuCode: sku.skuCode, name: sku.name, quantity: 1, unitPrice: sku.mrp || 0 }]);
+        toast.success(`${sku.skuCode} added`);
+      }
+      setBarcode('');
     } catch {
-      setSkuResults([]);
+      toast.error('Error looking up SKU');
     } finally {
-      setSearchingSku(false);
+      setScanning(false);
+      scanRef.current?.focus();
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    const timer = setTimeout(() => searchSkus(skuSearch), 300);
-    return () => clearTimeout(timer);
-  }, [skuSearch, searchSkus]);
-
-  const addItem = (sku) => {
-    if (items.find(i => i.skuId === sku.id)) {
-      toast.info('SKU already added');
-      return;
-    }
-    setItems([...items, { skuId: sku.id, skuCode: sku.skuCode, name: sku.name, quantity: 1, unitPrice: sku.mrp || 0 }]);
-    setSkuSearch('');
-    setSkuResults([]);
+  const updateUnitPrice = (skuId, value) => {
+    setItems(items.map(i => i.skuId === skuId ? { ...i, unitPrice: parseFloat(value) || 0 } : i));
   };
 
   const removeItem = (skuId) => setItems(items.filter(i => i.skuId !== skuId));
-
-  const updateItem = (skuId, field, value) => {
-    setItems(items.map(i => i.skuId === skuId ? { ...i, [field]: value } : i));
-  };
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.shippingAddress || items.length === 0) {
@@ -353,32 +353,23 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Add Items (search by SKU)</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Scan Barcode to Add Items</label>
             <div className="relative">
-              <input type="text" className="input-field" value={skuSearch} onChange={e => setSkuSearch(e.target.value)} placeholder="Type SKU code or name..." />
-              {searchingSku && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
-              {skuResults.length > 0 && (
-                <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                  {skuResults.map(sku => (
-                    <button key={sku.id} onClick={() => addItem(sku)} className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 flex justify-between items-center">
-                      <span><span className="font-medium">{sku.skuCode}</span> {sku.name && <span className="text-slate-500">- {sku.name}</span>}</span>
-                      <span className="text-xs text-indigo-600 font-medium">+ Add</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <input ref={scanRef} type="text" className="input-field pr-8" value={barcode} onChange={e => setBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleScan(); } }} placeholder="Scan barcode..." />
+              {scanning && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
             </div>
           </div>
 
           {items.length > 0 && (
             <div>
-              <label className="block text-xs font-medium text-slate-500 mb-2">Items ({items.length})</label>
+              <label className="block text-xs font-medium text-slate-500 mb-2">Items ({items.reduce((s, i) => s + i.quantity, 0)} total)</label>
               <div className="bg-slate-50 rounded-xl p-3 space-y-2">
                 {items.map((item) => (
                   <div key={item.skuId} className="flex items-center gap-2">
-                    <span className="flex-1 text-sm truncate">{item.skuCode}</span>
-                    <input type="number" min={1} className="input-field w-16 text-xs text-center" value={item.quantity} onChange={e => updateItem(item.skuId, 'quantity', parseInt(e.target.value) || 1)} />
-                    <input type="number" min={0} step="0.01" className="input-field w-20 text-xs text-center" value={item.unitPrice} onChange={e => updateItem(item.skuId, 'unitPrice', parseFloat(e.target.value) || 0)} placeholder="Price" />
+                    <span className="flex-[2] text-sm truncate font-medium">{item.skuCode}</span>
+                    <span className="flex-1 text-xs text-slate-500">{item.name}</span>
+                    <span className="w-10 text-xs text-center font-semibold text-indigo-600">x{item.quantity}</span>
+                    <input type="number" min={0} step="0.01" className="input-field w-20 text-xs text-center" value={item.unitPrice} onChange={e => updateUnitPrice(item.skuId, e.target.value)} placeholder="Price" />
                     <button onClick={() => removeItem(item.skuId)} className="p-1 hover:bg-red-100 rounded-lg text-red-500"><X size={14} /></button>
                   </div>
                 ))}
