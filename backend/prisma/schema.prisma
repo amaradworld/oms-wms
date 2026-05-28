@@ -521,3 +521,26 @@ model GatepassItem {
   @@unique([gatepassId, skuId])
   @@map("gatepass_items")
 }
+
+model PlatformIntegration {
+  id            String   @id @default(uuid())
+  tenantId      String
+  name          String   // e.g. "Shopify", "Amazon", "Custom"
+  platform      String   // shopify, amazon, custom, flipkart, etc.
+  apiBaseUrl    String?
+  apiKey        String?
+  apiSecret     String?
+  accessToken   String?
+  webhookUrl    String?
+  syncInventory Boolean? @default(false)
+  syncOrders    Boolean? @default(false)
+  syncProducts  Boolean? @default(false)
+  isActive      Boolean  @default(true)
+  lastSyncAt    DateTime?
+  config        Json?    // custom key-value pairs for flexible integrations
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@map("platform_integrations")
+}
