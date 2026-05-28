@@ -74,7 +74,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       ],
     },
     {
-      id: 'outbound', label: 'Outbound', icon: Truck, group: true,
+      id: 'outbound', label: 'Outbound', icon: Settings, group: true,
       children: [
         { id: 'gatepass', label: 'Gatepass', icon: FileText },
         { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
