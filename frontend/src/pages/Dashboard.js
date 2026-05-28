@@ -14,6 +14,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color }) => {
     rose: 'text-rose-600 bg-rose-50',
     violet: 'text-violet-600 bg-violet-50',
     cyan: 'text-cyan-600 bg-cyan-50',
+    slate: 'text-slate-600 bg-slate-100',
   };
   const c = colors[color] || colors.blue;
   return (
@@ -93,13 +94,14 @@ const Dashboard = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "ΓÇö"} subtitle="All time" icon={ShoppingCart} color="blue" />
             <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "ΓÇö"} subtitle="Awaiting dispatch" icon={Package} color="amber" />
             <StatCard title="Revenue" value={stats.totalRevenue ? `Γé╣${stats.totalRevenue.toLocaleString()}` : "ΓÇö"} subtitle="Total value" icon={IndianRupee} color="emerald" />
             <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || 'ΓÇö'} subtitle="In inventory" icon={BarChart3} color="violet" />
             <StatCard title="SLA Breached" value={sla.breached ?? 'ΓÇö'} subtitle={sla.breached > 0 ? 'Requires attention' : 'All good'} icon={AlertTriangle} color="rose" />
             <StatCard title="At Risk" value={sla.atRisk ?? 'ΓÇö'} subtitle={sla.atRisk > 0 ? 'Approaching deadline' : 'On track'} icon={Clock} color="amber" />
+            <StatCard title="No SLA" value={sla.noDeadline ?? 'ΓÇö'} subtitle="Without deadline" icon={Clock} color="slate" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

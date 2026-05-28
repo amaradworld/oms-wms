@@ -40,42 +40,74 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
 
   const allMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'inventory', label: 'Inventory', icon: Package },
-    { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
-    { id: 'cyclecount', label: 'Cycle Count', icon: ClipboardCheck },
     {
-      id: 'waves', label: 'Wave Picking', icon: Layers,
+      id: 'order-management', label: 'Order Management', icon: ShoppingCart, group: true,
       children: [
-        { id: 'picklist', label: 'Picklist', icon: ClipboardList },
+        { id: 'orders', label: 'Orders', icon: ShoppingCart },
+        { id: 'marketplace', label: 'Marketplace', icon: Globe },
+        { id: 'returns', label: 'Returns/RTO', icon: RotateCcw },
+        { id: 'ndr', label: 'NDR', icon: AlertTriangle },
       ],
     },
-    { id: 'packing', label: 'Packing', icon: PackageCheck },
-    { id: 'manifests', label: 'Manifests', icon: FileText },
-    { id: 'ndr', label: 'NDR', icon: AlertTriangle },
-    { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
-    { id: 'inventory-alerts', label: 'Inventory Alerts', icon: AlertTriangle },
-    { id: 'scanning', label: 'Barcode Scan', icon: Barcode },
-    { id: 'returns', label: 'Returns/RTO', icon: RotateCcw },
-    { id: 'marketplace', label: 'Marketplace', icon: Globe },
-    { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
-    { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
-    { id: 'gatepass', label: 'Gatepass', icon: FileText },
-    { id: 'integrations', label: 'Integrations', icon: Globe },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    {
+      id: 'warehouse-ops', label: 'Warehouse Operations', icon: Warehouse, group: true,
+      children: [
+        { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
+        { id: 'waves', label: 'Wave Picking', icon: Layers, children: [
+          { id: 'picklist', label: 'Picklist', icon: ClipboardList },
+        ]},
+        { id: 'packing', label: 'Packing', icon: PackageCheck },
+        { id: 'scanning', label: 'Barcode Scan', icon: Barcode },
+        { id: 'manifests', label: 'Manifests', icon: FileText },
+      ],
+    },
+    {
+      id: 'inventory-stock', label: 'Inventory & Stock Control', icon: Package, group: true,
+      children: [
+        { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'cyclecount', label: 'Cycle Count', icon: ClipboardCheck },
+        { id: 'inventory-alerts', label: 'Inventory Alerts', icon: AlertTriangle },
+      ],
+    },
+    {
+      id: 'inbound-supply', label: 'Inbound & Supply Chain', icon: Truck, group: true,
+      children: [
+        { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
+        { id: 'gatepass', label: 'Gatepass', icon: FileText },
+        { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
+      ],
+    },
+    {
+      id: 'administration', label: 'Administration', icon: Settings, group: true,
+      children: [
+        { id: 'integrations', label: 'Integrations', icon: Globe },
+        { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
+        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'settings', label: 'Settings', icon: Settings },
+      ],
+    },
   ];
+
+  const filterTree = (items, allowed) =>
+    items
+      .map(item => {
+        if (!item.children) return allowed.has(item.id) ? item : null;
+        const filteredChildren = item.children
+          .map(c => {
+            if (!c.children) return allowed.has(c.id) ? c : null;
+            const gc = c.children?.filter(g => allowed.has(g.id));
+            return gc?.length ? { ...c, children: gc } : null;
+          })
+          .filter(Boolean);
+        return filteredChildren.length ? { ...item, children: filteredChildren } : null;
+      })
+      .filter(Boolean);
 
   const roleMenuMap = {
     SUPER_ADMIN: allMenuItems,
     WAREHOUSE_MGR: allMenuItems,
-    PICKER: allMenuItems.filter(i => {
-      if (i.id === 'waves') return true;
-      return ['picklist', 'scanning', 'dashboard'].includes(i.id);
-    }),
-    PACKER: allMenuItems.filter(i => {
-      return ['packing', 'scanning', 'dashboard'].includes(i.id);
-    }),
+    PICKER: filterTree(allMenuItems, new Set(['dashboard', 'picklist', 'scanning', 'waves'])),
+    PACKER: filterTree(allMenuItems, new Set(['dashboard', 'packing', 'scanning'])),
   };
   const menuItems = roleMenuMap[role] || allMenuItems;
 
@@ -85,7 +117,12 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
   };
 
   const childIds = new Set();
-  menuItems.forEach(item => item.children?.forEach(c => childIds.add(c.id)));
+  menuItems.forEach(item => {
+    item.children?.forEach(c => {
+      childIds.add(c.id);
+      c.children?.forEach(cc => childIds.add(cc.id));
+    });
+  });
 
   const nav = (
     <>
@@ -116,29 +153,55 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       <nav aria-label="Main navigation" className="flex-1 mt-2 md:mt-4 overflow-y-auto">
         {menuItems.map(item => {
           if (item.children) {
+            const isOrgGroup = item.group;
             return (
               <SidebarGroup
                 key={item.id}
                 icon={item.icon}
                 label={item.label}
-                defaultOpen={activeTab === item.id || item.children.some(c => c.id === activeTab)}
+                defaultOpen={activeTab === item.id || item.children.some(c => c.id === activeTab || (c.children && c.children.some(cc => cc.id === activeTab)))}
                 collapsed={collapsed}
               >
-                <div onClick={() => handleClick(item.id)} className={`flex items-center gap-3 px-4 py-2.5 pl-10 cursor-pointer transition-colors ${
-                  activeTab === item.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                }`}>
-                  <span className="font-medium text-sm">{item.label}</span>
-                </div>
-                {item.children.map(child => (
-                  <SidebarItem
-                    key={child.id}
-                    {...child}
-                    active={activeTab === child.id}
-                    onClick={() => handleClick(child.id)}
-                    indent={true}
-                    collapsed={collapsed}
-                  />
-                ))}
+                {!isOrgGroup && (
+                  <div onClick={() => handleClick(item.id)} className={`flex items-center gap-3 px-4 py-2.5 pl-10 cursor-pointer transition-colors ${
+                    activeTab === item.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                  }`}>
+                    <span className="font-medium text-sm">{item.label}</span>
+                  </div>
+                )}
+                {item.children.map(child => {
+                  if (child.children) {
+                    return (
+                      <div key={child.id}>
+                        <div onClick={() => handleClick(child.id)} className={`flex items-center gap-3 px-4 py-2.5 pl-10 cursor-pointer transition-colors ${
+                          activeTab === child.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        }`}>
+                          <span className="font-medium text-sm">{child.label}</span>
+                        </div>
+                        {child.children.map(grandchild => (
+                          <SidebarItem
+                            key={grandchild.id}
+                            {...grandchild}
+                            active={activeTab === grandchild.id}
+                            onClick={() => handleClick(grandchild.id)}
+                            indent={true}
+                            collapsed={collapsed}
+                          />
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <SidebarItem
+                      key={child.id}
+                      {...child}
+                      active={activeTab === child.id}
+                      onClick={() => handleClick(child.id)}
+                      indent={true}
+                      collapsed={collapsed}
+                    />
+                  );
+                })}
               </SidebarGroup>
             );
           }
