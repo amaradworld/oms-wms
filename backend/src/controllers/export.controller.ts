@@ -90,7 +90,7 @@ export const exportStockTransfers = async (req: AuthRequest, res: Response) => {
     orderBy: { createdAt: 'desc' },
   });
   const rows = transfers.map(t => ({
-    transferNumber: t.transferNumber || t.id.slice(0, 8),
+    transferId: t.id.slice(0, 8),
     status: t.status,
     fromWarehouse: t.fromWarehouse?.name || '',
     toWarehouse: t.toWarehouse?.name || '',
@@ -106,16 +106,14 @@ export const exportReturns = async (req: AuthRequest, res: Response) => {
   const returns = await prisma.return.findMany({
     where: { order: { tenantId } },
     include: { order: true, sku: true },
-    orderBy: { createdAt: 'desc' },
   });
   const rows = returns.map(r => ({
-    returnNumber: r.id.slice(0, 8),
-    orderNumber: r.order?.orderNumber || '',
-    skuCode: r.sku?.skuCode || '',
+    returnId: r.id.slice(0, 8),
+    orderNumber: r.order.orderNumber || '',
+    skuCode: r.sku.skuCode || '',
     quantity: r.quantity,
     status: r.status,
     reason: r.reason || '',
-    createdAt: r.createdAt.toISOString(),
     receivedAt: r.receivedAt?.toISOString() || '',
   }));
   sendCsv(res, rows, 'returns.csv');
@@ -138,7 +136,7 @@ export const exportPurchaseOrders = async (req: AuthRequest, res: Response) => {
     warehouse: po.warehouse?.name || '',
     status: po.status,
     items: po.items.map(i => `${i.sku.skuCode} x${i.quantity}`).join('; '),
-    totalAmount: po.items.reduce((s, i) => s + Number(i.totalAmount), 0),
+    totalAmount: po.items.reduce((s, i) => s + Number(i.unitPrice) * i.quantity, 0),
     orderDate: po.orderDate?.toISOString() || '',
     expectedDate: po.expectedDate?.toISOString() || '',
     createdAt: po.createdAt.toISOString(),
@@ -185,7 +183,8 @@ export const exportPickWaves = async (req: AuthRequest, res: Response) => {
     orderBy: { createdAt: 'desc' },
   });
   const rows = waves.map(w => ({
-    waveNumber: w.waveNumber || w.id.slice(0, 8),
+    waveId: w.id.slice(0, 8),
+    name: w.name,
     warehouse: w.warehouse?.name || '',
     status: w.status,
     orders: w.orders.map(o => o.order?.orderNumber || '').join('; '),
@@ -208,7 +207,8 @@ export const exportAuditLogs = async (req: AuthRequest, res: Response) => {
     entityId: l.entityId || '',
     userEmail: l.user?.email || '',
     userName: l.user?.fullName || '',
-    details: l.details || '',
+    oldValue: l.oldValue ? JSON.stringify(l.oldValue) : '',
+    newValue: l.newValue ? JSON.stringify(l.newValue) : '',
     timestamp: l.timestamp.toISOString(),
   }));
   sendCsv(res, rows, 'audit-logs.csv');
