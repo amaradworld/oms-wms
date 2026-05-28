@@ -77,15 +77,25 @@ model SkuMaster {
 }
 
 model Inventory {
-  id               String   @id @default(uuid())
-  warehouseId      String
-  skuId            String
-  binLocation      String
-  reorderPoint     Int      @default(0)
-  quantityOnHand   Int      @default(0)
-  quantityReserved Int      @default(0)
-  quantityAvailable Int    @default(0)
-  lastUpdated      DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  warehouseId         String
+  skuId               String
+  binLocation         String
+  reorderPoint        Int      @default(0)
+  quantityOnHand      Int      @default(0)
+  quantityReserved    Int      @default(0)
+  quantityAvailable   Int      @default(0)
+  virtualInventory    Int      @default(0)
+  notFound            Int      @default(0)
+  type                String   @default("Good")
+  batch               String?
+  batchStatus         String?
+  status              String   @default("ACTIVE")
+  inventoryAllocation Boolean  @default(true)
+  inventorySync       Boolean  @default(true)
+  skuMixing           Boolean  @default(true)
+  shelfOnHold         Boolean  @default(false)
+  lastUpdated         DateTime @updatedAt
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
   sku       SkuMaster @relation(fields: [skuId], references: [id])
