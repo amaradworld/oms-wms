@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, X, CheckCircle, QrCode, Loader2 } from 'lucide-react';
+import { Plus, X, CheckCircle, QrCode, Loader2, Printer } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -103,6 +103,21 @@ const StockTransfer = () => {
     }
   };
 
+  const handlePrint = async () => {
+    if (!detailTransfer) return;
+    try {
+      const res = await API.get(`/transfers/${detailTransfer.id}/print`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `STN_${detailTransfer.id.slice(0, 8)}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Failed to generate PDF');
+    }
+  };
+
   const handleComplete = async () => {
     if (!detailTransfer) return;
     try {
@@ -169,6 +184,11 @@ const StockTransfer = () => {
                 <p className="text-xs text-slate-400">{detailTransfer.fromWarehouse?.name} → {detailTransfer.toWarehouse?.name}</p>
               </div>
               <button onClick={() => setDetailTransfer(null)}><X size={20} /></button>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                <Printer size={14} /> Print STN
+              </button>
             </div>
 
             {detailTransfer.notes && <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">{detailTransfer.notes}</p>}
