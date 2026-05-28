@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors } from 'lucide-react';
+import { Search, Filter, MoreVertical, RefreshCw, Eye, XCircle, X, ChevronLeft, ChevronRight, FileText, Scissors, Plus, Loader2 } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import { toast } from '../components/Toast';
@@ -28,17 +28,22 @@ const sourceColors = {
   Amazon: 'bg-orange-100 text-orange-700',
   Flipkart: 'bg-blue-100 text-blue-700',
   Meesho: 'bg-yellow-100 text-yellow-700',
+  MANUAL: 'bg-purple-100 text-purple-700',
 };
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [detailOrder, setDetailOrder] = useState(null);
+  const [showManualOrder, setShowManualOrder] = useState(false);
+  const [allSources, setAllSources] = useState([]);
   const { selectedFacility } = useAuth();
 
   const fetchOrders = useCallback(async (targetPage) => {
@@ -47,29 +52,30 @@ const Orders = () => {
       const pg = targetPage || 1;
       const params = { page: pg, limit: 50 };
       if (selectedFacility) params.warehouseId = selectedFacility.id;
+      if (sourceFilter !== 'ALL') params.source = sourceFilter;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
       const res = await API.get('/orders', { params });
       const data = res.data;
       setOrders(data.orders || []);
       setTotalPages(data.totalPages || 1);
       setPage(pg);
+      const sources = [...new Set((data.orders || []).map(o => o.source).filter(Boolean))];
+      setAllSources(sources);
     } catch {
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedFacility]);
+  }, [selectedFacility, sourceFilter, dateFrom, dateTo]);
 
   useEffect(() => { fetchOrders(1); }, [fetchOrders]);
 
   const filteredOrders = orders.filter(o => {
-    const matchSearch = !searchTerm || 
+    return !searchTerm ||
       o.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       o.customerName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchSource = sourceFilter === 'ALL' || o.source === sourceFilter;
-    return matchSearch && matchSource;
   });
-
-  const sources = [...new Set(orders.map(o => o.source).filter(Boolean))];
 
   useEffect(() => {
     const handler = (e) => {
@@ -111,6 +117,9 @@ const Orders = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-xl md:text-2xl font-bold">Order Management</h1>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <button onClick={() => setShowManualOrder(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-indigo-700 transition-colors">
+            <Plus size={14} /> Manual Order
+          </button>
           <button onClick={() => fetchOrders(1)} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs md:text-sm font-medium hover:bg-slate-50">
             <RefreshCw size={14} /> Refresh
           </button>
@@ -122,9 +131,9 @@ const Orders = () => {
       <div className="card p-3 md:p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search by Order ID or Customer..." 
+          <input
+            type="text"
+            placeholder="Search by Order ID or Customer..."
             className="input-field"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -132,14 +141,19 @@ const Orders = () => {
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter size={16} className="text-slate-400 flex-shrink-0" />
-          <select
-            value={sourceFilter}
-            onChange={(e) => { setSourceFilter(e.target.value); fetchOrders(1); }}
-            className="input-field w-full sm:w-auto"
-          >
+          <select value={sourceFilter} onChange={(e) => { setSourceFilter(e.target.value); fetchOrders(1); }} className="input-field w-full sm:w-32">
             <option value="ALL">All Sources</option>
-            {sources.map(s => <option key={s} value={s}>{s}</option>)}
+            {allSources.map(s => <option key={s} value={s}>{s}</option>)}
+            <option value="MANUAL">MANUAL</option>
           </select>
+          <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); }} className="input-field w-full sm:w-36 text-xs" title="From date" />
+          <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); }} className="input-field w-full sm:w-36 text-xs" title="To date" />
+          {(dateFrom || dateTo) && (
+            <button onClick={() => { setDateFrom(''); setDateTo(''); }} className="p-1.5 hover:bg-slate-100 rounded-lg" title="Clear dates">
+              <X size={14} />
+            </button>
+          )}
+          <button onClick={() => fetchOrders(1)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">Apply</button>
         </div>
       </div>
 
@@ -278,6 +292,145 @@ const Orders = () => {
           </div>
         </div>
       )}
+
+      {showManualOrder && (
+        <ManualOrderModal
+          onClose={() => setShowManualOrder(false)}
+          onSuccess={() => { setShowManualOrder(false); fetchOrders(1); }}
+        />
+      )}
+    </div>
+  );
+};
+
+const ManualOrderModal = ({ onClose, onSuccess }) => {
+  const [form, setForm] = useState({
+    orderNumber: 'MAN-' + Date.now().toString(36).toUpperCase(),
+    customerName: '',
+    shippingAddress: '',
+  });
+  const [items, setItems] = useState([]);
+  const [skuSearch, setSkuSearch] = useState('');
+  const [skuResults, setSkuResults] = useState([]);
+  const [searchingSku, setSearchingSku] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const searchSkus = useCallback(async (q) => {
+    if (!q || q.length < 2) { setSkuResults([]); return; }
+    setSearchingSku(true);
+    try {
+      const res = await API.get('/skus', { params: { search: q } });
+      setSkuResults(res.data?.skus || res.data || []);
+    } catch {
+      setSkuResults([]);
+    } finally {
+      setSearchingSku(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => searchSkus(skuSearch), 300);
+    return () => clearTimeout(timer);
+  }, [skuSearch, searchSkus]);
+
+  const addItem = (sku) => {
+    if (items.find(i => i.skuId === sku.id)) {
+      toast.info('SKU already added');
+      return;
+    }
+    setItems([...items, { skuId: sku.id, skuCode: sku.skuCode, name: sku.name, quantity: 1, unitPrice: sku.mrp || 0 }]);
+    setSkuSearch('');
+    setSkuResults([]);
+  };
+
+  const removeItem = (skuId) => setItems(items.filter(i => i.skuId !== skuId));
+
+  const updateItem = (skuId, field, value) => {
+    setItems(items.map(i => i.skuId === skuId ? { ...i, [field]: value } : i));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.customerName || !form.shippingAddress || items.length === 0) {
+      toast.error('Customer name, shipping address, and at least one item required');
+      return;
+    }
+    setCreating(true);
+    try {
+      await API.post('/orders', {
+        ...form,
+        items: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, unitPrice: i.unitPrice })),
+      });
+      toast.success('Manual order created');
+      onSuccess();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create order');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">Manual Order</h3>
+          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Order Number</label>
+            <input type="text" className="input-field" value={form.orderNumber} onChange={e => setForm({ ...form, orderNumber: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Customer Name</label>
+            <input type="text" className="input-field" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="John Doe" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Shipping Address</label>
+            <textarea className="input-field" rows={2} value={form.shippingAddress} onChange={e => setForm({ ...form, shippingAddress: e.target.value })} placeholder="123 Main St, City, State, ZIP" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Add Items (search by SKU)</label>
+            <div className="relative">
+              <input type="text" className="input-field" value={skuSearch} onChange={e => setSkuSearch(e.target.value)} placeholder="Type SKU code or name..." />
+              {searchingSku && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
+              {skuResults.length > 0 && (
+                <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {skuResults.map(sku => (
+                    <button key={sku.id} onClick={() => addItem(sku)} className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 flex justify-between items-center">
+                      <span><span className="font-medium">{sku.skuCode}</span> {sku.name && <span className="text-slate-500">- {sku.name}</span>}</span>
+                      <span className="text-xs text-indigo-600 font-medium">+ Add</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {items.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-2">Items ({items.length})</label>
+              <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+                {items.map((item) => (
+                  <div key={item.skuId} className="flex items-center gap-2">
+                    <span className="flex-1 text-sm truncate">{item.skuCode}</span>
+                    <input type="number" min={1} className="input-field w-16 text-xs text-center" value={item.quantity} onChange={e => updateItem(item.skuId, 'quantity', parseInt(e.target.value) || 1)} />
+                    <input type="number" min={0} step="0.01" className="input-field w-20 text-xs text-center" value={item.unitPrice} onChange={e => updateItem(item.skuId, 'unitPrice', parseFloat(e.target.value) || 0)} placeholder="Price" />
+                    <button onClick={() => removeItem(item.skuId)} className="p-1 hover:bg-red-100 rounded-lg text-red-500"><X size={14} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button onClick={handleSubmit} disabled={creating || items.length === 0} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          {creating && <Loader2 size={16} className="animate-spin" />}
+          {creating ? 'Creating...' : 'Create Order'}
+        </button>
+      </div>
     </div>
   );
 };

@@ -3,11 +3,19 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getSkus = async (req: AuthRequest, res: Response) => {
+  const search = req.query.search as string | undefined;
+  const where: any = { tenantId: req.user!.tenant_id };
+  if (search) {
+    where.OR = [
+      { skuCode: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
+    ];
+  }
   const skus = await prisma.skuMaster.findMany({
-    where: { tenantId: req.user!.tenant_id },
+    where,
     orderBy: { createdAt: 'desc' },
   });
-  res.json(skus);
+  res.json({ skus });
 };
 
 export const createSku = async (req: AuthRequest, res: Response) => {

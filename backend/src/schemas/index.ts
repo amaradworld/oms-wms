@@ -44,14 +44,14 @@ export const createOrderSchema = z.object({
   orderNumber: z.string().min(1, 'Order number is required'),
   customerName: z.string().min(1, 'Customer name is required'),
   shippingAddress: z.string().min(1, 'Shipping address is required'),
-  tenantId: z.string().min(1, 'Tenant ID is required'),
+  tenantId: z.string().optional(),
   warehouseId: z.string().optional(),
+  source: z.string().optional(),
   items: z.array(z.object({
     skuId: z.string().min(1),
     quantity: z.number().min(1),
-    unitPrice: z.number().min(0),
-    totalAmount: z.number().min(0),
-  })).optional(),
+    unitPrice: z.number().min(0).optional(),
+  })).min(1, 'At least one item required'),
 });
 
 export const updateOrderStatusSchema = z.object({

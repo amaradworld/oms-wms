@@ -6,10 +6,19 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
     const { tenant_id } = req.user!;
     const warehouseId = req.query.warehouseId as string | undefined;
+    const source = req.query.source as string | undefined;
+    const dateFrom = req.query.dateFrom as string | undefined;
+    const dateTo = req.query.dateTo as string | undefined;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
     const where: any = { tenantId: tenant_id };
     if (warehouseId) where.warehouseId = warehouseId;
+    if (source && source !== 'ALL') where.source = source;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) where.createdAt.lte = new Date(dateTo + 'T23:59:59.999Z');
+    }
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
@@ -43,12 +52,15 @@ function computeSlaDeadline(source?: string): Date {
   return new Date(Date.now() + hours * 60 * 60 * 1000);
 }
 
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { orderNumber, customerName, shippingAddress, items, tenantId, warehouseId, source } = req.body;
+    const { orderNumber, customerName, shippingAddress, items, warehouseId } = req.body;
+    const source = req.body.source || 'MANUAL';
+    const tenantId = req.user!.tenant_id;
 
     if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'At least one item is required' });
+      res.status(400).json({ message: 'At least one item is required' });
+      return;
     }
 
     const order = await prisma.$transaction(async (tx) => {
@@ -58,7 +70,7 @@ export const createOrder = async (req: Request, res: Response) => {
           customerName,
           shippingAddress,
           tenantId,
-          source: source || null,
+          source,
           slaDeadline: computeSlaDeadline(source),
           warehouseId: warehouseId || null,
           items: {
