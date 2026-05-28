@@ -6,12 +6,12 @@ const SidebarItem = ({ icon: Icon, label, active, onClick, indent, collapsed }) 
   <div
     onClick={onClick}
     title={collapsed ? label : undefined}
-    className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-      active ? 'bg-violet-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+    className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
+      active ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
     } ${indent ? (collapsed ? 'justify-center' : 'pl-10') : collapsed ? 'justify-center' : ''}`}
   >
-    <Icon size={20} className="flex-shrink-0" />
-    {!collapsed && <span className="font-medium truncate">{label}</span>}
+    <Icon size={18} className="flex-shrink-0" />
+    {!collapsed && <span className="font-medium text-sm truncate">{label}</span>}
   </div>
 );
 
@@ -22,11 +22,11 @@ const SidebarGroup = ({ icon: Icon, label, active, children, defaultOpen, collap
       <div
         onClick={() => !collapsed && setOpen(!open)}
         title={collapsed ? label : undefined}
-        className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors text-slate-400 hover:bg-slate-800 hover:text-white ${collapsed ? 'justify-center' : ''}`}
+        className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors text-slate-400 hover:bg-slate-800 hover:text-slate-200 ${collapsed ? 'justify-center' : ''}`}
       >
-        <Icon size={20} className="flex-shrink-0" />
-        {!collapsed && <span className="font-medium flex-1 truncate">{label}</span>}
-        {!collapsed && (open ? <ChevronDown size={16} className="flex-shrink-0" /> : <ChevronRight size={16} className="flex-shrink-0" />)}
+        <Icon size={18} className="flex-shrink-0" />
+        {!collapsed && <span className="font-medium flex-1 text-sm truncate">{label}</span>}
+        {!collapsed && (open ? <ChevronDown size={14} className="flex-shrink-0" /> : <ChevronRight size={14} className="flex-shrink-0" />)}
       </div>
       {!collapsed && open && <div>{children}</div>}
     </div>
@@ -88,17 +88,15 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
 
   const nav = (
     <>
-      <div className="p-4 md:p-6 border-b border-slate-800 flex items-center justify-between">
+      <div className="p-4 md:p-5 border-b border-slate-700/50 flex items-center justify-between">
         <div className="flex items-center gap-3 overflow-hidden">
-          <img src="/logo.png" alt="Logo" className="h-8 w-auto flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
+          <img src="/logo.png" alt="Logo" className="h-7 w-auto flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-xl md:text-2xl font-bold tracking-tight">
-                OMS<span className="text-violet-400">WMS</span>
-              </div>
+              <div className="text-base font-bold tracking-tight">SupplyHub</div>
               {company && (
-                <div className="flex items-center gap-2 mt-1 md:mt-2 text-xs text-slate-400">
-                  <Building2 size={12} />
+                <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500">
+                  <Building2 size={10} />
                   <span className="truncate max-w-[140px]">{company.name}</span>
                 </div>
               )}
@@ -106,11 +104,11 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setCollapsed(!collapsed)} className="hidden md:flex p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors">
-            <ChevronLeft size={18} className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
+          <button onClick={() => setCollapsed(!collapsed)} className="hidden md:flex p-1.5 hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-300 transition-colors">
+            <ChevronLeft size={16} className={`transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`} />
           </button>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden p-1 hover:bg-slate-800 rounded-lg">
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
       </div>
@@ -126,7 +124,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
                 collapsed={collapsed}
               >
                 <div onClick={() => handleClick(item.id)} className={`flex items-center gap-3 px-4 py-2.5 pl-10 cursor-pointer transition-colors ${
-                  activeTab === item.id ? 'bg-violet-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  activeTab === item.id ? 'bg-slate-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                 }`}>
                   <span className="font-medium text-sm">{item.label}</span>
                 </div>
@@ -155,7 +153,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
           );
         })}
       </nav>
-      <div className={collapsed ? 'p-4 border-t border-slate-800 flex justify-center' : 'p-4 border-t border-slate-800'}>
+      <div className={collapsed ? 'p-4 border-t border-slate-700/50 flex justify-center' : 'p-4 border-t border-slate-700/50'}>
         <SidebarItem icon={LogOut} label="Logout" onClick={() => { logout(); window.location.reload(); }} collapsed={collapsed} />
       </div>
     </>
@@ -174,7 +172,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       } ${collapsed ? 'w-16' : 'w-64'}`}>
         {nav}
       </aside>
-      <aside className={`hidden md:flex h-screen bg-slate-900 text-white flex-col sticky top-0 flex-shrink-0 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+      <aside className={`hidden md:flex h-screen bg-slate-900 text-slate-300 flex-col sticky top-0 flex-shrink-0 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
         {nav}
       </aside>
     </>

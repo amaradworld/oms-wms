@@ -24,7 +24,7 @@ const TrackingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-slate-900">
       <div className="max-w-2xl mx-auto px-4 py-16">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">

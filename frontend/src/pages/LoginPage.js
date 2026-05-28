@@ -59,21 +59,19 @@ const LoginPage = () => {
     : 'localhost:3000';
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-violet-950 to-indigo-950 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src="/logo.png" alt="Global Supply" className="h-12 mx-auto mb-4" onError={(e) => { e.target.style.display = 'none'; }} />
-          <h1 className="text-4xl font-bold text-white tracking-tight">
-            OMS<span className="text-violet-400">WMS</span>
-          </h1>
-          <p className="text-slate-300 mt-2">Multi-Tenant Warehouse Management</p>
+          <h1 className="text-4xl font-bold text-white tracking-tight">SupplyHub</h1>
+          <p className="text-slate-400 mt-2">Warehouse Management System</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {step === 'company' ? (
             <>
               <div className="text-center mb-6">
-                <Globe size={32} className="mx-auto text-violet-600 mb-2" />
+                <Globe size={32} className="mx-auto text-blue-600 mb-2" />
                 <h2 className="text-xl font-bold">Select Your Company</h2>
                 <p className="text-sm text-slate-500 mt-1">Choose your organization to continue</p>
               </div>
@@ -154,7 +152,7 @@ const LoginPage = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 gradient-primary text-white rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   Sign In to {selectedCompany.name} <ArrowRight size={18} />
                 </button>

@@ -129,21 +129,21 @@ const App = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="sticky top-0 z-30 md:hidden bg-white/90 backdrop-blur-sm border-b border-indigo-100/60 px-4 py-3 flex items-center gap-3">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50">
+        <div className="sticky top-0 z-30 md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
           <button onClick={() => setSidebarOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg">
             <Menu size={22} />
           </button>
-          <div className="text-lg font-bold tracking-tight">OMS<span className="text-violet-500">WMS</span></div>
+          <div className="text-base font-bold tracking-tight text-slate-900">SupplyHub</div>
         </div>
         {selectedFacility && (
-          <div className="gradient-primary text-white px-4 py-2 flex items-center justify-between text-sm shadow-md shadow-indigo-200/50">
+          <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Building2 size={14} />
               <span className="font-medium">{selectedFacility.name}</span>
-              <span className="text-indigo-200 text-xs ml-1">(filtered view)</span>
+              <span className="text-blue-200 text-xs ml-1">(filtered view)</span>
             </div>
-            <button onClick={clearSelectedFacility} className="flex items-center gap-1 text-indigo-200 hover:text-white transition-colors">
+            <button onClick={clearSelectedFacility} className="flex items-center gap-1 text-blue-200 hover:text-white transition-colors">
               <X size={14} /> Show All
             </button>
           </div>

@@ -1,21 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Clock, RefreshCw } from 'lucide-react';
+import { ShoppingCart, Package, IndianRupee, AlertTriangle, Clock, RefreshCw, BarChart3, TrendingUp } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { StatsSkeleton } from '../components/Skeleton';
-import EmptyState from '../components/EmptyState';
 import { toast } from '../components/Toast';
 
-const StatCard = ({ title, value, change, trend, danger, warning }) => {
-  const valueColor = danger ? 'from-red-600 to-rose-500' : warning ? 'from-amber-500 to-orange-400' : 'from-indigo-700 to-violet-600';
+const StatCard = ({ title, value, subtitle, icon: Icon, color }) => {
+  const colors = {
+    blue: 'text-blue-600 bg-blue-50',
+    emerald: 'text-emerald-600 bg-emerald-50',
+    amber: 'text-amber-600 bg-amber-50',
+    rose: 'text-rose-600 bg-rose-50',
+    violet: 'text-violet-600 bg-violet-50',
+    cyan: 'text-cyan-600 bg-cyan-50',
+  };
+  const c = colors[color] || colors.blue;
   return (
-    <div className="card p-4 md:p-6 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-200">
-      <p className="text-xs md:text-sm text-indigo-500 font-semibold uppercase tracking-wider">{title}</p>
-      <div className="flex items-baseline gap-2 mt-1 md:mt-2">
-        <h3 className={`text-xl md:text-2xl font-bold bg-gradient-to-r ${valueColor} bg-clip-text text-transparent`}>{value}</h3>
-        {change && (
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{change}</span>
+    <div className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</p>
+          <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+          {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+        </div>
+        {Icon && (
+          <div className={`p-2.5 rounded-lg ${c}`}>
+            <Icon size={18} />
+          </div>
         )}
       </div>
     </div>
@@ -63,69 +75,101 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-4 md:space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h1 className="text-xl md:text-2xl font-bold">Enterprise Overview</h1>
+    <div className="p-4 md:p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-0.5">Real-time warehouse operations overview</p>
+        </div>
+        <button onClick={fetchStats} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
       {loading ? <StatsSkeleton /> : !stats ? (
-        <div className="card p-8 text-center"><p className="text-slate-400">Dashboard data unavailable. <button onClick={fetchStats} className="text-indigo-600 hover:underline font-medium inline-flex items-center gap-1"><RefreshCw size={14} /> Retry</button></p></div>
+        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+          <p className="text-slate-400">Dashboard data unavailable.</p>
+          <button onClick={fetchStats} className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"><RefreshCw size={14} /> Retry</button>
+        </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-6">
-            <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "—"} change="+12%" trend="up" />
-            <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "—"} change="-5%" trend="down" />
-            <StatCard title="Revenue" value={stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "—"} change="+8%" trend="up" />
-            <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || '—'} />
-            <StatCard title="SLA Breached" value={sla.breached ?? '—'} danger={sla.breached > 0} />
-            <StatCard title="At Risk" value={sla.atRisk ?? '—'} warning={sla.atRisk > 0} />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "—"} subtitle="All time" icon={ShoppingCart} color="blue" />
+            <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "—"} subtitle="Awaiting dispatch" icon={Package} color="amber" />
+            <StatCard title="Revenue" value={stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "—"} subtitle="Total value" icon={IndianRupee} color="emerald" />
+            <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || '—'} subtitle="In inventory" icon={BarChart3} color="violet" />
+            <StatCard title="SLA Breached" value={sla.breached ?? '—'} subtitle={sla.breached > 0 ? 'Requires attention' : 'All good'} icon={AlertTriangle} color="rose" />
+            <StatCard title="At Risk" value={sla.atRisk ?? '—'} subtitle={sla.atRisk > 0 ? 'Approaching deadline' : 'On track'} icon={Clock} color="amber" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="lg:col-span-2 card p-4 md:p-6">
-              <h3 className="font-bold text-sm md:text-base mb-4 text-indigo-900">Orders by Status</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <BarChart3 size={16} className="text-slate-400" />
+                <h3 className="font-semibold text-sm text-slate-700">Orders by Status</h3>
+              </div>
               {chartData.length === 0 ? (
-                <EmptyState icon="analytics" title="No data yet" description="Orders will appear here once the system starts processing." />
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <BarChart3 size={32} className="mb-2 text-slate-300" />
+                  <p className="text-sm">No data yet</p>
+                </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
 
-            <div className="card p-4 md:p-6">
-              <h3 className="font-bold text-sm md:text-base mb-3 md:mb-4 text-indigo-900">SLA Overview</h3>
+            <div className="bg-white border border-slate-200 rounded-xl p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <TrendingUp size={16} className="text-slate-400" />
+                <h3 className="font-semibold text-sm text-slate-700">SLA Overview</h3>
+              </div>
               {slaTotal > 0 ? (
                 <>
-                  <div className="flex h-6 rounded-full overflow-hidden mb-4">
-                    {sla.breached > 0 && <div className="bg-red-500" style={{ width: `${breachedPct}%` }} title={`${sla.breached} breached`} />}
+                  <div className="flex h-2 rounded-full overflow-hidden mb-5 bg-slate-100">
+                    {sla.breached > 0 && <div className="bg-rose-500" style={{ width: `${breachedPct}%` }} title={`${sla.breached} breached`} />}
                     {sla.atRisk > 0 && <div className="bg-amber-400" style={{ width: `${atRiskPct}%` }} title={`${sla.atRisk} at risk`} />}
                     {sla.onTrack > 0 && <div className="bg-emerald-400" style={{ width: `${onTrackPct}%` }} title={`${sla.onTrack} on track`} />}
                   </div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-red-500" /><span>{sla.breached} Breached</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-amber-400" /><span>{sla.atRisk} At Risk</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-emerald-400" /><span>{sla.onTrack} On Track</span></div>
-                    {sla.noDeadline > 0 && <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded bg-slate-300" /><span>{sla.noDeadline} No SLA</span></div>}
+                  <div className="space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-rose-500" /><span className="text-slate-600">Breached</span></div>
+                      <span className="font-semibold text-slate-800">{sla.breached}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-slate-600">At Risk</span></div>
+                      <span className="font-semibold text-slate-800">{sla.atRisk}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-400" /><span className="text-slate-600">On Track</span></div>
+                      <span className="font-semibold text-slate-800">{sla.onTrack}</span>
+                    </div>
+                    {sla.noDeadline > 0 && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-300" /><span className="text-slate-600">No SLA</span></div>
+                        <span className="font-semibold text-slate-800">{sla.noDeadline}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-4 space-y-2 max-h-44 overflow-y-auto">
+                  <div className="mt-5 space-y-2 max-h-44 overflow-y-auto">
                     {sla.breachedOrders?.map(o => (
-                      <div key={o.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
+                      <div key={o.id} className="flex items-center justify-between p-2.5 bg-rose-50 rounded-lg border border-rose-100">
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-red-700 truncate">{o.orderNumber}</div>
-                          <div className="text-[10px] text-red-500">{o.source || '-'} &middot; {o.customerName}</div>
+                          <div className="text-xs font-medium text-rose-700 truncate">{o.orderNumber}</div>
+                          <div className="text-[10px] text-rose-500">{o.source || '-'} &middot; {o.customerName}</div>
                         </div>
-                        <AlertTriangle size={12} className="text-red-500 flex-shrink-0 ml-1" />
+                        <AlertTriangle size={12} className="text-rose-500 flex-shrink-0 ml-1" />
                       </div>
                     ))}
                     {sla.atRiskOrders?.map(o => (
-                      <div key={o.id} className="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-100">
+                      <div key={o.id} className="flex items-center justify-between p-2.5 bg-amber-50 rounded-lg border border-amber-100">
                         <div className="min-w-0">
                           <div className="text-xs font-medium text-amber-700 truncate">{o.orderNumber}</div>
                           <div className="text-[10px] text-amber-500">{formatTimeRemaining(o.slaDeadline)} left</div>
@@ -136,24 +180,31 @@ const Dashboard = () => {
                   </div>
                 </>
               ) : (
-                <EmptyState icon="clock" title="No SLA data" description="SLA deadlines will appear once orders have them set." />
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <Clock size={32} className="mb-2 text-slate-300" />
+                  <p className="text-sm">No SLA data</p>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="card p-4 md:p-6">
-              <h3 className="font-bold text-sm md:text-base mb-3 md:mb-4 text-indigo-900">Low Stock Alerts</h3>
-              <div className="space-y-3 overflow-y-auto max-h-72">
-                {!stats.lowStockItems?.length ? (
-                  <p className="text-green-600 text-xs md:text-sm">All items sufficiently stocked</p>
-                ) : stats.lowStockItems.map((item, i) => (
-                  <div key={i} className="flex justify-between items-center p-2 md:p-3 bg-red-50 rounded-lg border border-red-100">
-                    <span className="text-xs md:text-sm font-medium text-red-700 truncate mr-2">{item.sku?.skuCode || item.skuCode}: {item.sku?.name || item.name}</span>
-                    <span className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded flex-shrink-0">Low</span>
+          <div className="bg-white border border-slate-200 rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Package size={16} className="text-slate-400" />
+              <h3 className="font-semibold text-sm text-slate-700">Low Stock Alerts</h3>
+            </div>
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {!stats.lowStockItems?.length ? (
+                <p className="text-emerald-600 text-sm flex items-center gap-1.5"><TrendingUp size={14} /> All items sufficiently stocked</p>
+              ) : stats.lowStockItems.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-rose-50 rounded-lg border border-rose-100">
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-rose-700">{item.sku?.skuCode || item.skuCode}</span>
+                    <span className="text-xs text-rose-500 ml-2">{item.sku?.name || item.name}</span>
                   </div>
-                ))}
-              </div>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-rose-200 text-rose-800">Low Stock</span>
+                </div>
+              ))}
             </div>
           </div>
         </>
