@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X, Play } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Layers, Plus, ChevronDown, ChevronRight, CheckCircle, Clock, X, Play, QrCode, Loader2, Package } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -12,6 +12,7 @@ const STATUS_BADGE = {
   PACKING: 'bg-cyan-100 text-cyan-800',
   IN_PROGRESS: 'bg-blue-100 text-blue-800',
   COMPLETED: 'bg-green-100 text-green-800',
+  PICKED: 'bg-emerald-100 text-emerald-700',
 };
 
 const WavePicking = () => {
@@ -24,11 +25,14 @@ const WavePicking = () => {
   const [selectedOrders, setSelectedOrders] = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [waveOrders, setWaveOrders] = useState(null);
+  const [scanInput, setScanInput] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scanOrderId, setScanOrderId] = useState(null);
+  const scanRef = useRef(null);
 
   useEffect(() => {
     loadWaves();
     loadOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFacility]);
 
   const loadWaves = async () => {
@@ -65,7 +69,6 @@ const WavePicking = () => {
       loadOrders();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to create wave');
-      console.error(e);
     }
   };
 
@@ -74,29 +77,58 @@ const WavePicking = () => {
   };
 
   const expandWave = async (wave) => {
-    if (expanded === wave.id) { setExpanded(null); setWaveOrders(null); return; }
+    if (expanded === wave.id) { setExpanded(null); setWaveOrders(null); setScanOrderId(null); return; }
     setExpanded(wave.id);
     try {
       const { data } = await API.get(`/waves/${wave.id}/orders`);
       setWaveOrders(data);
+      if (data.orders?.length) setScanOrderId(data.orders[0].orderId);
     } catch (e) { setWaveOrders(null); }
   };
 
   const startWave = async (id) => {
     try {
       await API.put(`/waves/${id}/start`);
+      toast.success('Wave started');
       loadWaves();
-    } catch (e) { console.error(e); }
+    } catch (e) { toast.error('Failed to start wave'); }
   };
 
   const completeWave = async (id) => {
     try {
       await API.put(`/waves/${id}/complete`);
+      toast.success('Wave completed');
       loadWaves();
-    } catch (e) { console.error(e); }
+    } catch (e) { toast.error('Failed to complete wave'); }
+  };
+
+  const handleScan = async (e) => {
+    e.preventDefault();
+    if (!scanInput.trim() || !scanOrderId || !expanded) return;
+    setScanning(true);
+    try {
+      const { data } = await API.post(`/waves/${expanded}/scan-item`, {
+        skuCode: scanInput.trim(),
+        orderId: scanOrderId,
+      });
+      toast.success(data.message);
+      // Refresh wave orders to show updated status
+      const refreshed = await API.get(`/waves/${expanded}/orders`);
+      setWaveOrders(refreshed.data);
+      setScanInput('');
+      scanRef.current?.focus();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Scan failed');
+      setScanInput('');
+      scanRef.current?.focus();
+    } finally {
+      setScanning(false);
+    }
   };
 
   if (loading) return <Skeleton />;
+
+  const currentOrderItems = waveOrders?.orders?.find(o => o.orderId === scanOrderId)?.order?.items || [];
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -145,19 +177,68 @@ const WavePicking = () => {
                 )}
               </div>
               {expanded === wave.id && waveOrders && (
-                <div className="border-t border-slate-100 px-4 py-3 bg-slate-50">
-                  {waveOrders.orders?.map(wo => {
-                    const orderStatus = wo.order?.orderStatus || wo.status;
-                    return (
-                      <div key={wo.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                        <div>
-                          <span className="text-sm font-medium text-slate-700">{wo.order?.orderNumber}</span>
-                          <span className="text-xs text-slate-400 ml-2">{wo.order?.customerName}</span>
+                <div className="border-t border-slate-100 px-4 py-3 bg-slate-50 space-y-3">
+                  <div className="flex gap-2 flex-wrap">
+                    {waveOrders.orders?.map(wo => {
+                      const allPicked = wo.order?.items?.every(i => i.status === 'PICKED');
+                      return (
+                        <button key={wo.id} onClick={() => setScanOrderId(wo.orderId)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${scanOrderId === wo.orderId ? 'bg-indigo-100 border-indigo-300 text-indigo-700' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                          <Package size={13} />
+                          {wo.order?.orderNumber}
+                          {allPicked && <CheckCircle size={12} className="text-green-500" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {currentOrderItems.length > 0 && (
+                    <>
+                      <form onSubmit={handleScan} className="flex gap-2">
+                        <div className="relative flex-1">
+                          <QrCode size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            ref={scanRef}
+                            autoFocus
+                            type="text"
+                            value={scanInput}
+                            onChange={e => setScanInput(e.target.value)}
+                            placeholder="Scan SKU barcode to verify..."
+                            className="w-full pl-9 pr-3 py-2 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200"
+                          />
                         </div>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[orderStatus] || 'bg-slate-100 text-slate-600'}`}>{orderStatus}</span>
-                      </div>
-                    );
-                  })}
+                        <button type="submit" disabled={scanning} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                          {scanning ? <Loader2 size={14} className="animate-spin" /> : <QrCode size={14} />}
+                          Verify
+                        </button>
+                      </form>
+
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-white border-b">
+                          <tr>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500">SKU</th>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500">Product</th>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Qty</th>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentOrderItems.map((item, i) => (
+                            <tr key={item.id || i} className="border-b border-slate-100">
+                              <td className="px-3 py-2 font-mono text-xs">{item.sku?.skuCode}</td>
+                              <td className="px-3 py-2 text-slate-600">{item.sku?.name || '—'}</td>
+                              <td className="px-3 py-2 text-right">{item.quantity}</td>
+                              <td className="px-3 py-2">
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === 'PICKED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                  {item.status === 'PICKED' ? '✓ Picked' : 'Pending'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  )}
                 </div>
               )}
             </div>
