@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Scan, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, X, CheckCircle, QrCode, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -13,7 +13,9 @@ const StockTransfer = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [detailTransfer, setDetailTransfer] = useState(null);
-  const [scanValues, setScanValues] = useState({});
+  const [scanning, setScanning] = useState(false);
+  const [scanInput, setScanInput] = useState('');
+  const scanRef = useRef(null);
   const [form, setForm] = useState({ fromWarehouseId: selectedFacility?.id || '', toWarehouseId: '', notes: '', items: [{ skuCode: '', quantity: 1 }] });
 
   const fetchData = useCallback(async () => {
@@ -44,25 +46,29 @@ const StockTransfer = () => {
     try {
       const { data } = await API.get(`/transfers/${t.id}`);
       setDetailTransfer(data);
-      const scans = {};
-      data.items.forEach(i => { scans[i.sku?.skuCode] = i.receivedQty || 0; });
-      setScanValues(scans);
     } catch { toast.error('Failed to load transfer details'); }
   };
 
-  const handleScan = async (skuCode) => {
-    if (!detailTransfer) return;
+  const handleScan = async (e) => {
+    e.preventDefault();
+    if (!scanInput.trim() || !detailTransfer) return;
+    setScanning(true);
     try {
-      const receivedQty = parseInt(scanValues[skuCode]) || 0;
-      const { data } = await API.put(`/transfers/${detailTransfer.id}/scan-item`, { skuCode, receivedQty });
-      const scans = { ...scanValues, [skuCode]: data.receivedQty };
-      setScanValues(scans);
+      const { data } = await API.put(`/transfers/${detailTransfer.id}/scan-item`, { skuCode: scanInput.trim() });
       setDetailTransfer(prev => ({
         ...prev,
         items: prev.items.map(i => i.id === data.id ? { ...i, receivedQty: data.receivedQty, status: data.status } : i),
       }));
-      toast.success(`Scanned ${skuCode}: ${data.receivedQty} received`);
-    } catch (err) { toast.error(err.response?.data?.message || 'Scan failed'); }
+      toast.success(`Scanned ${data.sku.skuCode}: ${data.receivedQty} total`);
+      setScanInput('');
+      scanRef.current?.focus();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Scan failed');
+      setScanInput('');
+      scanRef.current?.focus();
+    } finally {
+      setScanning(false);
+    }
   };
 
   const handleComplete = async () => {
@@ -135,6 +141,27 @@ const StockTransfer = () => {
 
             {detailTransfer.notes && <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-lg">{detailTransfer.notes}</p>}
 
+            {canReceive && (
+              <form onSubmit={handleScan} className="flex gap-2">
+                <div className="relative flex-1">
+                  <QrCode size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    ref={scanRef}
+                    autoFocus
+                    type="text"
+                    value={scanInput}
+                    onChange={e => setScanInput(e.target.value)}
+                    placeholder="Scan SKU barcode to add +1 qty..."
+                    className="w-full pl-9 pr-3 py-2.5 border-2 rounded-xl font-mono text-sm outline-none focus:ring-4 focus:ring-blue-200"
+                  />
+                </div>
+                <button type="submit" disabled={scanning} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+                  {scanning ? <Loader2 size={16} className="animate-spin" /> : <QrCode size={16} />}
+                  Scan
+                </button>
+              </form>
+            )}
+
             <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 border-b">
@@ -143,7 +170,6 @@ const StockTransfer = () => {
                     <th className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase text-right">Qty Requested</th>
                     <th className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase text-right">Qty Received</th>
                     <th className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Status</th>
-                    {canReceive && <th className="px-3 py-2"></th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -151,28 +177,12 @@ const StockTransfer = () => {
                     <tr key={item.id} className="border-b border-slate-100">
                       <td className="px-3 py-2.5 text-sm font-mono">{item.sku?.skuCode}</td>
                       <td className="px-3 py-2.5 text-sm text-right">{item.quantity}</td>
-                      <td className="px-3 py-2.5 text-sm text-right">{item.receivedQty || '-'}</td>
+                      <td className="px-3 py-2.5 text-sm text-right font-semibold">{item.receivedQty || 0}</td>
                       <td className="px-3 py-2.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === 'RECEIVED' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === 'RECEIVED' ? 'bg-green-100 text-green-700' : item.status === 'PARTIAL' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
                           {item.status}
                         </span>
                       </td>
-                      {canReceive && (
-                        <td className="px-3 py-2.5">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number" min="0" max={item.quantity}
-                              value={scanValues[item.sku?.skuCode] || 0}
-                              onChange={e => setScanValues({ ...scanValues, [item.sku?.skuCode]: parseInt(e.target.value) || 0 })}
-                              className="w-16 px-2 py-1 border rounded text-sm text-center"
-                              placeholder="Qty"
-                            />
-                            <button onClick={() => handleScan(item.sku?.skuCode)} className="flex items-center gap-1 text-xs px-2 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200">
-                              <Scan size={14} /> Scan
-                            </button>
-                          </div>
-                        </td>
-                      )}
                     </tr>
                   ))}
                 </tbody>

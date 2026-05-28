@@ -46,7 +46,7 @@ export const createTransfer = async (req: AuthRequest, res: Response) => {
 };
 
 export const scanTransferItem = async (req: AuthRequest, res: Response) => {
-  const { skuCode, receivedQty } = req.body;
+  const { skuCode } = req.body;
   const id = req.params.id as string;
   const tenantId = req.user!.tenant_id;
 
@@ -66,11 +66,47 @@ export const scanTransferItem = async (req: AuthRequest, res: Response) => {
   });
   if (!item) return res.status(404).json({ message: 'Item not in this transfer' });
 
+  if (item.receivedQty >= item.quantity) return res.status(400).json({ message: `${skuCode} already fully scanned` });
+
+  const newQty = item.receivedQty + 1;
+  const newStatus = newQty >= item.quantity ? 'RECEIVED' : 'PARTIAL';
+
   const updated = await prisma.stockTransferItem.update({
     where: { id: item.id },
-    data: { receivedQty: receivedQty ?? item.quantity, status: 'RECEIVED' },
+    data: { receivedQty: newQty, status: newStatus },
     include: { sku: { select: { skuCode: true, name: true } } },
   });
+
+  // Also update inventory for receiving warehouse
+  await prisma.inventory.upsert({
+    where: {
+      warehouseId_skuId_binLocation: {
+        warehouseId: transfer.toWarehouseId,
+        skuId: sku.id,
+        binLocation: '',
+      },
+    },
+    update: {
+      quantityOnHand: { increment: 1 },
+      quantityAvailable: { increment: 1 },
+    },
+    create: {
+      warehouseId: transfer.toWarehouseId,
+      skuId: sku.id,
+      binLocation: '',
+      quantityOnHand: 1,
+      quantityAvailable: 1,
+      virtualInventory: 0,
+      notFound: 0,
+      type: 'Good',
+      status: 'ACTIVE',
+      inventoryAllocation: true,
+      inventorySync: true,
+      skuMixing: true,
+      shelfOnHold: false,
+    },
+  });
+
   res.json(updated);
 };
 
