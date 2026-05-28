@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Package, RefreshCw, Sliders } from 'lucide-react';
+import { AlertTriangle, Package, RefreshCw, Sliders, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import Skeleton from '../components/Skeleton';
+import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { toast } from '../components/Toast';
 
 const InventoryAlerts = () => {
   const [alerts, setAlerts] = useState([]);
   const [total, setTotal] = useState(0);
   const [threshold, setThreshold] = useState(5);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
   const { selectedFacility } = useAuth();
 
   const loadAlerts = async (t) => {
@@ -20,8 +22,20 @@ const InventoryAlerts = () => {
       const { data } = await API.get('/inventory/alerts', { params });
       setAlerts(data.alerts || []);
       setTotal(data.total || 0);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      toast.error('Failed to load inventory alerts');
+      setAlerts([]);
+      setTotal(0);
+    }
     setLoading(false);
+  };
+
+  const handleApply = async () => {
+    if (threshold < 1) { toast.error('Threshold must be at least 1'); return; }
+    if (threshold > 1000) { toast.error('Threshold max is 1000'); return; }
+    setApplying(true);
+    await loadAlerts(threshold);
+    setApplying(false);
   };
 
   useEffect(() => { loadAlerts(); }, [selectedFacility]);
@@ -40,10 +54,10 @@ const InventoryAlerts = () => {
           <div className="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm">
             <Sliders size={14} className="text-slate-400" />
             <label className="text-slate-500">Threshold:</label>
-            <input type="number" value={threshold} onChange={e => setThreshold(Number(e.target.value))} className="w-16 text-sm outline-none" min="1" />
-            <button onClick={() => loadAlerts(threshold)} className="text-blue-600 font-medium text-xs">Apply</button>
+            <input type="number" value={threshold} onChange={e => setThreshold(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))} className="w-16 text-sm outline-none" min="1" max="1000" />
+            <button onClick={handleApply} disabled={applying} className="text-blue-600 font-medium text-xs disabled:opacity-50">{applying ? 'Applying...' : 'Apply'}</button>
           </div>
-          <button onClick={() => loadAlerts()} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50">
+          <button onClick={() => loadAlerts()} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
             <RefreshCw size={14} />
           </button>
         </div>
@@ -55,7 +69,7 @@ const InventoryAlerts = () => {
         <div className="card p-4 border-amber-200"><p className="text-xs text-amber-600 font-semibold uppercase">Low Stock</p><p className="text-2xl font-bold mt-1 text-amber-600">{lowStock.length}</p></div>
       </div>
 
-      {loading ? <Skeleton /> : alerts.length === 0 ? (
+      {loading ? <TableSkeleton rows={4} cols={6} /> : alerts.length === 0 ? (
         <EmptyState icon="package" title="All stocked up" description="No items below the threshold." />
       ) : (
         <div className="card overflow-hidden">

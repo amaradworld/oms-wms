@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, RefreshCw } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { StatsSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { toast } from '../components/Toast';
 
 const StatCard = ({ title, value, change, trend, danger, warning }) => {
   const valueColor = danger ? 'from-red-600 to-rose-500' : warning ? 'from-amber-500 to-orange-400' : 'from-indigo-700 to-violet-600';
@@ -23,15 +24,19 @@ const StatCard = ({ title, value, change, trend, danger, warning }) => {
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { selectedFacility } = useAuth();
 
   const fetchStats = useCallback(async () => {
+    setLoading(true);
     const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
     try {
       const res = await API.get('/dashboard/stats', { params });
       setStats(res.data);
     } catch {
-      setStats({ totalOrders: 1284, pendingOrders: 432, totalRevenue: 452800, ordersByStatus: [], lowStockItems: [] });
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
     }
   }, [selectedFacility]);
 
@@ -47,7 +52,10 @@ const Dashboard = () => {
   const onTrackPct = Math.round((sla.onTrack / denom) * 100);
 
   const formatTimeRemaining = (deadline) => {
-    const diff = new Date(deadline).getTime() - Date.now();
+    if (!deadline) return '—';
+    const ms = new Date(deadline).getTime();
+    if (isNaN(ms)) return '—';
+    const diff = ms - Date.now();
     if (diff <= 0) return 'Breached';
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -60,13 +68,15 @@ const Dashboard = () => {
         <h1 className="text-xl md:text-2xl font-bold">Enterprise Overview</h1>
       </div>
 
-      {!stats ? <StatsSkeleton /> : (
+      {loading ? <StatsSkeleton /> : !stats ? (
+        <div className="card p-8 text-center"><p className="text-slate-400">Dashboard data unavailable. <button onClick={fetchStats} className="text-indigo-600 hover:underline font-medium inline-flex items-center gap-1"><RefreshCw size={14} /> Retry</button></p></div>
+      ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-6">
             <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "—"} change="+12%" trend="up" />
             <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "—"} change="-5%" trend="down" />
             <StatCard title="Revenue" value={stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : "—"} change="+8%" trend="up" />
-            <StatCard title="Active SKUs" value="10" />
+            <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || '—'} />
             <StatCard title="SLA Breached" value={sla.breached ?? '—'} danger={sla.breached > 0} />
             <StatCard title="At Risk" value={sla.atRisk ?? '—'} warning={sla.atRisk > 0} />
           </div>

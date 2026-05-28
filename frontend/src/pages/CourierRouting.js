@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Edit3, Trash2, Search, X, RefreshCw } from 'lucide-react';
+import { Truck, Plus, Edit3, Trash2, Search, X, RefreshCw, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
-import Skeleton from '../components/Skeleton';
+import { TableSkeleton } from '../components/Skeleton';
 
 const SPEED_COLORS = {
   express: 'bg-purple-100 text-purple-700',
@@ -25,13 +25,18 @@ const CourierRouting = () => {
   const [suggestForm, setSuggestForm] = useState({
     pincode: '', weight: '', orderValue: '',
   });
+  const [saving, setSaving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const loadConfigs = async () => {
     setLoading(true);
     try {
       const { data } = await API.get('/courier/routing');
-      setConfigs(data);
-    } catch (e) { console.error(e); }
+      setConfigs(data || []);
+    } catch (e) {
+      toast.error('Failed to load routing configs');
+      setConfigs([]);
+    }
     setLoading(false);
   };
 
@@ -61,6 +66,7 @@ const CourierRouting = () => {
 
   const saveConfig = async () => {
     if (!form.courierName) { toast.error('Courier name is required'); return; }
+    setSaving(true);
     try {
       await API.post('/courier/routing', {
         ...form,
@@ -75,6 +81,7 @@ const CourierRouting = () => {
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to save');
     }
+    setSaving(false);
   };
 
   const deleteConfig = async (id) => {
@@ -89,6 +96,7 @@ const CourierRouting = () => {
   };
 
   const runSuggest = async () => {
+    setSuggesting(true);
     try {
       const { data } = await API.post('/courier/routing/suggest', {
         pincode: suggestForm.pincode || undefined,
@@ -99,6 +107,7 @@ const CourierRouting = () => {
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to suggest');
     }
+    setSuggesting(false);
   };
 
   return (
@@ -121,7 +130,7 @@ const CourierRouting = () => {
         </div>
       </div>
 
-      {loading ? <Skeleton /> : configs.length === 0 ? (
+      {loading ? <TableSkeleton rows={4} cols={7} /> : configs.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
           <Truck size={48} className="mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No routing rules</p>
@@ -177,7 +186,7 @@ const CourierRouting = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Courier Name</label>
-                <input type="text" value={form.courierName} onChange={e => setForm({ ...form, courierName: e.target.value.toUpperCase() })} placeholder="SHIPROCKET" className="input-field text-sm" disabled={!!editing} />
+                <input type="text" value={form.courierName} onChange={e => setForm({ ...form, courierName: e.target.value.toUpperCase() })} placeholder="SHIPROCKET" className="input-field text-sm disabled:opacity-50 disabled:bg-slate-100 disabled:cursor-not-allowed" disabled={!!editing} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -221,8 +230,8 @@ const CourierRouting = () => {
                 <input type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} />
                 Active
               </label>
-              <button onClick={saveConfig} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 font-medium text-sm mt-2">
-                {editing ? 'Update' : 'Create'} Rule
+              <button onClick={saveConfig} disabled={saving} className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium text-sm mt-2 flex items-center justify-center gap-2">
+                {saving ? <Loader2 size={16} className="animate-spin" /> : null} {saving ? 'Saving...' : `${editing ? 'Update' : 'Create'} Rule`}
               </button>
             </div>
           </div>
@@ -251,8 +260,8 @@ const CourierRouting = () => {
                   <input type="number" value={suggestForm.orderValue} onChange={e => setSuggestForm({ ...suggestForm, orderValue: e.target.value })} className="input-field text-sm" />
                 </div>
               </div>
-              <button onClick={runSuggest} className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-                Suggest
+              <button onClick={runSuggest} disabled={suggesting} className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2">
+                {suggesting ? <Loader2 size={16} className="animate-spin" /> : null} {suggesting ? 'Suggesting...' : 'Suggest'}
               </button>
             </div>
             {suggestResult && (

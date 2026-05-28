@@ -20,6 +20,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       where: orderWhere,
     });
 
+    const activeSkus = await prisma.inventory.count({
+      where: { ...invWhere, quantityOnHand: { gt: 0 } },
+    });
+
     const lowStockItems = (await prisma.inventory.findMany({
       where: invWhere,
       include: { sku: true, warehouse: true },
@@ -44,6 +48,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
       totalOrders: totalOrders || 0,
       pendingOrders: pendingOrders || 0,
       totalRevenue: totalRevenue._sum.totalAmount || 0,
+      activeSkus: activeSkus || 0,
       ordersByStatus: ordersByStatus || [],
       lowStockItems: lowStockItems || [],
       sla: {

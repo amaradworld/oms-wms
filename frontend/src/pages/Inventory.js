@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, MoreVertical, Download, Printer, Loader2, QrCode, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, MoreVertical, Download, Printer, Loader2, QrCode, CheckCircle2, RefreshCw } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import BarcodeCell from '../components/BarcodeCell';
@@ -7,11 +7,13 @@ import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import EmptyState from '../components/EmptyState';
+import { TableSkeleton } from '../components/Skeleton';
 
 const Inventory = () => {
   const [search, setSearch] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { selectedFacility } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [printingLabel, setPrintingLabel] = useState(null);
@@ -20,16 +22,18 @@ const Inventory = () => {
   const [lastScanned, setLastScanned] = useState(null);
   const scanRef = useRef(null);
 
-  const fetchInventory = useCallback(async () => {
-    setLoading(true);
+  const fetchInventory = useCallback(async (silent) => {
+    if (silent) setRefreshing(true); else setLoading(true);
     try {
       const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
       const res = await API.get('/inventory', { params });
       setItems(Array.isArray(res.data) ? res.data : []);
     } catch {
+      toast.error('Failed to load inventory');
       setItems([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [selectedFacility]);
 
@@ -47,7 +51,7 @@ const Inventory = () => {
       });
       setLastScanned(res.data.sku);
       toast.success(`+1 ${res.data.sku.skuCode} (${res.data.sku.name})`);
-      fetchInventory();
+      fetchInventory(true);
       setScanInput('');
       scanRef.current?.focus();
     } catch (err) {
@@ -98,10 +102,13 @@ const Inventory = () => {
   );
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Inventory Management</h1>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => fetchInventory()} disabled={loading || refreshing} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
+            <RefreshCw size={16} /> Refresh
+          </button>
           <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
             <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
           </button>
@@ -174,7 +181,7 @@ const Inventory = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="12" className="p-8 text-center text-slate-500">Loading...</td></tr>
+                <tr><td colSpan="12"><TableSkeleton rows={5} cols={12} /></td></tr>
               ) : filtered.length === 0 ? (
                 <tr><td colSpan="12"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
               ) : filtered.map((item, i) => (
