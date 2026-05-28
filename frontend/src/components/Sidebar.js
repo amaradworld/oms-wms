@@ -71,11 +71,14 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       children: [
         { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
         { id: 'grn', label: 'GRN', icon: FileText },
-        { id: 'outbound', label: 'Outbound', icon: Truck, group: true, children: [
-          { id: 'gatepass', label: 'Gatepass', icon: FileText },
-          { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
-          { id: 'gatepass-order', label: 'Gatepass Order', icon: FileText },
-        ]},
+      ],
+    },
+    {
+      id: 'outbound', label: 'Outbound', icon: Truck, group: true,
+      children: [
+        { id: 'gatepass', label: 'Gatepass', icon: FileText },
+        { id: 'stocktransfer', label: 'Stock Transfer', icon: Truck },
+        { id: 'gatepass-order', label: 'Gatepass Order', icon: FileText },
       ],
     },
     {
