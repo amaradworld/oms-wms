@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ShoppingCart, Package, IndianRupee, AlertTriangle, Clock, RefreshCw, BarChart3, TrendingUp, Box, Tag, Building2, Layers } from 'lucide-react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ShoppingCart, Package, IndianRupee, AlertTriangle, Clock, RefreshCw, BarChart3, TrendingUp } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { StatsSkeleton } from '../components/Skeleton';
@@ -64,9 +64,9 @@ const Dashboard = () => {
   const onTrackPct = Math.round((sla.onTrack / denom) * 100);
 
   const formatTimeRemaining = (deadline) => {
-    if (!deadline) return '—';
+    if (!deadline) return 'ΓÇö';
     const ms = new Date(deadline).getTime();
-    if (isNaN(ms)) return '—';
+    if (isNaN(ms)) return 'ΓÇö';
     const diff = ms - Date.now();
     if (diff <= 0) return 'Breached';
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -94,18 +94,12 @@ const Dashboard = () => {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "—"} subtitle="All time" icon={ShoppingCart} color="blue" />
-            <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "—"} subtitle="Awaiting dispatch" icon={Package} color="amber" />
-            <StatCard title="Revenue" value={stats.totalRevenue ? `₹${(stats.totalRevenue / 100000).toFixed(1)}L` : "—"} subtitle="Order value" icon={IndianRupee} color="emerald" />
-            <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || '—'} subtitle="In inventory" icon={BarChart3} color="violet" />
-            <StatCard title="Total Items" value={stats.totalQtyOnHand?.toLocaleString() || '—'} subtitle="Quantity on hand" icon={Box} color="cyan" />
-            <StatCard title="Inventory Value" value={stats.totalInventoryValue ? `₹${(stats.totalInventoryValue / 100000).toFixed(1)}L` : "—"} subtitle="Stock value" icon={IndianRupee} color="emerald" />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <StatCard title="Available" value={stats.totalQtyAvailable?.toLocaleString() || '—'} subtitle="Ready to sell" icon={Layers} color="blue" />
-            <StatCard title="Blocked" value={stats.totalQtyBlocked?.toLocaleString() || '—'} subtitle="Reserved stock" icon={AlertTriangle} color="rose" />
-            <StatCard title="SLA Breached" value={sla.breached ?? '—'} subtitle={sla.breached > 0 ? 'Requires attention' : 'All good'} icon={AlertTriangle} color="rose" />
-            <StatCard title="At Risk" value={sla.atRisk ?? '—'} subtitle={sla.atRisk > 0 ? 'Approaching deadline' : 'On track'} icon={Clock} color="amber" />
+            <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "ΓÇö"} subtitle="All time" icon={ShoppingCart} color="blue" />
+            <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "ΓÇö"} subtitle="Awaiting dispatch" icon={Package} color="amber" />
+            <StatCard title="Revenue" value={stats.totalRevenue ? `Γé╣${stats.totalRevenue.toLocaleString()}` : "ΓÇö"} subtitle="Total value" icon={IndianRupee} color="emerald" />
+            <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || 'ΓÇö'} subtitle="In inventory" icon={BarChart3} color="violet" />
+            <StatCard title="SLA Breached" value={sla.breached ?? 'ΓÇö'} subtitle={sla.breached > 0 ? 'Requires attention' : 'All good'} icon={AlertTriangle} color="rose" />
+            <StatCard title="At Risk" value={sla.atRisk ?? 'ΓÇö'} subtitle={sla.atRisk > 0 ? 'Approaching deadline' : 'On track'} icon={Clock} color="amber" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -121,19 +115,13 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
-                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={{ stroke: '#e2e8f0' }} />
                     <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                    <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2.5} fill="url(#colorCount)" dot={{ fill: '#3b82f6', stroke: '#fff', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
-                  </AreaChart>
+                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
@@ -195,66 +183,6 @@ const Dashboard = () => {
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
                   <Clock size={32} className="mb-2 text-slate-300" />
                   <p className="text-sm">No SLA data</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Tag size={16} className="text-slate-400" />
-                <h3 className="font-semibold text-sm text-slate-700">Brand-wise Inventory</h3>
-              </div>
-              {!stats.brandWise?.length ? (
-                <p className="text-sm text-slate-400">No brand data</p>
-              ) : (
-                <div className="space-y-3">
-                  {stats.brandWise.map((b, i) => {
-                    const maxCount = stats.brandWise[0].count;
-                    const pct = Math.round((b.count / maxCount) * 100);
-                    const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-cyan-500', 'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500', 'bg-slate-500'];
-                    return (
-                      <div key={b.brand} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700 truncate">{b.brand}</span>
-                          <span className="text-slate-500 ml-2">{b.count.toLocaleString()} units</span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${colors[i % colors.length]} transition-all duration-500`} style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Building2 size={16} className="text-slate-400" />
-                <h3 className="font-semibold text-sm text-slate-700">Warehouse-wise Stock</h3>
-              </div>
-              {!stats.warehouseWise?.length ? (
-                <p className="text-sm text-slate-400">No warehouse data</p>
-              ) : (
-                <div className="space-y-3">
-                  {stats.warehouseWise.map((w, i) => {
-                    const maxCount = stats.warehouseWise[0].count;
-                    const pct = maxCount > 0 ? Math.round((w.count / maxCount) * 100) : 0;
-                    const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-cyan-500', 'bg-rose-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500', 'bg-slate-500'];
-                    return (
-                      <div key={w.name} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-slate-700 truncate">{w.name}</span>
-                          <span className="text-slate-500 ml-2">{w.count.toLocaleString()} units</span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${colors[i % colors.length]} transition-all duration-500`} style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               )}
             </div>
