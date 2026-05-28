@@ -31,11 +31,11 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 
     const inventoryAgg = await prisma.inventory.aggregate({
       where: invWhere,
-      _sum: { quantityOnHand: true, quantityAvailable: true, quantityBlocked: true },
+      _sum: { quantityOnHand: true, quantityAvailable: true, quantityReserved: true },
     });
     const totalQtyOnHand = inventoryAgg._sum.quantityOnHand || 0;
     const totalQtyAvailable = inventoryAgg._sum.quantityAvailable || 0;
-    const totalQtyBlocked = inventoryAgg._sum.quantityBlocked || 0;
+    const totalQtyBlocked = inventoryAgg._sum.quantityReserved || 0;
 
     const brandAgg = await prisma.inventory.groupBy({
       by: ['skuId'],
