@@ -56,8 +56,15 @@ function computeSlaDeadline(source?: string): Date {
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { orderNumber, customerName, shippingAddress, items, warehouseId } = req.body;
-    const source = req.body.source || 'MANUAL';
+    const {
+      orderNumber, customerName, shippingAddress, items, warehouseId, source,
+      displayOrderCode, customerCode, customerGstin, notificationEmail, notificationMobile,
+      currency, paymentMode, paymentStatus, channelProcessingTime, deliverMode, pdfAttachment,
+      orderAmount, discountAmount, giftWrapCharges, shippingCharges,
+      billingName, billingAddress1, billingAddress2, billingCountry, billingState,
+      billingCity, billingDistrict, billingPinCode, billingPhone, billingLatitude, billingLongitude, billingEmail,
+    } = req.body;
+    const src = source || 'MANUAL';
     const tenantId = req.user!.tenant_id;
 
     if (!items || items.length === 0) {
@@ -65,22 +72,42 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    const fallbackBilling = billingName ? {
+      billingName, billingAddress1, billingAddress2, billingCountry, billingState,
+      billingCity, billingDistrict, billingPinCode, billingPhone, billingLatitude, billingLongitude, billingEmail,
+    } : {};
+
     const order = await prisma.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
-          orderNumber,
-          customerName,
-          shippingAddress,
-          tenantId,
-          source,
-          slaDeadline: computeSlaDeadline(source),
+          orderNumber, customerName, shippingAddress, tenantId,
+          source: src,
+          displayOrderCode: displayOrderCode || null,
+          customerCode: customerCode || null,
+          customerGstin: customerGstin || null,
+          notificationEmail: notificationEmail || null,
+          notificationMobile: notificationMobile || null,
+          currency: currency || 'INR',
+          paymentMode: paymentMode || null,
+          paymentStatus: paymentStatus || null,
+          channelProcessingTime: channelProcessingTime ? new Date(channelProcessingTime) : null,
+          deliverMode: deliverMode || null,
+          pdfAttachment: pdfAttachment || null,
+          orderAmount: orderAmount ? parseFloat(orderAmount) : null,
+          discountAmount: discountAmount ? parseFloat(discountAmount) : 0,
+          giftWrapCharges: giftWrapCharges ? parseFloat(giftWrapCharges) : 0,
+          shippingCharges: shippingCharges ? parseFloat(shippingCharges) : 0,
+          slaDeadline: computeSlaDeadline(src),
           warehouseId: warehouseId || null,
+          ...fallbackBilling,
           items: {
             create: items.map(i => ({
               skuId: i.skuId,
               quantity: i.quantity,
               unitPrice: i.unitPrice || 0,
-              totalAmount: (i.unitPrice || 0) * i.quantity,
+              mrp: i.mrp || null,
+              discountAmount: i.discountAmount || 0,
+              totalAmount: ((i.unitPrice || 0) * i.quantity) - (i.discountAmount || 0),
             })),
           },
         },

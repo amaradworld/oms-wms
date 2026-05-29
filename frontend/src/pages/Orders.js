@@ -267,16 +267,29 @@ const Orders = () => {
 const ManualOrderModal = ({ onClose, onSuccess }) => {
   const [form, setForm] = useState({
     orderNumber: 'MAN-' + Date.now().toString(36).toUpperCase(),
-    customerName: '',
-    shippingAddress: '',
+    displayOrderCode: '', source: '', orderDate: new Date().toISOString().split('T')[0],
+    paymentMode: '', currency: 'INR', warehouseId: '',
+    channelProcessingTime: '', pdfAttachment: '', deliverMode: '',
+    customerCode: '', customerName: '', notificationEmail: '', notificationMobile: '', customerGstin: '',
+    billingName: '', billingAddress1: '', billingAddress2: '',
+    billingCountry: 'India', billingState: '', billingCity: '', billingDistrict: '',
+    billingPinCode: '', billingPhone: '', billingLatitude: '', billingLongitude: '', billingEmail: '',
+    shippingAddress: '', shippingSameAsBilling: true,
+    discountAmount: 0, giftWrapCharges: 0, shippingCharges: 0,
   });
   const [items, setItems] = useState([]);
   const [barcode, setBarcode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [warehouses, setWarehouses] = useState([]);
   const scanRef = useRef(null);
+  const { selectedFacility } = useAuth();
 
   useEffect(() => { scanRef.current?.focus(); }, []);
+  useEffect(() => {
+    API.get('/warehouses').then(r => { setWarehouses(Array.isArray(r.data) ? r.data : []); }).catch(() => {});
+    if (selectedFacility?.id) setForm(f => ({ ...f, warehouseId: selectedFacility.id }));
+  }, [selectedFacility]);
 
   const handleScan = async () => {
     const code = barcode.trim();
@@ -290,25 +303,42 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
       const existing = items.find(i => i.skuId === sku.id);
       if (existing) {
         setItems(items.map(i => i.skuId === sku.id ? { ...i, quantity: i.quantity + 1 } : i));
-        toast.success(`${sku.skuCode} qty → ${existing.quantity + 1}`);
       } else {
-        setItems([...items, { skuId: sku.id, skuCode: sku.skuCode, name: sku.name, quantity: 1, unitPrice: sku.mrp || 0 }]);
-        toast.success(`${sku.skuCode} added`);
+        setItems([...items, { skuId: sku.id, skuCode: sku.skuCode, name: sku.name, quantity: 1, unitPrice: sku.mrp || 0, mrp: sku.mrp || 0, discountAmount: 0 }]);
       }
       setBarcode('');
-    } catch {
-      toast.error('Error looking up SKU');
-    } finally {
-      setScanning(false);
-      scanRef.current?.focus();
-    }
+    } catch { toast.error('Error looking up SKU'); } finally { setScanning(false); scanRef.current?.focus(); }
   };
 
-  const updateUnitPrice = (skuId, value) => {
-    setItems(items.map(i => i.skuId === skuId ? { ...i, unitPrice: parseFloat(value) || 0 } : i));
+  const updateItem = (skuId, field, value) => {
+    setItems(items.map(i => i.skuId === skuId ? { ...i, [field]: value } : i));
   };
 
   const removeItem = (skuId) => setItems(items.filter(i => i.skuId !== skuId));
+
+  const subtotal = items.reduce((s, i) => s + (i.unitPrice || 0) * i.quantity, 0);
+  const totalDiscount = (form.discountAmount || 0) + items.reduce((s, i) => s + (i.discountAmount || 0), 0);
+  const payable = subtotal - totalDiscount + (form.giftWrapCharges || 0) + (form.shippingCharges || 0);
+
+  const setBillingField = (field, value) => {
+    const updated = { ...form, [field]: value };
+    if (form.shippingSameAsBilling) {
+      if (field === 'billingName') updated.customerName = value;
+      if (field === 'billingAddress1') updated.shippingAddress = value;
+      if (field === 'billingPhone') updated.notificationMobile = value;
+      if (field === 'billingEmail') updated.notificationEmail = value;
+      setForm(updated);
+      return;
+    }
+    setForm(updated);
+  };
+      if (field === 'billingName') updated.customerName = value;
+      if (field === 'billingAddress1') updated.shippingAddress = value;
+      if (field === 'billingPhone') updated.notificationMobile = value;
+      if (field === 'billingEmail') updated.notificationEmail = value;
+    }
+    setForm(updated);
+  };
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.shippingAddress || items.length === 0) {
@@ -319,69 +349,296 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
     try {
       await API.post('/orders', {
         ...form,
-        items: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, unitPrice: i.unitPrice })),
+        orderDate: form.orderDate ? new Date(form.orderDate).toISOString() : null,
+        source: form.source || 'MANUAL',
+        items: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, unitPrice: i.unitPrice, mrp: i.mrp, discountAmount: i.discountAmount })),
+        orderAmount: payable,
       });
       toast.success('Manual order created');
       onSuccess();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create order');
-    } finally {
-      setCreating(false);
-    }
+    } finally { setCreating(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Manual Order</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-slate-200 sticky top-0 bg-white rounded-t-2xl z-10">
+          <h3 className="text-lg font-bold">Create Order</h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
         </div>
 
-        <div className="space-y-4">
+        <div className="p-5 space-y-6 overflow-y-auto flex-1">
+          {/* ── Basic Details ── */}
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Order Number</label>
-            <input type="text" className="input-field" value={form.orderNumber} onChange={e => setForm({ ...form, orderNumber: e.target.value })} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Customer Name</label>
-            <input type="text" className="input-field" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="John Doe" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Shipping Address</label>
-            <textarea className="input-field" rows={2} value={form.shippingAddress} onChange={e => setForm({ ...form, shippingAddress: e.target.value })} placeholder="123 Main St, City, State, ZIP" />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Scan Barcode to Add Items</label>
-            <div className="relative">
-              <input ref={scanRef} type="text" className="input-field pr-8" value={barcode} onChange={e => setBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleScan(); } }} placeholder="Scan barcode..." />
-              {scanning && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
-            </div>
-          </div>
-
-          {items.length > 0 && (
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-2">Items ({items.reduce((s, i) => s + i.quantity, 0)} total)</label>
-              <div className="bg-slate-50 rounded-xl p-3 space-y-2">
-                {items.map((item) => (
-                  <div key={item.skuId} className="flex items-center gap-2">
-                    <span className="flex-[2] text-sm truncate font-medium">{item.skuCode}</span>
-                    <span className="flex-1 text-xs text-slate-500">{item.name}</span>
-                    <span className="w-10 text-xs text-center font-semibold text-indigo-600">x{item.quantity}</span>
-                    <input type="number" min={0} step="0.01" className="input-field w-20 text-xs text-center" value={item.unitPrice} onChange={e => updateUnitPrice(item.skuId, e.target.value)} placeholder="Price" />
-                    <button onClick={() => removeItem(item.skuId)} className="p-1 hover:bg-red-100 rounded-lg text-red-500"><X size={14} /></button>
-                  </div>
-                ))}
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-blue-500 rounded-full" /> Basic Details</h4>
+            <p className="text-[10px] text-slate-400 mb-3">Auto Generated Code is for your internal purpose, while the other code is displayed to Customer.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Auto Generated Order Code *</label>
+                <input type="text" className="input-field text-sm bg-slate-50" value={form.orderNumber} onChange={e => setForm({ ...form, orderNumber: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Display Order Code (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.displayOrderCode} onChange={e => setForm({ ...form, displayOrderCode: e.target.value })} placeholder="e.g. Alpha-Numeric / Numeric" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Channel *</label>
+                <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="input-field text-sm">
+                  <option value="">Select Channel</option>
+                  <option value="MANUAL">Manual</option>
+                  <option value="Amazon">Amazon</option>
+                  <option value="Flipkart">Flipkart</option>
+                  <option value="Shopify">Shopify</option>
+                  <option value="Nykaa">Nykaa</option>
+                  <option value="Myntra">Myntra</option>
+                  <option value="Meesho">Meesho</option>
+                  <option value="TataCliq">TataCliq</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Order date *</label>
+                <input type="date" className="input-field text-sm" value={form.orderDate} onChange={e => setForm({ ...form, orderDate: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Payment Mode *</label>
+                <select value={form.paymentMode} onChange={e => setForm({ ...form, paymentMode: e.target.value })} className="input-field text-sm">
+                  <option value="">Select an option</option>
+                  <option value="COD">COD</option>
+                  <option value="PREPAID">Prepaid</option>
+                  <option value="CREDIT">Credit</option>
+                  <option value="UPI">UPI</option>
+                  <option value="BANK_TRANSFER">Bank Transfer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Currency (Optional)</label>
+                <select value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })} className="input-field text-sm">
+                  <option value="INR">INR - Indian Rupee</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Facility Code *</label>
+                <select value={form.warehouseId} onChange={e => setForm({ ...form, warehouseId: e.target.value })} className="input-field text-sm">
+                  <option value="">Select Facility</option>
+                  {warehouses.map(w => <option key={w.id} value={w.id}>{w.displayName || w.name} ({w.code || 'N/A'})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Channel Processing Time (Optional)</label>
+                <input type="date" className="input-field text-sm" value={form.channelProcessingTime} onChange={e => setForm({ ...form, channelProcessingTime: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">PDF_Attachment (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.pdfAttachment} onChange={e => setForm({ ...form, pdfAttachment: e.target.value })} placeholder="URL or path" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">deliverMode (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.deliverMode} onChange={e => setForm({ ...form, deliverMode: e.target.value })} placeholder="e.g. Standard, Express" />
               </div>
             </div>
-          )}
+          </div>
+
+          {/* ── Customer Details ── */}
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-green-500 rounded-full" /> Customer Details</h4>
+            <p className="text-[10px] text-slate-400 mb-3">Type Name or Code of Customer. Rest of the fields will be populated automatically. This Address, Email &amp; Phone no. is used to communicate order information to Customer.</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Customer Code *</label>
+                <input type="text" className="input-field text-sm" value={form.customerCode} onChange={e => setForm({ ...form, customerCode: e.target.value })} placeholder="e.g. name or Code" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Customer Name *</label>
+                <input type="text" className="input-field text-sm" value={form.customerName} onChange={e => setBillingField('billingName', e.target.value)} placeholder="e.g. name or Code" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Notification Email (Optional)</label>
+                <input type="email" className="input-field text-sm" value={form.notificationEmail} onChange={e => setForm({ ...form, notificationEmail: e.target.value })} placeholder="e.g. ken@xyz.com" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Notification Mobile (Optional)</label>
+                <input type="tel" className="input-field text-sm" value={form.notificationMobile} onChange={e => setForm({ ...form, notificationMobile: e.target.value })} placeholder="e.g. 9999999999" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">GSTIN (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.customerGstin} onChange={e => setForm({ ...form, customerGstin: e.target.value })} placeholder="GSTIN" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Billing Address ── */}
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-purple-500 rounded-full" /> Billing Address</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Name *</label>
+                <input type="text" className="input-field text-sm" value={form.billingName} onChange={e => setBillingField('billingName', e.target.value)} placeholder="Name" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Email (Optional)</label>
+                <input type="email" className="input-field text-sm" value={form.billingEmail} onChange={e => setBillingField('billingEmail', e.target.value)} placeholder="Email" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Address Line 1 *</label>
+                <input type="text" className="input-field text-sm" value={form.billingAddress1} onChange={e => setBillingField('billingAddress1', e.target.value)} placeholder="Address Line 1" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Address Line 2 (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.billingAddress2} onChange={e => setForm({ ...form, billingAddress2: e.target.value })} placeholder="Address Line 2" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Country *</label>
+                <select value={form.billingCountry} onChange={e => setForm({ ...form, billingCountry: e.target.value })} className="input-field text-sm">
+                  <option value="India">India (IN)</option>
+                  <option value="USA">USA</option>
+                  <option value="UAE">UAE</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">State *</label>
+                <input type="text" className="input-field text-sm" value={form.billingState} onChange={e => setForm({ ...form, billingState: e.target.value })} placeholder="Select State" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">City *</label>
+                <input type="text" className="input-field text-sm" value={form.billingCity} onChange={e => setForm({ ...form, billingCity: e.target.value })} placeholder="City" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">District (Optional)</label>
+                <input type="text" className="input-field text-sm" value={form.billingDistrict} onChange={e => setForm({ ...form, billingDistrict: e.target.value })} placeholder="District" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Pin Code *</label>
+                <input type="text" className="input-field text-sm" value={form.billingPinCode} onChange={e => setForm({ ...form, billingPinCode: e.target.value })} placeholder="Pincode" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Phone *</label>
+                <input type="tel" className="input-field text-sm" value={form.billingPhone} onChange={e => setBillingField('billingPhone', e.target.value)} placeholder="Phone" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Latitude *</label>
+                <input type="text" className="input-field text-sm" value={form.billingLatitude} onChange={e => setForm({ ...form, billingLatitude: e.target.value })} placeholder="Latitude" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Longitude *</label>
+                <input type="text" className="input-field text-sm" value={form.billingLongitude} onChange={e => setForm({ ...form, billingLongitude: e.target.value })} placeholder="Longitude" />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Shipping Address ── */}
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-orange-500 rounded-full" /> Shipping Address</h4>
+            <label className="flex items-center gap-2 mb-3 cursor-pointer">
+              <input type="checkbox" checked={form.shippingSameAsBilling} onChange={e => {
+                setForm({ ...form, shippingSameAsBilling: e.target.checked });
+                if (e.target.checked) {
+                  setForm(f => ({ ...f, shippingSameAsBilling: true, shippingAddress: f.billingAddress1 || '' }));
+                }
+              }} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+              <span className="text-xs font-medium text-slate-600">Shipping Address is same as Billing Address</span>
+            </label>
+            {!form.shippingSameAsBilling && (
+              <div className="col-span-2">
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Shipping Address *</label>
+                <textarea className="input-field text-sm" rows={2} value={form.shippingAddress} onChange={e => setForm({ ...form, shippingAddress: e.target.value })} placeholder="Full shipping address" />
+              </div>
+            )}
+          </div>
+
+          {/* ── Item Details ── */}
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-pink-500 rounded-full" /> Item Details</h4>
+            <p className="text-[10px] text-slate-400 mb-3">Type first 2 characters of name or item sku of order item in order-item dropdown and fill rest of details or you can also import the list of order items by clicking Import Via CSV link.</p>
+
+            <div className="relative mb-3">
+              <input ref={scanRef} type="text" className="input-field text-sm pr-8" value={barcode} onChange={e => setBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleScan(); } }} placeholder="Scan barcode or type SKU code..." />
+              {scanning && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
+            </div>
+
+            {items.length > 0 && (
+              <div className="overflow-x-auto mb-3">
+                <table className="w-full text-left text-xs min-w-[700px]">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500">#</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500">Item SKU Code</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500">Inventory</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">Units</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">MRP (₹)</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">Selling Price (₹)</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">Discount (₹)</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">Net Price (₹)</th>
+                      <th className="px-2 py-1.5 font-semibold text-slate-500 text-right">Sub-Total (₹)</th>
+                      <th className="px-2 py-1.5"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, idx) => {
+                      const netPrice = (item.unitPrice || 0) - (item.discountAmount || 0);
+                      const subTotal = netPrice * item.quantity;
+                      return (
+                        <tr key={item.skuId} className="border-b border-slate-100 hover:bg-slate-50">
+                          <td className="px-2 py-1.5 text-slate-400">{idx + 1}</td>
+                          <td className="px-2 py-1.5 font-mono font-medium">{item.skuCode}</td>
+                          <td className="px-2 py-1.5 text-slate-400">{item.name || '-'}</td>
+                          <td className="px-2 py-1.5">
+                            <input type="number" min={1} className="w-14 px-1 py-0.5 border rounded text-xs text-center" value={item.quantity} onChange={e => updateItem(item.skuId, 'quantity', parseInt(e.target.value) || 1)} />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="number" min={0} step="0.01" className="w-20 px-1 py-0.5 border rounded text-xs text-right" value={item.mrp} onChange={e => updateItem(item.skuId, 'mrp', parseFloat(e.target.value) || 0)} />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="number" min={0} step="0.01" className="w-20 px-1 py-0.5 border rounded text-xs text-right" value={item.unitPrice} onChange={e => updateItem(item.skuId, 'unitPrice', parseFloat(e.target.value) || 0)} />
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <input type="number" min={0} step="0.01" className="w-16 px-1 py-0.5 border rounded text-xs text-right" value={item.discountAmount} onChange={e => updateItem(item.skuId, 'discountAmount', parseFloat(e.target.value) || 0)} />
+                          </td>
+                          <td className="px-2 py-1.5 text-right font-medium">{netPrice.toFixed(2)}</td>
+                          <td className="px-2 py-1.5 text-right font-semibold">{subTotal.toFixed(2)}</td>
+                          <td className="px-2 py-1.5">
+                            <button onClick={() => removeItem(item.skuId)} className="p-0.5 hover:bg-red-100 rounded text-red-400"><X size={12} /></button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* ── Extra Charges / Discounts / Payments ── */}
+          <div>
+            <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><span className="w-1 h-4 bg-teal-500 rounded-full" /> Extra Charges / Discounts / Payments</h4>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2 max-w-sm">
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="font-medium">₹{subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Discount (-)</span>
+                <input type="number" min={0} step="0.01" className="w-24 px-2 py-0.5 border rounded text-xs text-right" value={form.discountAmount} onChange={e => setForm({ ...form, discountAmount: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Gift Wrap Charges</span>
+                <input type="number" min={0} step="0.01" className="w-24 px-2 py-0.5 border rounded text-xs text-right" value={form.giftWrapCharges} onChange={e => setForm({ ...form, giftWrapCharges: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div className="flex justify-between text-sm"><span className="text-slate-500">Shipping Charges</span>
+                <input type="number" min={0} step="0.01" className="w-24 px-2 py-0.5 border rounded text-xs text-right" value={form.shippingCharges} onChange={e => setForm({ ...form, shippingCharges: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-bold">
+                <span>Payable (for {items.reduce((s, i) => s + i.quantity, 0)} items)</span>
+                <span className="text-indigo-600">₹{payable.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button onClick={handleSubmit} disabled={creating || items.length === 0} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-          {creating && <Loader2 size={16} className="animate-spin" />}
-          {creating ? 'Creating...' : 'Create Order'}
-        </button>
+        <div className="p-5 border-t border-slate-200 sticky bottom-0 bg-white rounded-b-2xl">
+          <button onClick={handleSubmit} disabled={creating || items.length === 0} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            {creating && <Loader2 size={16} className="animate-spin" />}
+            {creating ? 'Creating...' : 'Create Order'}
+          </button>
+        </div>
       </div>
     </div>
   );
