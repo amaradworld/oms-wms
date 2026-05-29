@@ -168,6 +168,8 @@ export const approveGrn = async (req: AuthRequest, res: Response) => {
     .map(item => ({
       tenantId,
       warehouseId: grn.warehouseId,
+      source: 'PUTAWAY_GRN_ITEM',
+      sourceId: grn.id,
       grnId: grn.id,
       skuId: item.skuId,
       expectedQty: item.acceptedQty > 0 ? item.acceptedQty : item.receivedQty,
@@ -193,77 +195,4 @@ export const rejectGrn = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'GRN rejected' });
 };
 
-export const getPutawayTasks = async (req: AuthRequest, res: Response) => {
-  const where: any = { tenantId: req.user!.tenant_id };
-  const status = req.query.status as string;
-  if (status) where.status = status;
-  if (req.query.warehouseId) where.warehouseId = req.query.warehouseId as string;
 
-  const tasks = await prisma.putawayTask.findMany({
-    where,
-    include: {
-      sku: { select: { skuCode: true, name: true, size: true } },
-      grn: { select: { grnNumber: true } },
-      bin: { select: { id: true, code: true } },
-    },
-    orderBy: { createdAt: 'asc' },
-  });
-  res.json(tasks);
-};
-
-export const assignBinToTask = async (req: AuthRequest, res: Response) => {
-  const { binId } = req.body;
-  const task = await prisma.putawayTask.findFirst({
-    where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
-  });
-  if (!task) return res.status(404).json({ message: 'Task not found' });
-
-  const bin = await prisma.binLocation.findFirst({
-    where: { id: binId, warehouseId: task.warehouseId, tenantId: req.user!.tenant_id },
-  });
-  if (!bin) return res.status(400).json({ message: 'Bin not found in this warehouse' });
-
-  await prisma.putawayTask.update({
-    where: { id: task.id },
-    data: { binId, status: 'IN_PROGRESS' },
-  });
-
-  res.json({ message: 'Bin assigned to putaway task' });
-};
-
-export const completePutaway = async (req: AuthRequest, res: Response) => {
-  const task = await prisma.putawayTask.findFirst({
-    where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
-    include: { bin: true },
-  });
-  if (!task) return res.status(404).json({ message: 'Task not found' });
-  if (!task.binId) return res.status(400).json({ message: 'Assign bin first' });
-
-  // Move inventory from GRN-RECEIVED to actual bin
-  const skuId = task.skuId;
-  const warehouseId = task.warehouseId;
-  const acceptedQty = task.expectedQty - task.completedQty;
-
-  if (acceptedQty > 0) {
-    // Decrease from GRN-RECEIVED
-    await prisma.inventory.update({
-      where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: 'GRN-RECEIVED' } },
-      data: { quantityOnHand: { decrement: acceptedQty }, quantityAvailable: { decrement: acceptedQty } },
-    });
-
-    // Add to target bin
-    const targetBinLocation = task.bin!.code;
-    await prisma.inventory.upsert({
-      where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: targetBinLocation } },
-      update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
-      create: { warehouseId, skuId, binLocation: targetBinLocation, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
-    });
-  }
-
-  await prisma.putawayTask.update({
-    where: { id: task.id },
-    data: { completedQty: { increment: acceptedQty }, completedAt: new Date(), status: 'COMPLETED' },
-  });
-
-  res.json({ message: 'Putaway completed. Inventory moved to bin.' });
-};

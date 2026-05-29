@@ -27,26 +27,33 @@ export const getPurchaseOrders = async (req: AuthRequest, res: Response) => {
 };
 
 export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
-  const { supplierId, warehouseId, expectedDate, notes, items } = req.body;
-  const tenantId = req.user!.tenant_id;
-  const count = await prisma.purchaseOrder.count({ where: { tenantId } });
-  const poNumber = `PO-${String(count + 1).padStart(5, '0')}`;
+  try {
+    const { supplierId, warehouseId, expectedDate, notes, items } = req.body;
+    if (!supplierId) return res.status(400).json({ message: 'Supplier is required' });
+    if (!warehouseId) return res.status(400).json({ message: 'Warehouse/Facility is required — select a facility first' });
+    const tenantId = req.user!.tenant_id;
+    const count = await prisma.purchaseOrder.count({ where: { tenantId } });
+    const poNumber = `PO-${String(count + 1).padStart(5, '0')}`;
 
-  const skus = await prisma.skuMaster.findMany({
-    where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId },
-  });
-  const skuMap = new Map(skus.map(s => [s.skuCode, s.id]));
-  const missing = items.filter(i => !skuMap.has(i.skuCode));
-  if (missing.length) return res.status(400).json({ message: `SKU not found: ${missing.map(i => i.skuCode).join(', ')}` });
+    const skus = await prisma.skuMaster.findMany({
+      where: { skuCode: { in: items.map(i => i.skuCode) }, tenantId },
+    });
+    const skuMap = new Map(skus.map(s => [s.skuCode, s.id]));
+    const missing = items.filter(i => !skuMap.has(i.skuCode));
+    if (missing.length) return res.status(400).json({ message: `SKU not found: ${missing.map(i => i.skuCode).join(', ')}` });
 
-  const po = await prisma.purchaseOrder.create({
-    data: {
-      tenantId, poNumber, supplierId, warehouseId, expectedDate: expectedDate ? new Date(expectedDate) : null, notes,
-      items: { create: items.map(i => ({ skuId: skuMap.get(i.skuCode)!, quantity: i.quantity, unitPrice: i.unitPrice || 0 })) },
-    },
-    include: { supplier: { select: { name: true } }, warehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
-  });
-  res.status(201).json(po);
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        tenantId, poNumber, supplierId, warehouseId, expectedDate: expectedDate ? new Date(expectedDate) : null, notes,
+        items: { create: items.map(i => ({ skuId: skuMap.get(i.skuCode)!, quantity: i.quantity, unitPrice: i.unitPrice || 0 })) },
+      },
+      include: { supplier: { select: { name: true } }, warehouse: { select: { name: true } }, items: { include: { sku: { select: { skuCode: true, name: true } } } } },
+    });
+    res.status(201).json(po);
+  } catch (error: any) {
+    console.error('Create PO error:', error);
+    res.status(500).json({ message: error?.message || 'Internal server error' });
+  }
 };
 
 export const receivePurchaseOrder = async (req: AuthRequest, res: Response) => {

@@ -44,8 +44,9 @@ const PurchaseOrders = () => {
 
   const handleCreatePO = async () => {
     if (!form.supplierId) return toast.error('Select supplier');
+    if (!selectedFacility?.id) return toast.error('Select a warehouse/facility before creating PO');
     try {
-      await API.post('/purchase-orders', { ...form, warehouseId: selectedFacility?.id || '' });
+      await API.post('/purchase-orders', { ...form, warehouseId: selectedFacility.id });
       toast.success('Purchase order created');
       setShowModal(false);
       setForm({ supplierId: '', expectedDate: '', notes: '', items: [{ skuCode: '', quantity: 1, unitPrice: 0 }] });

@@ -35,6 +35,7 @@ import gatepassRoutes from './routes/gatepass.routes';
 import integrationRoutes from './routes/integration.routes';
 import grnRoutes from './routes/grn.routes';
 import binRoutes from './routes/bin.routes';
+import putawayRoutes from './routes/putaway.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -87,6 +88,7 @@ app.use('/api/gatepass', gatepassRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api', grnRoutes);
 app.use('/api', binRoutes);
+app.use('/api', putawayRoutes);
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';
