@@ -72,7 +72,6 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
         { id: 'grn', label: 'GRN', icon: ClipboardCheck },
         { id: 'putaway', label: 'Putaway', icon: ScanLine },
-        { id: 'bins', label: 'Bin Locations', icon: MapPin },
       ],
     },
     {
@@ -90,6 +89,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
         { id: 'marketplace', label: 'Marketplace', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'bins', label: 'Bin Locations', icon: MapPin },
         { id: 'settings', label: 'Settings', icon: Settings },
       ],
     },
