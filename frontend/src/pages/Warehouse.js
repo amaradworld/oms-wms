@@ -15,7 +15,7 @@ const SECTIONS = [
 const emptyForm = () => ({
   name: '', code: '', type: 'Warehouse', displayName: '', partyName: '',
   websiteUrl: '', alternateCode: '', logoUrl: '', signatureUrl: '',
-  posEnabled: false, processingCapacity: '', allowMaxLimit: false,
+  isActive: true, posEnabled: false, processingCapacity: '', allowMaxLimit: false,
   operationalType: '', associatedPosChannel: '', itemSealEnabled: false,
   priority: 1, contactPerson: '', contactEmail: '', contactPhone: '',
   openingTime: '', closingTime: '', b2cTaxAddressType: 'BillingAddress',
@@ -101,7 +101,7 @@ const Warehouse = () => {
       const res = await API.get(`/warehouses/${id}`);
       const w = res.data;
       setForm({
-        name: w.name || '', code: w.code || '', type: w.type || 'Warehouse',
+        isActive: w.isActive ?? true, name: w.name || '', code: w.code || '', type: w.type || 'Warehouse',
         displayName: w.displayName || '', partyName: w.partyName || '',
         websiteUrl: w.websiteUrl || '', alternateCode: w.alternateCode || '',
         logoUrl: w.logoUrl || '', signatureUrl: w.signatureUrl || '',
@@ -176,6 +176,16 @@ const Warehouse = () => {
     setExpandWH(expandWH === id ? null : id);
   };
 
+  const toggleActive = async (id, current) => {
+    try {
+      await API.put(`/warehouses/${id}`, { isActive: !current });
+      toast.success(`Facility ${!current ? 'activated' : 'deactivated'}`);
+      fetchWarehouses();
+    } catch {
+      toast.error('Failed to update status');
+    }
+  };
+
   const up = (field) => (e) => setForm({ ...form, [field]: e.target.value });
   const upBool = (field) => (v) => setForm({ ...form, [field]: v });
   const [facilityForm, setFacilityForm] = useState({ name: '', location: '', address: '' });
@@ -212,17 +222,24 @@ const Warehouse = () => {
       ) : (
         <div className="space-y-3">
           {warehouses.map(wh => (
-            <div key={wh.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div key={wh.id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${wh.isActive === false ? 'border-slate-300 opacity-60' : 'border-slate-200'}`}>
               <div className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer" onClick={() => toggleExpand(wh.id)}>
                 <div className="flex items-center gap-3">
                   {expandWH === wh.id ? <ChevronDown size={18} className="text-slate-400" /> : <ChevronRight size={18} className="text-slate-400" />}
-                  <Building2 size={20} className="text-blue-600" />
+                  <Building2 size={20} className={wh.isActive === false ? 'text-slate-400' : 'text-blue-600'} />
                   <div>
-                    <div className="font-semibold">{wh.displayName || wh.name}</div>
+                    <div className="font-semibold flex items-center gap-2">
+                      {wh.displayName || wh.name}
+                      {wh.isActive === false && <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Inactive</span>}
+                    </div>
                     <div className="text-xs text-slate-500">{wh.code || wh.location || 'No code'} &middot; {wh.children?.length || 0} facilities</div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); toggleActive(wh.id, wh.isActive); }}
+                    className={`text-[10px] font-medium px-2 py-1 rounded ${wh.isActive === false ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
+                    {wh.isActive === false ? 'Enable' : 'Disable'}
+                  </button>
                   <button onClick={(e) => { e.stopPropagation(); openEdit(wh.id); }} className="text-xs text-slate-500 hover:text-blue-600 p-1"><Pencil size={14} /></button>
                   <button onClick={(e) => { e.stopPropagation(); setSelectedWH(wh.id); setShowFacilityModal(true); }} className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
                     <Plus size={14} /> Add Facility
@@ -234,14 +251,21 @@ const Warehouse = () => {
                   {wh.children?.length === 0 ? (
                     <EmptyState icon="warehouse" title="No facilities" description="Add a facility to organize inventory and orders under this warehouse." />
                   ) : wh.children.map(fac => (
-                    <div key={fac.id} className={`px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8 ${selectedFacility?.id === fac.id ? 'bg-indigo-50 border-indigo-200' : ''}`}>
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                    <div key={fac.id} className={`px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8 ${fac.isActive === false ? 'opacity-50' : ''} ${selectedFacility?.id === fac.id ? 'bg-indigo-50 border-indigo-200' : ''}`}>
+                      <div className={`w-2 h-2 rounded-full ${fac.isActive === false ? 'bg-slate-300' : 'bg-green-400'}`} />
                       <div className="flex-1">
-                        <div className="text-sm font-medium">{fac.displayName || fac.name}</div>
+                        <div className="text-sm font-medium flex items-center gap-2">
+                          {fac.displayName || fac.name}
+                          {fac.isActive === false && <span className="text-[10px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Inactive</span>}
+                        </div>
                         <div className="text-xs text-slate-400">{fac.code || fac.location || '\u2014'}</div>
                       </div>
+                      <button onClick={(e) => { e.stopPropagation(); toggleActive(fac.id, fac.isActive); }}
+                        className={`text-[10px] font-medium px-2 py-1 rounded ${fac.isActive === false ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100' : 'text-red-600 bg-red-50 hover:bg-red-100'}`}>
+                        {fac.isActive === false ? 'Enable' : 'Disable'}
+                      </button>
                       <button onClick={() => openEdit(fac.id)} className="text-xs text-slate-400 hover:text-blue-600 p-1"><Pencil size={14} /></button>
-                      <button onClick={() => setSelectedFacility({ id: fac.id, name: fac.name })} className="flex items-center gap-1 text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 font-medium transition-colors">
+                      <button onClick={() => setSelectedFacility({ id: fac.id, name: fac.name })} disabled={fac.isActive === false} className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${fac.isActive === false ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
                         Load <ArrowRight size={12} />
                       </button>
                     </div>
@@ -367,6 +391,7 @@ const Warehouse = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Toggle label="Active / Enabled" value={form.isActive} onChange={upBool('isActive')} />
                     <Toggle label="POS Enabled" value={form.posEnabled} onChange={upBool('posEnabled')} />
                     <Toggle label="Allow Maximum Limit" value={form.allowMaxLimit} onChange={upBool('allowMaxLimit')} />
                     <Input label="Processing Capacity" type="number" placeholder="Enter Processing Capacity" value={form.processingCapacity} onChange={up('processingCapacity')} />
