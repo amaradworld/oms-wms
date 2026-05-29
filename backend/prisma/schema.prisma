@@ -35,6 +35,66 @@ model Warehouse {
   parent    Warehouse?  @relation("FacilityHierarchy", fields: [parentId], references: [id])
   children  Warehouse[] @relation("FacilityHierarchy")
   createdAt DateTime @default(now())
+
+  // General Details
+  code                   String?
+  type                   String?  @default("Warehouse")
+  displayName            String?
+  partyName              String?
+  websiteUrl             String?
+  alternateCode          String?
+  logoUrl                String?
+  signatureUrl           String?
+  posEnabled             Boolean? @default(false)
+  processingCapacity     Int?
+  allowMaxLimit          Boolean? @default(false)
+  operationalType        String?
+  associatedPosChannel   String?
+  itemSealEnabled        Boolean? @default(false)
+  priority               Int?     @default(1)
+  contactPerson          String?
+  contactEmail           String?
+  contactPhone           String?
+  openingTime            String?
+  closingTime            String?
+  b2cTaxAddressType      String?  @default("BillingAddress")
+  channelImageProcessing Boolean? @default(false)
+  autoPackageDimensions  Boolean? @default(false)
+
+  // Accounting Details
+  pan           String?
+  tin           String?
+  cst           String?
+  serviceTax    String?
+  gstin         String?
+  upiAddress    String?
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+
+  // Billing Address
+  billingAddress1  String?
+  billingAddress2  String?
+  billingCity      String?
+  billingPinCode   String?
+  billingCountry   String? @default("India")
+  billingState     String?
+  billingPhone     String?
+  billingLatitude  String?
+  billingLongitude String?
+
+  // Shipping Address
+  shippingSameAsBilling Boolean? @default(true)
+  shippingAddress1      String?
+  shippingAddress2      String?
+  shippingCity          String?
+  shippingPinCode       String?
+  shippingCountry       String? @default("India")
+  shippingState         String?
+  shippingPhone         String?
+  shippingLatitude      String?
+  shippingLongitude     String?
+
   inventory  Inventory[]
   picklists  Picklist[]
   orders          Order[]

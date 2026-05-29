@@ -21,21 +21,43 @@ export const getWarehouseById = async (req: AuthRequest, res: Response) => {
   res.json(warehouse);
 };
 
+const facilityFields = [
+  'name','location','address','isActive','code','type','displayName','partyName',
+  'websiteUrl','alternateCode','logoUrl','signatureUrl','posEnabled','processingCapacity',
+  'allowMaxLimit','operationalType','associatedPosChannel','itemSealEnabled','priority',
+  'contactPerson','contactEmail','contactPhone','openingTime','closingTime','b2cTaxAddressType',
+  'channelImageProcessing','autoPackageDimensions','pan','tin','cst','serviceTax','gstin',
+  'upiAddress','bankName','accountNumber','ifscCode',
+  'billingAddress1','billingAddress2','billingCity','billingPinCode','billingCountry',
+  'billingState','billingPhone','billingLatitude','billingLongitude',
+  'shippingSameAsBilling','shippingAddress1','shippingAddress2','shippingCity','shippingPinCode',
+  'shippingCountry','shippingState','shippingPhone','shippingLatitude','shippingLongitude',
+];
+
+const pick = (body: any) => {
+  const data: any = {};
+  for (const f of facilityFields) {
+    if (body[f] !== undefined) data[f] = body[f];
+  }
+  return data;
+};
+
 export const createWarehouse = async (req: AuthRequest, res: Response) => {
-  const { name, location, address } = req.body;
+  const { name } = req.body;
   if (!name) return res.status(400).json({ message: 'Name is required' });
   const warehouse = await prisma.warehouse.create({
-    data: { name, location, address, tenantId: req.user!.tenant_id },
+    data: { name, tenantId: req.user!.tenant_id, ...pick(req.body) },
   });
   res.status(201).json(warehouse);
 };
 
 export const updateWarehouse = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
-  const { name, location, address, isActive } = req.body;
+  const data = pick(req.body);
+  if (Object.keys(data).length === 0) return res.status(400).json({ message: 'No fields to update' });
   await prisma.warehouse.updateMany({
     where: { id, tenantId: req.user!.tenant_id },
-    data: { name, location, address, isActive },
+    data,
   });
   res.json({ success: true });
 };
@@ -51,14 +73,14 @@ export const getFacilities = async (req: AuthRequest, res: Response) => {
 
 export const createFacility = async (req: AuthRequest, res: Response) => {
   const parentId = req.params.id as string;
-  const { name, location, address } = req.body;
+  const { name } = req.body;
   const parent = await prisma.warehouse.findFirst({
     where: { id: parentId, tenantId: req.user!.tenant_id },
   });
   if (!parent) return res.status(404).json({ message: 'Parent warehouse not found' });
   if (!name) return res.status(400).json({ message: 'Name is required' });
   const facility = await prisma.warehouse.create({
-    data: { name, location, address, parentId, tenantId: req.user!.tenant_id },
+    data: { name, parentId, tenantId: req.user!.tenant_id, ...pick(req.body) },
   });
   res.status(201).json(facility);
 };
