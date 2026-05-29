@@ -27,6 +27,7 @@ import Settings from './pages/Settings';
 import Grn from './pages/Grn';
 import Putaway from './pages/Putaway';
 import BinManager from './pages/BinManager';
+import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
 import ToastContainer from './components/Toast';
@@ -159,6 +160,7 @@ const App = () => {
         {renderContent()}
       </main>
       <ToastContainer />
+      <AssistantBot />
     </div>
   );
 };
