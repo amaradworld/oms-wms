@@ -33,6 +33,8 @@ import routingRoutes from './routes/routing.routes';
 import backupRoutes from './routes/backup.routes';
 import gatepassRoutes from './routes/gatepass.routes';
 import integrationRoutes from './routes/integration.routes';
+import grnRoutes from './routes/grn.routes';
+import binRoutes from './routes/bin.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -83,6 +85,8 @@ app.use('/api/courier/routing', routingRoutes);
 app.use('/api', backupRoutes);
 app.use('/api/gatepass', gatepassRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api', grnRoutes);
+app.use('/api', binRoutes);
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';

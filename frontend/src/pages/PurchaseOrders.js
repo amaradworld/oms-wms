@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, X, Truck } from 'lucide-react';
+import { Plus, X, Truck, ClipboardCheck, Loader } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -16,6 +16,10 @@ const PurchaseOrders = () => {
   const [tab, setTab] = useState('orders');
   const [form, setForm] = useState({ supplierId: '', expectedDate: '', notes: '', items: [{ skuCode: '', quantity: 1, unitPrice: 0 }] });
   const [supForm, setSupForm] = useState({ name: '', contactPerson: '', email: '', phone: '', address: '' });
+  const [showGrnModal, setShowGrnModal] = useState(false);
+  const [grnItems, setGrnItems] = useState([]);
+  const [selectedPoForGrn, setSelectedPoForGrn] = useState(null);
+  const [grnSubmitting, setGrnSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -55,6 +59,39 @@ const PurchaseOrders = () => {
       toast.success('PO received, inventory updated');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  };
+
+  const openGrnReceive = (po) => {
+    setSelectedPoForGrn(po);
+    setGrnItems(po.items.map(item => ({
+      poItemId: item.id,
+      skuId: item.skuId,
+      skuCode: item.sku?.skuCode || '',
+      skuName: item.sku?.name || '',
+      expectedQty: item.quantity,
+      receivedQty: item.quantity - (item.receivedQty || 0),
+    })));
+    setShowGrnModal(true);
+  };
+
+  const handleGrnReceive = async () => {
+    if (!grnItems.some(i => i.receivedQty > 0)) return toast.error('Enter at least one item qty');
+    setGrnSubmitting(true);
+    try {
+      await API.post('/grn', {
+        poId: selectedPoForGrn.id,
+        items: grnItems.filter(i => i.receivedQty > 0).map(i => ({
+          poItemId: i.poItemId,
+          skuId: i.skuId,
+          expectedQty: i.expectedQty,
+          receivedQty: i.receivedQty,
+        })),
+      });
+      toast.success('GRN created. Proceed to QC and approval.');
+      setShowGrnModal(false);
+      setSelectedPoForGrn(null);
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setGrnSubmitting(false); }
   };
 
   const addItem = () => setForm({ ...form, items: [...form.items, { skuCode: '', quantity: 1, unitPrice: 0 }] });
@@ -101,7 +138,10 @@ const PurchaseOrders = () => {
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">{new Date(po.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
-                      {po.status === 'DRAFT' && <button onClick={() => handleReceive(po.id)} className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium"><Truck size={14} /> Receive</button>}
+                      <div className="flex gap-2">
+                        {po.status === 'DRAFT' && <button onClick={() => handleReceive(po.id)} className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium" title="Quick receive all"><Truck size={14} /> Quick</button>}
+                        {(po.status === 'DRAFT' || po.status === 'PARTIALLY_RECEIVED' || po.status === 'RECEIVING') && <button onClick={() => openGrnReceive(po)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"><ClipboardCheck size={14} /> GRN</button>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -151,6 +191,42 @@ const PurchaseOrders = () => {
               <textarea placeholder="Address" value={supForm.address} onChange={e => setSupForm({ ...supForm, address: e.target.value })} className="w-full px-3 py-2 border rounded-lg text-sm" rows={2} />
             </div>
             <button onClick={handleCreateSupplier} disabled={!supForm.name} className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">Save Supplier</button>
+          </div>
+        </div>
+      )}
+
+      {showGrnModal && selectedPoForGrn && (
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold">Receive via GRN - {selectedPoForGrn.poNumber}</h2>
+              <button onClick={() => setShowGrnModal(false)}><X size={20} /></button>
+            </div>
+            <p className="text-sm text-slate-500">{selectedPoForGrn.supplier?.name}</p>
+            <div className="space-y-3">
+              {grnItems.map((item, i) => (
+                <div key={item.poItemId} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{item.skuName || item.skuCode}</div>
+                    <div className="text-xs text-slate-400">Expected: {item.expectedQty}</div>
+                  </div>
+                  <input
+                    type="number" min="0" max={item.expectedQty}
+                    value={item.receivedQty}
+                    onChange={e => {
+                      const updated = [...grnItems];
+                      updated[i].receivedQty = Math.min(parseInt(e.target.value) || 0, item.expectedQty);
+                      setGrnItems(updated);
+                    }}
+                    className="w-20 px-2 py-1.5 border rounded text-sm text-center"
+                  />
+                </div>
+              ))}
+            </div>
+            <button onClick={handleGrnReceive} disabled={grnSubmitting} className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+              {grnSubmitting && <Loader size={16} className="animate-spin" />}
+              Create GRN
+            </button>
           </div>
         </div>
       )}

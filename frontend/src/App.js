@@ -24,6 +24,9 @@ import Gatepasses from './pages/Gatepasses';
 import Integrations from './pages/Integrations';
 import TrackingPage from './pages/TrackingPage';
 import Settings from './pages/Settings';
+import Grn from './pages/Grn';
+import Putaway from './pages/Putaway';
+import BinManager from './pages/BinManager';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
 import ToastContainer from './components/Toast';
@@ -50,8 +53,8 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -123,6 +126,9 @@ const App = () => {
       case 'inventory-alerts': return <InventoryAlerts />;
       case 'gatepass': return <Gatepasses />;
       case 'integrations': return <Integrations />;
+      case 'grn': return <Grn />;
+      case 'putaway': return <Putaway />;
+      case 'bins': return <BinManager />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }
