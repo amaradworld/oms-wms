@@ -15,6 +15,9 @@ const statusColors = {
 
 const typeColors = {
   STOCK_TRANSFER: 'bg-indigo-100 text-indigo-700',
+  RETURNABLE: 'bg-purple-100 text-purple-700',
+  NON_RETURNABLE: 'bg-amber-100 text-amber-700',
+  RETURN_TO_VENDOR: 'bg-rose-100 text-rose-700',
   INCOMING: 'bg-green-100 text-green-700',
   RETURN: 'bg-purple-100 text-purple-700',
   MANUAL: 'bg-slate-100 text-slate-600',
@@ -220,27 +223,22 @@ const Gatepasses = () => {
   );
 };
 
+const GATEPASS_TYPES = ['STOCK_TRANSFER', 'RETURNABLE', 'NON_RETURNABLE', 'RETURN_TO_VENDOR'];
+const INVENTORY_TYPES = ['GOOD_INVENTORY', 'BAD_INVENTORY', 'QC_REJECTED'];
+
 const CreateGatepassModal = ({ onClose, onSuccess }) => {
-  const [transfers, setTransfers] = useState([]);
-  const [loadingTransfers, setLoadingTransfers] = useState(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
-    type: 'MANUAL',
+    type: 'STOCK_TRANSFER',
     toParty: '',
+    expectedDate: '',
     notes: '',
-    stockTransferId: '',
     items: [],
   });
   const [manualItems, setManualItems] = useState([]);
   const [skuSearch, setSkuSearch] = useState('');
   const [skuResults, setSkuResults] = useState([]);
   const [searchingSku, setSearchingSku] = useState(false);
-
-  useEffect(() => {
-    API.get('/transfers').then(res => {
-      setTransfers(res.data?.transfers || res.data || []);
-    }).catch(() => {}).finally(() => setLoadingTransfers(false));
-  }, []);
 
   const searchSkus = useCallback(async (q) => {
     if (!q || q.length < 2) { setSkuResults([]); return; }
@@ -258,33 +256,22 @@ const CreateGatepassModal = ({ onClose, onSuccess }) => {
 
   const addManualItem = (sku) => {
     if (manualItems.find(i => i.skuId === sku.id)) { toast.info('Already added'); return; }
-    setManualItems([...manualItems, { skuId: sku.id, skuCode: sku.skuCode, quantity: 1 }]);
+    setManualItems([...manualItems, { skuId: sku.id, skuCode: sku.skuCode, quantity: 1, inventoryType: 'GOOD_INVENTORY', shelfCode: '', unitPrice: '', batchCode: '', forceAllocate: false }]);
     setSkuSearch(''); setSkuResults([]);
   };
 
   const handleSubmit = async () => {
-    if (form.stockTransferId) {
-      setCreating(true);
-      try {
-        await API.post(`/gatepass/from-stock-transfer/${form.stockTransferId}`);
-        toast.success('Gatepass created from stock transfer');
-        onSuccess();
-      } catch (err) {
-        toast.error(err.response?.data?.message || 'Failed to create');
-      } finally { setCreating(false); }
-      return;
-    }
-    if (!form.toParty || manualItems.length === 0) {
-      toast.error('To Party and at least one item required');
-      return;
-    }
+    if (!form.toParty) return toast.error('To Party is required');
+    if (manualItems.length === 0) return toast.error('Add at least one item');
+
     setCreating(true);
     try {
       await API.post('/gatepass', {
         type: form.type,
         toParty: form.toParty,
+        expectedDate: form.expectedDate || null,
         notes: form.notes,
-        items: manualItems.map(i => ({ skuId: i.skuId, quantity: i.quantity })),
+        items: manualItems.map(i => ({ skuId: i.skuId, quantity: i.quantity, inventoryType: i.inventoryType, shelfCode: i.shelfCode || null, unitPrice: i.unitPrice ? parseFloat(i.unitPrice) : null, batchCode: i.batchCode || null, forceAllocate: i.forceAllocate })),
       });
       toast.success('Gatepass created');
       onSuccess();
@@ -293,89 +280,129 @@ const CreateGatepassModal = ({ onClose, onSuccess }) => {
     } finally { setCreating(false); }
   };
 
-  const selectedTransfer = transfers.find(t => t.id === form.stockTransferId);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Create Gatepass</h3>
+          <h3 className="text-lg font-bold">Create Gatepass Order</h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Create from Stock Transfer (optional)</label>
-            <select value={form.stockTransferId} onChange={e => setForm({ ...form, stockTransferId: e.target.value, items: [] })} className="input-field">
-              <option value="">Manual entry</option>
-              {loadingTransfers ? <option disabled>Loading...</option> : transfers.map(t => (
-                <option key={t.id} value={t.id}>{t.id.slice(0, 8)} - {t.fromWarehouse?.name} → {t.toWarehouse?.name}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Gatepass Order No</label>
+              <input type="text" className="input-field bg-slate-50 text-slate-400" value="Auto-generated" disabled />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">Gatepass Type *</label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="input-field">
+                {GATEPASS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
 
-          {!form.stockTransferId && (
-            <>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Type</label>
-                <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="input-field">
-                  <option value="MANUAL">Manual</option>
-                  <option value="INCOMING">Incoming</option>
-                  <option value="RETURN">Return</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">To Party</label>
-                <input type="text" className="input-field" value={form.toParty} onChange={e => setForm({ ...form, toParty: e.target.value })} placeholder="Party name" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Notes</label>
-                <input type="text" className="input-field" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500 mb-1">Items</label>
-                <div className="relative mb-2">
-                  <input type="text" className="input-field" value={skuSearch} onChange={e => setSkuSearch(e.target.value)} placeholder="Search SKU..." />
-                  {searchingSku && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
-                  {skuResults.length > 0 && (
-                    <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-40 overflow-y-auto">
-                      {skuResults.map(sku => (
-                        <button key={sku.id} onClick={() => addManualItem(sku)} className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 flex justify-between">
-                          <span><span className="font-medium">{sku.skuCode}</span></span>
-                          <span className="text-xs text-indigo-600">+ Add</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">To Party *</label>
+            <input type="text" className="input-field" value={form.toParty} onChange={e => setForm({ ...form, toParty: e.target.value })} placeholder="Party name" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Expected Date</label>
+            <input type="date" className="input-field" value={form.expectedDate} onChange={e => setForm({ ...form, expectedDate: e.target.value })} />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Notes</label>
+            <input type="text" className="input-field" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Items</label>
+            <div className="relative mb-2">
+              <input type="text" className="input-field" value={skuSearch} onChange={e => setSkuSearch(e.target.value)} placeholder="Search SKU to add..." />
+              {searchingSku && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
+              {skuResults.length > 0 && (
+                <div className="absolute z-10 top-full mt-1 w-full bg-white border rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                  {skuResults.map(sku => (
+                    <button key={sku.id} onClick={() => addManualItem(sku)} className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 flex justify-between">
+                      <span><span className="font-medium">{sku.skuCode}</span> - {sku.name}</span>
+                      <span className="text-xs text-indigo-600">+ Add</span>
+                    </button>
+                  ))}
                 </div>
-                {manualItems.length > 0 && (
-                  <div className="bg-slate-50 rounded-xl p-2 space-y-1">
-                    {manualItems.map((item, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <span className="flex-1 font-mono text-xs">{item.skuCode}</span>
-                        <input type="number" min={1} className="input-field w-16 text-xs text-center" value={item.quantity} onChange={e => {
+              )}
+            </div>
+            {manualItems.length > 0 && (
+              <div className="bg-slate-50 rounded-xl p-2 space-y-2 max-h-64 overflow-y-auto">
+                {manualItems.map((item, i) => (
+                  <div key={i} className="border border-slate-200 rounded-lg p-2 bg-white space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-medium text-indigo-600">{item.skuCode}</span>
+                      <button onClick={() => setManualItems(manualItems.filter((_, idx) => idx !== i))} className="p-0.5 hover:bg-red-100 rounded text-red-500"><X size={12} /></button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <div>
+                        <label className="text-[9px] font-medium text-slate-400 uppercase">Qty</label>
+                        <input type="number" min={1} className="w-full px-1.5 py-1 border rounded text-xs text-center" value={item.quantity} onChange={e => {
                           const updated = [...manualItems];
                           updated[i].quantity = parseInt(e.target.value) || 1;
                           setManualItems(updated);
                         }} />
-                        <button onClick={() => setManualItems(manualItems.filter((_, idx) => idx !== i))} className="p-1 hover:bg-red-100 rounded-lg text-red-500"><X size={14} /></button>
                       </div>
-                    ))}
+                      <div>
+                        <label className="text-[9px] font-medium text-slate-400 uppercase">Inventory Type</label>
+                        <select value={item.inventoryType} onChange={e => {
+                          const updated = [...manualItems];
+                          updated[i].inventoryType = e.target.value;
+                          setManualItems(updated);
+                        }} className="w-full px-1.5 py-1 border rounded text-[10px]">
+                          {INVENTORY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-medium text-slate-400 uppercase">Shelf Code</label>
+                        <input type="text" className="w-full px-1.5 py-1 border rounded text-xs" value={item.shelfCode} onChange={e => {
+                          const updated = [...manualItems];
+                          updated[i].shelfCode = e.target.value;
+                          setManualItems(updated);
+                        }} placeholder="e.g. A-01" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-medium text-slate-400 uppercase">Unit Price</label>
+                        <input type="number" step="0.01" className="w-full px-1.5 py-1 border rounded text-xs" value={item.unitPrice} onChange={e => {
+                          const updated = [...manualItems];
+                          updated[i].unitPrice = e.target.value;
+                          setManualItems(updated);
+                        }} placeholder="0.00" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-medium text-slate-400 uppercase">Batch Code</label>
+                        <input type="text" className="w-full px-1.5 py-1 border rounded text-xs" value={item.batchCode} onChange={e => {
+                          const updated = [...manualItems];
+                          updated[i].batchCode = e.target.value;
+                          setManualItems(updated);
+                        }} placeholder="Batch/Lot" />
+                      </div>
+                      <div className="flex items-end pb-1">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" checked={item.forceAllocate} onChange={e => {
+                            const updated = [...manualItems];
+                            updated[i].forceAllocate = e.target.checked;
+                            setManualItems(updated);
+                          }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                          <span className="text-[10px] font-medium text-slate-500">Force Allocate</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
-            </>
-          )}
-
-          {form.stockTransferId && selectedTransfer && (
-            <div className="bg-slate-50 rounded-xl p-3 text-sm space-y-1">
-              <p className="font-medium">{selectedTransfer.fromWarehouse?.name} → {selectedTransfer.toWarehouse?.name}</p>
-              <p className="text-xs text-slate-500">Items will be auto-populated from this transfer</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <button onClick={handleSubmit} disabled={creating} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
+        <button onClick={handleSubmit} disabled={creating || manualItems.length === 0} className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
           {creating && <Loader2 size={16} className="animate-spin" />}
           {creating ? 'Creating...' : 'Create Gatepass'}
         </button>

@@ -646,6 +646,7 @@ model Gatepass {
   status          String   @default("PENDING") // PENDING, APPROVED, DISPATCHED, RECEIVED, CANCELLED
   quantity        Int      @default(0)
   toParty         String?
+  expectedDate    DateTime?
   notes           String?
   stockTransferId String?
   createdById     String?
@@ -660,12 +661,17 @@ model Gatepass {
 }
 
 model GatepassItem {
-  id         String @id @default(uuid())
-  gatepassId String
-  skuId      String
-  quantity   Int
-  scannedQty Int    @default(0)
-  status     String @default("PENDING") // PENDING, PARTIAL, SCANNED
+  id            String   @id @default(uuid())
+  gatepassId    String
+  skuId         String
+  quantity      Int
+  scannedQty    Int      @default(0)
+  status        String   @default("PENDING") // PENDING, PARTIAL, SCANNED
+  inventoryType String   @default("GOOD_INVENTORY") // GOOD_INVENTORY, BAD_INVENTORY, QC_REJECTED
+  shelfCode     String?
+  unitPrice     Decimal?
+  batchCode     String?
+  forceAllocate Boolean  @default(false)
 
   gatepass Gatepass  @relation(fields: [gatepassId], references: [id])
   sku      SkuMaster @relation(fields: [skuId], references: [id])

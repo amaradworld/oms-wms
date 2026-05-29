@@ -53,9 +53,9 @@ export const getGatepassById = async (req: AuthRequest, res: Response) => {
 export const createGatepass = async (req: AuthRequest, res: Response) => {
   try {
     const { tenant_id } = req.user!;
-    const { code, type, status, quantity, toParty, notes, stockTransferId, items } = req.body;
+    const { code, type, status, quantity, toParty, expectedDate, notes, stockTransferId, items } = req.body;
 
-    const gatepassCode = code || await generateCode(tenant_id, type || 'MANUAL');
+    const gatepassCode = code || await generateCode(tenant_id, type || 'STOCK_TRANSFER');
     const existing = await prisma.gatepass.findUnique({ where: { code: gatepassCode } });
     if (existing) { res.status(400).json({ message: `Gatepass code ${gatepassCode} already exists` }); return; }
 
@@ -63,15 +63,16 @@ export const createGatepass = async (req: AuthRequest, res: Response) => {
       data: {
         tenantId: tenant_id,
         code: gatepassCode,
-        type: type || 'MANUAL',
+        type: type || 'STOCK_TRANSFER',
         status: status || 'PENDING',
         quantity: quantity || 0,
         toParty,
+        expectedDate: expectedDate ? new Date(expectedDate) : null,
         notes,
         stockTransferId: stockTransferId || null,
         createdById: req.user!.id,
         items: items?.length ? {
-          create: items.map(i => ({ skuId: i.skuId, quantity: i.quantity })),
+          create: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, inventoryType: i.inventoryType || 'GOOD_INVENTORY', shelfCode: i.shelfCode || null, unitPrice: i.unitPrice || null, batchCode: i.batchCode || null, forceAllocate: i.forceAllocate || false })),
         } : undefined,
       },
       include: {
