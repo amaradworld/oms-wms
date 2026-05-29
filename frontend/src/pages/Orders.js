@@ -332,13 +332,6 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
     }
     setForm(updated);
   };
-      if (field === 'billingName') updated.customerName = value;
-      if (field === 'billingAddress1') updated.shippingAddress = value;
-      if (field === 'billingPhone') updated.notificationMobile = value;
-      if (field === 'billingEmail') updated.notificationEmail = value;
-    }
-    setForm(updated);
-  };
 
   const handleSubmit = async () => {
     if (!form.customerName || !form.shippingAddress || items.length === 0) {
