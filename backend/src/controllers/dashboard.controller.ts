@@ -13,7 +13,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 
     const totalOrders = await prisma.order.count({ where: orderWhere });
     const pendingOrders = await prisma.order.count({ where: { ...orderWhere, orderStatus: 'PENDING' } });
-    const totalRevenue = await prisma.order.aggregate({ _sum: { orderAmount: true }, where: orderWhere });
+    const totalRevenue = await prisma.orderItem.aggregate({
+      _sum: { totalAmount: true },
+      where: { order: { tenantId: tenant_id, ...(warehouseId ? { warehouseId } : {}) } },
+    });
     const ordersByStatus = await prisma.order.groupBy({
       by: ['orderStatus'],
       _count: true,
@@ -47,7 +50,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     res.json({
       totalOrders: totalOrders || 0,
       pendingOrders: pendingOrders || 0,
-      totalRevenue: totalRevenue._sum.orderAmount || 0,
+      totalRevenue: totalRevenue._sum.totalAmount || 0,
       activeSkus: activeSkus || 0,
       ordersByStatus: ordersByStatus || [],
       lowStockItems: lowStockItems || [],
