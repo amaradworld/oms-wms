@@ -97,7 +97,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
             <StatCard title="Total Orders" value={stats.totalOrders?.toLocaleString() || "ΓÇö"} subtitle="All time" icon={ShoppingCart} color="blue" />
             <StatCard title="Pending Shipment" value={stats.pendingOrders?.toLocaleString() || "ΓÇö"} subtitle="Awaiting dispatch" icon={Package} color="amber" />
-            <StatCard title="Revenue" value={stats.totalRevenue ? `Γé╣${stats.totalRevenue.toLocaleString()}` : "ΓÇö"} subtitle="Total value" icon={IndianRupee} color="emerald" />
+            <StatCard title="Revenue" value={stats.totalRevenue ? `Rs. ${stats.totalRevenue.toLocaleString()}` : "ΓÇö"} subtitle="Total value" icon={IndianRupee} color="emerald" />
             <StatCard title="Active SKUs" value={stats.activeSkus?.toLocaleString() || 'ΓÇö'} subtitle="In inventory" icon={BarChart3} color="violet" />
             <StatCard title="SLA Breached" value={sla.breached ?? 'ΓÇö'} subtitle={sla.breached > 0 ? 'Requires attention' : 'All good'} icon={AlertTriangle} color="rose" />
             <StatCard title="At Risk" value={sla.atRisk ?? 'ΓÇö'} subtitle={sla.atRisk > 0 ? 'Approaching deadline' : 'On track'} icon={Clock} color="amber" />
