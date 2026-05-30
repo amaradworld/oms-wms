@@ -32,6 +32,7 @@ import BinManager from './pages/BinManager';
 import SkuHistory from './pages/SkuHistory';
 import Parties from './pages/Parties';
 import Companies from './pages/Companies';
+import AuditLogs from './pages/AuditLogs';
 import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
@@ -59,22 +60,55 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  PLATFORM_ADMIN: ['dashboard','companies'],
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties'],
+  PLATFORM_ADMIN: ['dashboard','companies','audit-logs'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','audit-logs'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','audit-logs'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
 
+const TAB_TO_HASH = {
+  dashboard:'dashboard', orders:'orders', inventory:'inventory', scanning:'scanning', 'audit-logs':'audit-logs',
+  picklist:'picklist', packing:'packing', returns:'returns', warehouse:'warehouse',
+  cyclecount:'cycle-count', analytics:'analytics', marketplace:'marketplace',
+  purchaseorders:'purchase-orders', stocktransfer:'stock-transfer', waves:'wave-picking',
+  manifests:'manifests', ndr:'ndr', 'courier-routing':'courier-routing',
+  'inventory-alerts':'inventory-alerts', gatepass:'gatepass', 'gatepass-order':'gatepass-order',
+  integrations:'integrations', grn:'grn', putaway:'putaway', bins:'bin-locations',
+  'sku-history':'sku-history', parties:'parties', companies:'companies', settings:'settings',
+};
+
+const HASH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_HASH).map(([k, v]) => [v, k]));
+
 const App = () => {
   const { user, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
   const role = user?.role || '';
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const getInitialTab = () => {
+    const hash = window.location.hash.replace('#/', '');
+    return HASH_TO_TAB[hash] || 'dashboard';
+  };
+  const [activeTab, setActiveTabState] = useState(getInitialTab());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    const hash = TAB_TO_HASH[tab];
+    if (hash) window.location.hash = hash;
+  };
+
   useEffect(() => {
-    if (role === 'PLATFORM_ADMIN') setActiveTab('companies');
+    const onHashChange = () => {
+      const hash = window.location.hash.replace('#/', '');
+      const tab = HASH_TO_TAB[hash];
+      if (tab) setActiveTabState(tab);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  useEffect(() => {
+    if (role === 'PLATFORM_ADMIN' && activeTab === 'dashboard') setActiveTab('companies');
   }, [role]);
 
   const API = process.env.REACT_APP_API_URL;
@@ -104,8 +138,8 @@ const App = () => {
   }
 
   if (!isAuthenticated) {
-    const isTrackPage = window.location.hash === '#/track' || window.location.pathname.startsWith('/track');
-    if (isTrackPage) return <TrackingPage />;
+    const hashTab = HASH_TO_TAB[window.location.hash.replace('#/', '')];
+    if (hashTab) setActiveTab(hashTab);
     return <LoginPage />;
   }
 
@@ -144,6 +178,7 @@ const App = () => {
       case 'sku-history': return <SkuHistory />;
       case 'parties': return <Parties />;
       case 'companies': return <Companies />;
+      case 'audit-logs': return <AuditLogs />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }
