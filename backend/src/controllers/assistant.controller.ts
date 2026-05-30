@@ -34,10 +34,11 @@ interface ActionItem {
 }
 
 const SKU_PATTERN = /\b[A-Za-z0-9][A-Za-z0-9\-_./]{1,30}\b/;
+const COMMON_WORDS = new Set(['history', 'track', 'search', 'find', 'where', 'item', 'product', 'stock', 'status', 'show', 'lookup', 'get', 'check', 'view', 'info', 'details', 'code', 'number', 'hello', 'help', 'guide', 'what', 'how', 'can', 'you']);
 
 const detectSkuQuery = (message: string): string | null => {
   const lower = message.toLowerCase();
-  const skuIndicators = ['sku', 'item', 'product', 'track', 'history of', 'search', 'find', 'where is', 'stock of', 'status of', 'transactions for'];
+  const skuIndicators = ['sku', 'item', 'product', 'track', 'history of', 'search', 'find', 'where is', 'stock of', 'status of', 'transactions for', 'lookup'];
   const hasIndicator = skuIndicators.some(ind => lower.includes(ind));
   if (!hasIndicator) return null;
 
@@ -45,7 +46,7 @@ const detectSkuQuery = (message: string): string | null => {
   const words = message.split(/\s+/);
   for (const word of words) {
     const cleaned = word.replace(/[,;.!?'"]/g, '');
-    if (SKU_PATTERN.test(cleaned) && cleaned.length >= 2 && !skuIndicators.includes(cleaned.toLowerCase())) {
+    if (SKU_PATTERN.test(cleaned) && cleaned.length >= 2 && !skuIndicators.includes(cleaned.toLowerCase()) && !COMMON_WORDS.has(cleaned.toLowerCase())) {
       return cleaned.toUpperCase();
     }
   }

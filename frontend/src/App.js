@@ -27,6 +27,7 @@ import Settings from './pages/Settings';
 import Grn from './pages/Grn';
 import Putaway from './pages/Putaway';
 import BinManager from './pages/BinManager';
+import SkuHistory from './pages/SkuHistory';
 import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
@@ -54,8 +55,8 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -130,6 +131,7 @@ const App = () => {
       case 'grn': return <Grn />;
       case 'putaway': return <Putaway />;
       case 'bins': return <BinManager />;
+      case 'sku-history': return <SkuHistory />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }
