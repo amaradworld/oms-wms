@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 
 const API_KEY = process.env.API_KEY;
+console.log(`[apiKey] API_KEY configured: ${API_KEY ? 'YES' : 'NO'}`);
 
 export const requireApiKey = (req: Request, res: Response, next: NextFunction) => {
-  // If no API_KEY is configured, allow public access (dev mode)
   if (!API_KEY) return next();
 
   const provided = req.headers['x-api-key'] as string || req.query.api_key as string;
