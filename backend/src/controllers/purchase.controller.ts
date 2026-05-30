@@ -3,14 +3,33 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getSuppliers = async (req: AuthRequest, res: Response) => {
-  const suppliers = await prisma.supplier.findMany({ where: { tenantId: req.user!.tenant_id }, orderBy: { createdAt: 'desc' } });
+  const suppliers = await prisma.supplier.findMany({ where: { tenantId: req.user!.tenant_id }, orderBy: [ { isActive: 'desc' }, { name: 'asc' } ] });
   res.json(suppliers);
 };
 
 export const createSupplier = async (req: AuthRequest, res: Response) => {
-  const { name, contactPerson, email, phone, address } = req.body;
-  const supplier = await prisma.supplier.create({ data: { tenantId: req.user!.tenant_id, name, contactPerson, email, phone, address } });
+  const { code, name, contactPerson, email, phone, address, gstin } = req.body;
+  if (!name) return res.status(400).json({ message: 'Party name is required' });
+  const supplier = await prisma.supplier.create({ data: { tenantId: req.user!.tenant_id, code: code || null, name, contactPerson, email, phone, address, gstin: gstin || null } });
   res.status(201).json(supplier);
+};
+
+export const updateSupplier = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const target = await prisma.supplier.findFirst({ where: { id, tenantId: req.user!.tenant_id } });
+  if (!target) return res.status(404).json({ message: 'Party not found' });
+  const { code, name, contactPerson, email, phone, address, gstin, isActive } = req.body;
+  const data: any = {};
+  if (code !== undefined) data.code = code;
+  if (name !== undefined) data.name = name;
+  if (contactPerson !== undefined) data.contactPerson = contactPerson;
+  if (email !== undefined) data.email = email;
+  if (phone !== undefined) data.phone = phone;
+  if (address !== undefined) data.address = address;
+  if (gstin !== undefined) data.gstin = gstin;
+  if (isActive !== undefined) data.isActive = isActive;
+  const updated = await prisma.supplier.update({ where: { id }, data });
+  res.json(updated);
 };
 
 export const getPurchaseOrders = async (req: AuthRequest, res: Response) => {

@@ -87,6 +87,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       id: 'administration', label: 'Administration', icon: Settings, group: true,
       children: [
         { id: 'integrations', label: 'Integrations', icon: Globe },
+        { id: 'parties', label: 'Parties', icon: Building2 },
         { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
         { id: 'marketplace', label: 'Marketplace', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },

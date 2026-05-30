@@ -426,15 +426,18 @@ model CycleCountItem {
 model Supplier {
   id             String   @id @default(uuid())
   tenantId       String
+  code           String?
   name           String
   contactPerson  String?
   email          String?
   phone          String?
   address        String?
+  gstin          String?
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   purchaseOrders PurchaseOrder[]
 
+  @@unique([tenantId, code])
   @@map("suppliers")
 }
 
