@@ -307,6 +307,26 @@ const knowledgeBase: KnowledgeEntry[] = [
     ],
   },
   {
+    keywords: ['sku history', 'sku track', 'sku search', 'item history', 'product history', 'transactions', 'track item', 'find item', 'sku status'],
+    title: 'SKU Transaction History',
+    summary: 'You can look up the full transaction history of any SKU — GRN receipts, sales orders, putaway movements, purchase orders, gatepasses, and stock transfers.',
+    steps: [
+      'Type a query like "Show history of SKU-001" or "Track ABC123" in the assistant chat.',
+      'The assistant will search your catalog and return all transactions for that SKU.',
+      'Results include: current stock levels per bin, GRN history, sales orders, putaway tasks, purchase orders, gatepass movements, and stock transfers.',
+      'Use the action buttons to navigate to Inventory or Orders for more detail.',
+    ],
+    tips: [
+      'Use the exact SKU code as it appears in the system.',
+      'SKU codes can contain letters, numbers, dashes, underscores, and dots.',
+      'Try: "Show history of SKU-001" or "Where is item ABC-123?"',
+    ],
+    related: ['inventory', 'orders'],
+    actions: [
+      { label: 'Go to Inventory', description: 'View all inventory levels', link: 'inventory' },
+    ],
+  },
+  {
     keywords: ['barcode', 'scan', 'scanner', 'barcode scan'],
     title: 'Barcode Scanning',
     summary: 'Use barcode scanning for fast, accurate inventory operations.',
