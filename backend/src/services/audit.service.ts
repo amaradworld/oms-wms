@@ -1,4 +1,4 @@
-import prisma from '../services/prisma';
+import prisma from './prisma';
 
 interface AuditEntry {
   tenantId: string;
