@@ -21,6 +21,7 @@ import NdrDashboard from './pages/NdrDashboard';
 import CourierRouting from './pages/CourierRouting';
 import InventoryAlerts from './pages/InventoryAlerts';
 import Gatepasses from './pages/Gatepasses';
+import GatepassOrder from './pages/GatepassOrder';
 import Integrations from './pages/Integrations';
 import TrackingPage from './pages/TrackingPage';
 import Settings from './pages/Settings';
@@ -127,6 +128,7 @@ const App = () => {
       case 'courier-routing': return <CourierRouting />;
       case 'inventory-alerts': return <InventoryAlerts />;
       case 'gatepass': return <Gatepasses />;
+      case 'gatepass-order': return <GatepassOrder />;
       case 'integrations': return <Integrations />;
       case 'grn': return <Grn />;
       case 'putaway': return <Putaway />;

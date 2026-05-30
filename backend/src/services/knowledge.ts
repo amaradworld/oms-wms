@@ -83,6 +83,33 @@ const knowledgeBase: KnowledgeEntry[] = [
     ],
   },
   {
+    keywords: ['gatepass order', 'gpo', 'gatepass order import', 'gatepass order csv', 'gatepass order process', 'gatepass order procedure'],
+    title: 'Gatepass Order (GPO) Process',
+    summary: 'Gatepass Order is an internal order to collect SKUs from warehouse storage for sending out to vendors, customers, or partners. It is created via the Import functionality using a CSV file.',
+    steps: [
+      'Go to Tools > Import > GatePass Order > Create New.',
+      'Click "Download CSV format" to download the template file.',
+      'Fill in the CSV columns: Gatepassorder No (mandatory, alphanumeric), Gatepass Type (RETURN_TO_VENDOR / RETURNABLE / NON_RETURNABLE / STOCK_TRANSFER), To Party (destination facility code or vendor code), Expected Date (DD-MM-YYYY), SKU Code(s), Inventory Type (GOOD_INVENTORY / BAD_INVENTORY / QC_REJECTED), Quantity.',
+      'Click "Choose File" to select the completed CSV file.',
+      'Click "Upload File" to upload and process the import.',
+      'Check import status using the Import icon. If errors, download the failed file, correct the cells, and re-import.',
+      'Once created, go to Outbound > Gatepass Order to view the gatepass order.',
+      'After SKUs are retrieved from storage, create a Gatepass and reference the Gatepass Order code to map them together.',
+    ],
+    tips: [
+      'For STOCK_TRANSFER type, enter the destination facility code in To Party.',
+      'For RETURN_TO_VENDOR / RETURNABLE / NON_RETURNABLE, enter the vendor code in To Party.',
+      'Gatepass Order is the collection order — the actual dispatch happens via the Gatepass that references it.',
+      'Incorrect data causes import errors; download the failed file to see the exact error for each row.',
+    ],
+    related: ['gatepass', 'stock transfer', 'import'],
+    actions: [
+      { label: 'Go to Gatepass Order', description: 'View gatepass orders', link: 'gatepass-order' },
+      { label: 'Go to Gatepass', description: 'Create gatepass referencing GPO', link: 'gatepass' },
+      { label: 'Go to Import', description: 'Import CSV files', link: 'import' },
+    ],
+  },
+  {
     keywords: ['gatepass', 'gate pass', 'dispatch', 'outbound', 'create gatepass', 'gatepass order'],
     title: 'Gatepass Management',
     summary: 'Gatepasses control the movement of goods in/out of the warehouse — stock transfers, returns, and other dispatches.',
