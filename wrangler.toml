@@ -1,8 +1,23 @@
-name = "supplyhub-security"
+name = "supplyhub-worker"
 main = "workers/security.js"
 compatibility_date = "2026-05-30"
+compatibility_flags = ["nodejs_compat"]
 
-[env.production]
+# ── Routes ──────────────────────────────────────────────────────────────
 routes = [
   { pattern = "api.globalsupply.in/*", zone_name = "globalsupply.in" }
 ]
+
+# ── Hyperdrive Binding ──────────────────────────────────────────────────
+# Create Hyperdrive in Cloudflare Dashboard:
+#   Dashboard > Hyperdrive > Create > name: "supplyhub-db"
+#   Use Render PostgreSQL connection string as origin
+# Then paste the ID below:
+#
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "<insert-hyperdrive-id-here>"
+
+# ── Environment Variables ───────────────────────────────────────────────
+[env.production]
+# Add any env-specific overrides here

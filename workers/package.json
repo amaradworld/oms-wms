@@ -1,0 +1,9 @@
+{
+  "name": "supplyhub-worker",
+  "version": "1.0.0",
+  "private": true,
+  "main": "security.js",
+  "dependencies": {
+    "pg": "^8.13.0"
+  }
+}
