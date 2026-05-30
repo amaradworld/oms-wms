@@ -7,13 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id        String     @id
+  name      String
+  slug      String     @unique
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("tenants")
+}
+
 model User {
   id            String   @id @default(uuid())
-  tenantId      String
+  tenantId      String?
   email         String   @unique
   passwordHash  String
   fullName      String?
-  role          String   // SUPER_ADMIN, WAREHOUSE_MGR, PICKER, PACKER
+  role          String   // PLATFORM_ADMIN, SUPER_ADMIN, WAREHOUSE_MGR, PICKER, PACKER
   warehouseId   String?
   warehouse     Warehouse? @relation(fields: [warehouseId], references: [id])
   mfaSecret     String?

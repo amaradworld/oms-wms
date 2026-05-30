@@ -31,6 +31,7 @@ import Putaway from './pages/Putaway';
 import BinManager from './pages/BinManager';
 import SkuHistory from './pages/SkuHistory';
 import Parties from './pages/Parties';
+import Companies from './pages/Companies';
 import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
@@ -58,6 +59,7 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
+  PLATFORM_ADMIN: ['dashboard','companies'],
   SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties'],
   WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties'],
   PICKER: ['dashboard','picklist','scanning'],
@@ -137,6 +139,7 @@ const App = () => {
       case 'bins': return <BinManager />;
       case 'sku-history': return <SkuHistory />;
       case 'parties': return <Parties />;
+      case 'companies': return <Companies />;
       case 'settings': return <Settings />;
       default: return <FallbackPage />;
     }

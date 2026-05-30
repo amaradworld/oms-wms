@@ -14,6 +14,7 @@ const LoginPage = () => {
   const [totpCode, setTotpCode] = useState('');
   const [mfaStep, setMfaStep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [platformMode, setPlatformMode] = useState(false);
 
   const getSubdomainCompany = () => {
     const host = window.location.hostname;
@@ -47,7 +48,7 @@ const LoginPage = () => {
       const res = await API.post('/auth/login', {
         email,
         password,
-        tenantId: selectedCompany.id,
+        ...(platformMode ? {} : { tenantId: selectedCompany.id }),
       });
 
       if (res.data.mfaRequired) {
@@ -59,7 +60,7 @@ const LoginPage = () => {
 
       login(
         { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
-        { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
+        platformMode ? { id: '__platform__', name: 'Platform', slug: 'platform' } : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
         res.data.token
       );
     } catch (err) {
@@ -80,7 +81,7 @@ const LoginPage = () => {
 
       login(
         { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
-        { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
+        platformMode ? { id: '__platform__', name: 'Platform', slug: 'platform' } : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
         res.data.token
       );
     } catch (err) {
@@ -127,6 +128,11 @@ const LoginPage = () => {
                   </button>
                 ))}
               </nav>
+              {!platformMode && (
+                <button onClick={() => { setPlatformMode(true); setStep('credentials'); setEmail(''); setPassword(''); }} className="w-full mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400 hover:text-violet-600 text-center">
+                  Platform Owner Login
+                </button>
+              )}
             </>
           ) : mfaStep ? (
             <form onSubmit={handleMfaChallenge}>
@@ -178,22 +184,21 @@ const LoginPage = () => {
           ) : (
             <form onSubmit={handleLogin}>
               <div className="text-center mb-6">
-                <div className="p-2 bg-violet-100 rounded-xl inline-block mb-2">
-                  <Building2 size={24} className="text-violet-600" />
+                <div className={`p-2 rounded-xl inline-block mb-2 ${platformMode ? 'bg-amber-100' : 'bg-violet-100'}`}>
+                  {platformMode ? <Shield size={24} className="text-amber-600" /> : <Building2 size={24} className="text-violet-600" />}
                 </div>
-                <h2 className="text-xl font-bold">{selectedCompany.name}</h2>
-                {!getSubdomainCompany() && (
-                  <button
-                    type="button"
-                    onClick={() => setStep('company')}
-                    className="text-xs text-violet-600 hover:underline mt-1"
-                  >
+                <h2 className="text-xl font-bold">{platformMode ? 'Platform Owner' : selectedCompany.name}</h2>
+                {platformMode ? (
+                  <button type="button" onClick={() => { setPlatformMode(false); setStep('company'); }} className="text-xs text-amber-600 hover:underline mt-1">
+                    Back to company login
+                  </button>
+                ) : !getSubdomainCompany() && (
+                  <button type="button" onClick={() => setStep('company')} className="text-xs text-violet-600 hover:underline mt-1">
                     Change company
                   </button>
                 )}
-                <p className="text-xs text-slate-600 mt-1">
-                  {selectedCompany.slug}.{baseDomain}
-                </p>
+                {!platformMode && <p className="text-xs text-slate-600 mt-1">{selectedCompany.slug}.{baseDomain}</p>}
+                {platformMode && <p className="text-xs text-slate-500 mt-1">Manage all companies</p>}
               </div>
 
               {error && (

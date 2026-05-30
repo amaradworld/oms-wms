@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting seeding process...');
 
+  await prisma.stockTransfer.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.rto.deleteMany();
   await prisma.return.deleteMany();
@@ -16,8 +17,21 @@ async function main() {
   await prisma.skuMaster.deleteMany();
   await prisma.warehouse.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.tenant.deleteMany();
 
   const passwordHash = await bcrypt.hash('admin123', 10);
+
+  const tenantsData = [
+    { id: 'tenant-1', name: 'InfiStyles', slug: 'infi' },
+    { id: 'tenant-2', name: 'Aria Fashion', slug: 'aria' },
+    { id: 'tenant-3', name: 'ZenCart', slug: 'zencart' },
+    { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear' },
+    { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
+  ];
+
+  for (const t of tenantsData) {
+    await prisma.tenant.create({ data: t });
+  }
 
   const admin = await prisma.user.create({
     data: {
@@ -28,6 +42,36 @@ async function main() {
       role: 'SUPER_ADMIN',
     },
   });
+
+  const ownerPasswordHash = await bcrypt.hash('owner123', 10);
+  await prisma.user.create({
+    data: {
+      tenantId: null,
+      email: 'owner@supplyhub.com',
+      passwordHash: ownerPasswordHash,
+      fullName: 'Platform Owner',
+      role: 'PLATFORM_ADMIN',
+    },
+  });
+
+  const tenantUsers = [
+    { tenantId: 'tenant-2', email: 'admin@aria.com', fullName: 'Aria Admin' },
+    { tenantId: 'tenant-3', email: 'admin@zencart.com', fullName: 'ZenCart Admin' },
+    { tenantId: 'tenant-4', email: 'admin@primewear.com', fullName: 'PrimeWear Admin' },
+    { tenantId: 'tenant-5', email: 'admin@ecothreads.com', fullName: 'EcoThreads Admin' },
+  ];
+
+  for (const u of tenantUsers) {
+    await prisma.user.create({
+      data: {
+        tenantId: u.tenantId,
+        email: u.email,
+        passwordHash,
+        fullName: u.fullName,
+        role: 'SUPER_ADMIN',
+      },
+    });
+  }
 
   const mumbaiWh = await prisma.warehouse.create({
     data: {

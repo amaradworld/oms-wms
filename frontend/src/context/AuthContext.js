@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-const COMPANIES = [
+const API = process.env.REACT_APP_API_URL;
+
+const FALLBACK_COMPANIES = [
   { id: 'tenant-1', name: 'InfiStyles', slug: 'infi' },
   { id: 'tenant-2', name: 'Aria Fashion', slug: 'aria' },
   { id: 'tenant-3', name: 'ZenCart', slug: 'zencart' },
@@ -8,17 +11,18 @@ const COMPANIES = [
   { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
 ];
 
+export const COMPANIES = FALLBACK_COMPANIES;
+
 const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
-
-export { COMPANIES };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [company, setCompany] = useState(null);
   const [tenantId, setTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState(FALLBACK_COMPANIES);
 
   useEffect(() => {
     const saved = localStorage.getItem('auth');
@@ -31,6 +35,12 @@ export const AuthProvider = ({ children }) => {
       } catch (e) { /* ignore */ }
     }
     setLoading(false);
+
+    axios.get(`${API}/api/tenants`).then(res => {
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive })));
+      }
+    }).catch(() => { /* use fallback */ });
   }, []);
 
   const login = (userData, companyData, token) => {
@@ -76,13 +86,13 @@ export const AuthProvider = ({ children }) => {
 
   const findCompanyBySubdomain = (subdomain) => {
     if (!subdomain) return null;
-    return COMPANIES.find(c => c.slug === subdomain) || null;
+    return companies.find(c => c.slug === subdomain) || null;
   };
 
   return (
     <AuthContext.Provider value={{
       user, company, tenantId, loading, login, logout,
-      detectSubdomain, findCompanyBySubdomain, COMPANIES,
+      detectSubdomain, findCompanyBySubdomain, companies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
     }}>

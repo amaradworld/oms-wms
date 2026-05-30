@@ -88,6 +88,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       children: [
         { id: 'integrations', label: 'Integrations', icon: Globe },
         { id: 'parties', label: 'Parties', icon: Building2 },
+        { id: 'companies', label: 'Companies', icon: Globe },
         { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
         { id: 'marketplace', label: 'Marketplace', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -119,6 +120,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
   };
 
   const roleMenuMap = {
+    PLATFORM_ADMIN: filterTree(allMenuItems, new Set(['dashboard', 'companies'])),
     SUPER_ADMIN: allMenuItems,
     WAREHOUSE_MGR: allMenuItems,
     PICKER: filterTree(allMenuItems, new Set(['dashboard', 'scanning', 'waves'])),
