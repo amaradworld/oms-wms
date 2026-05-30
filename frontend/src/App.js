@@ -81,8 +81,8 @@ const TAB_TO_HASH = {
 const HASH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_HASH).map(([k, v]) => [v, k]));
 
 const parseHash = () => {
-  const hash = window.location.hash.replace('#/', '');
-  const [tabPath, ...rest] = hash.split('?');
+  const raw = window.location.hash.replace(/^#\//, '');
+  const [tabPath, ...rest] = raw.split('?');
   const params = new URLSearchParams(rest.join('?'));
   return { tab: HASH_TO_TAB[tabPath] || 'dashboard', detailId: params.get('id') || '' };
 };
@@ -100,13 +100,13 @@ const App = () => {
     setActiveTabState(tab);
     setDetailIdState(entityId || '');
     const hash = TAB_TO_HASH[tab];
-    if (hash) window.location.hash = entityId ? `${hash}?id=${entityId}` : hash;
+    if (hash) window.location.hash = entityId ? `#/${hash}?id=${entityId}` : `#/${hash}`;
   };
 
   const setDetailId = (id) => {
     setDetailIdState(id || '');
     const hash = TAB_TO_HASH[activeTab];
-    if (hash) window.location.hash = id ? `${hash}?id=${id}` : hash;
+    if (hash) window.location.hash = id ? `#/${hash}?id=${id}` : `#/${hash}`;
   };
 
   useEffect(() => {
