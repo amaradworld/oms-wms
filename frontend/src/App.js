@@ -80,28 +80,39 @@ const TAB_TO_HASH = {
 
 const HASH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_HASH).map(([k, v]) => [v, k]));
 
+const parseHash = () => {
+  const hash = window.location.hash.replace('#/', '');
+  const [tabPath, ...rest] = hash.split('?');
+  const params = new URLSearchParams(rest.join('?'));
+  return { tab: HASH_TO_TAB[tabPath] || 'dashboard', detailId: params.get('id') || '' };
+};
+
 const App = () => {
   const { user, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
   const role = user?.role || '';
-  const getInitialTab = () => {
-    const hash = window.location.hash.replace('#/', '');
-    return HASH_TO_TAB[hash] || 'dashboard';
-  };
-  const [activeTab, setActiveTabState] = useState(getInitialTab());
+  const initial = parseHash();
+  const [activeTab, setActiveTabState] = useState(initial.tab);
+  const [detailId, setDetailIdState] = useState(initial.detailId);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const setActiveTab = (tab) => {
+  const setActiveTab = (tab, entityId) => {
     setActiveTabState(tab);
+    setDetailIdState(entityId || '');
     const hash = TAB_TO_HASH[tab];
-    if (hash) window.location.hash = hash;
+    if (hash) window.location.hash = entityId ? `${hash}?id=${entityId}` : hash;
+  };
+
+  const setDetailId = (id) => {
+    setDetailIdState(id || '');
+    const hash = TAB_TO_HASH[activeTab];
+    if (hash) window.location.hash = id ? `${hash}?id=${id}` : hash;
   };
 
   useEffect(() => {
     const onHashChange = () => {
-      const hash = window.location.hash.replace('#/', '');
-      const tab = HASH_TO_TAB[hash];
-      if (tab) setActiveTabState(tab);
+      const { tab, detailId: id } = parseHash();
+      if (tab) { setActiveTabState(tab); setDetailIdState(id); }
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -147,39 +158,41 @@ const App = () => {
     return <OnboardingWizard onComplete={() => setShowOnboarding(false)} getToken={getToken} />;
   }
 
+  const pageProps = { detailId, setDetailId, onNavigate: setActiveTab, activeTab, setActiveTab };
+
   const renderContent = () => {
     const allowed = roleAccess[role] || ['dashboard'];
     if (!allowed.includes(activeTab)) return <UNAUTHORIZED />;
     switch (activeTab) {
-      case 'dashboard': return <Dashboard />;
-      case 'orders': return <Orders />;
-      case 'inventory': return <Inventory />;
-      case 'scanning': return <ScanningScreen />;
-      case 'picklist': return <Picklist />;
-      case 'packing': return <PackingScreen />;
-      case 'returns': return <Returns />;
-      case 'warehouse': return <Warehouse />;
-      case 'cyclecount': return <CycleCount />;
-      case 'analytics': return <Analytics />;
-      case 'marketplace': return <MarketplaceSettings />;
-      case 'purchaseorders': return <PurchaseOrders />;
-      case 'stocktransfer': return <StockTransfer />;
-      case 'waves': return <WavePicking />;
-      case 'manifests': return <Manifests />;
-      case 'ndr': return <NdrDashboard />;
-      case 'courier-routing': return <CourierRouting />;
-      case 'inventory-alerts': return <InventoryAlerts />;
-      case 'gatepass': return <Gatepasses />;
-      case 'gatepass-order': return <GatepassOrder />;
-      case 'integrations': return <Integrations />;
-      case 'grn': return <Grn />;
-      case 'putaway': return <Putaway />;
-      case 'bins': return <BinManager />;
-      case 'sku-history': return <SkuHistory />;
-      case 'parties': return <Parties />;
-      case 'companies': return <Companies />;
-      case 'audit-logs': return <AuditLogs />;
-      case 'settings': return <Settings />;
+      case 'dashboard': return <Dashboard {...pageProps} />;
+      case 'orders': return <Orders {...pageProps} />;
+      case 'inventory': return <Inventory {...pageProps} />;
+      case 'scanning': return <ScanningScreen {...pageProps} />;
+      case 'picklist': return <Picklist {...pageProps} />;
+      case 'packing': return <PackingScreen {...pageProps} />;
+      case 'returns': return <Returns {...pageProps} />;
+      case 'warehouse': return <Warehouse {...pageProps} />;
+      case 'cyclecount': return <CycleCount {...pageProps} />;
+      case 'analytics': return <Analytics {...pageProps} />;
+      case 'marketplace': return <MarketplaceSettings {...pageProps} />;
+      case 'purchaseorders': return <PurchaseOrders {...pageProps} />;
+      case 'stocktransfer': return <StockTransfer {...pageProps} />;
+      case 'waves': return <WavePicking {...pageProps} />;
+      case 'manifests': return <Manifests {...pageProps} />;
+      case 'ndr': return <NdrDashboard {...pageProps} />;
+      case 'courier-routing': return <CourierRouting {...pageProps} />;
+      case 'inventory-alerts': return <InventoryAlerts {...pageProps} />;
+      case 'gatepass': return <Gatepasses {...pageProps} />;
+      case 'gatepass-order': return <GatepassOrder {...pageProps} />;
+      case 'integrations': return <Integrations {...pageProps} />;
+      case 'grn': return <Grn {...pageProps} />;
+      case 'putaway': return <Putaway {...pageProps} />;
+      case 'bins': return <BinManager {...pageProps} />;
+      case 'sku-history': return <SkuHistory {...pageProps} />;
+      case 'parties': return <Parties {...pageProps} />;
+      case 'companies': return <Companies {...pageProps} />;
+      case 'audit-logs': return <AuditLogs {...pageProps} />;
+      case 'settings': return <Settings {...pageProps} />;
       default: return <FallbackPage />;
     }
   };

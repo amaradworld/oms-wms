@@ -31,7 +31,7 @@ const sourceColors = {
   MANUAL: 'bg-purple-100 text-purple-700',
 };
 
-const Orders = () => {
+const Orders = ({ detailId, setDetailId }) => {
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
@@ -46,6 +46,22 @@ const Orders = () => {
   const [showManualOrder, setShowManualOrder] = useState(false);
   const [allSources, setAllSources] = useState([]);
   const { selectedFacility } = useAuth();
+
+  useEffect(() => {
+    if (detailId && !detailOrder) {
+      API.get(`/orders/${detailId}`).then(res => setDetailOrder(res.data)).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
+
+  const openOrderDetail = (order) => {
+    setDetailOrder(order);
+    if (setDetailId) setDetailId(order.id);
+  };
+
+  const closeOrderDetail = () => {
+    setDetailOrder(null);
+    if (setDetailId) setDetailId('');
+  };
 
   const fetchOrders = useCallback(async (targetPage) => {
     setLoading(true);
@@ -209,7 +225,7 @@ const Orders = () => {
                       </button>
                       {openMenuId === order.id && (
                         <div data-menu className="absolute right-2 top-10 z-40 w-44 bg-white rounded-xl shadow-xl border border-indigo-100/60 py-1 animate-fade-in">
-                          <button onClick={() => { setDetailOrder(order); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 transition-colors">
+                           <button onClick={() => { openOrderDetail(order); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-indigo-50 transition-colors">
                             <Eye size={15} className="text-indigo-500" /> View Details
                           </button>
                           <button onClick={() => handleCancelOrder(order)} disabled={order.orderStatus === 'CANCELLED' || order.orderStatus === 'DELIVERED'} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
@@ -248,7 +264,7 @@ const Orders = () => {
       {detailOrder && (
         <OrderDetailModal
           order={detailOrder}
-          onClose={() => setDetailOrder(null)}
+          onClose={closeOrderDetail}
           onUpdate={(updated) => setDetailOrder(updated)}
           onMarkDelivered={handleMarkDelivered}
         />

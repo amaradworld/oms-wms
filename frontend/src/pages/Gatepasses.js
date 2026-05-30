@@ -23,14 +23,25 @@ const typeColors = {
   MANUAL: 'bg-slate-100 text-slate-600',
 };
 
-const Gatepasses = () => {
+const Gatepasses = ({ detailId, setDetailId }) => {
   const [gatepasses, setGatepasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('PENDING');
   const [showCreate, setShowCreate] = useState(false);
-  const [detail, setDetail] = useState(null);
+  const [detail, setDetailState] = useState(null);
   const [scanCode, setScanCode] = useState('');
   const [scanning, setScanning] = useState(false);
+
+  const setDetail = (gp) => {
+    setDetailState(gp);
+    if (setDetailId) setDetailId(gp ? gp.id : '');
+  };
+
+  useEffect(() => {
+    if (detailId && !detail) {
+      API.get(`/gatepass/${detailId}`).then(res => setDetailState(res.data)).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
 
   const fetchGatepasses = useCallback(async () => {
     setLoading(true);
