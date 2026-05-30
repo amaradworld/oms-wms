@@ -37,6 +37,7 @@ import grnRoutes from './routes/grn.routes';
 import binRoutes from './routes/bin.routes';
 import putawayRoutes from './routes/putaway.routes';
 import assistantRoutes from './routes/assistant.routes';
+import dataRoutes from './routes/data.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 dotenv.config();
@@ -91,6 +92,7 @@ app.use('/api', grnRoutes);
 app.use('/api', binRoutes);
 app.use('/api', putawayRoutes);
 app.use('/api', assistantRoutes);
+app.use('/api/v1/data', dataRoutes);
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';
