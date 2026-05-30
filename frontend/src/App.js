@@ -73,6 +73,10 @@ const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  useEffect(() => {
+    if (role === 'PLATFORM_ADMIN') setActiveTab('companies');
+  }, [role]);
+
   const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
