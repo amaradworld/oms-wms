@@ -105,6 +105,46 @@ export const importOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const importParties = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user!.tenant_id;
+    const file = req.file;
+    if (!file) return res.status(400).json({ message: 'CSV file is required' });
+
+    const csv = file.buffer.toString('utf-8');
+    const records: any[] = parse(csv, { columns: true, skip_empty_lines: true, trim: true });
+    let count = 0;
+    const errors: string[] = [];
+
+    for (const row of records) {
+      const name = row.name || row.Name || '';
+      if (!name) { errors.push(`Row ${count + 1}: missing name`); continue; }
+
+      const code = row.code || row.Code || null;
+      const existingCode = code ? await prisma.supplier.findFirst({ where: { tenantId, code } }) : null;
+      if (existingCode) { errors.push(`Code "${code}" already exists`); continue; }
+
+      await prisma.supplier.create({
+        data: {
+          tenantId,
+          code: code || null,
+          name,
+          contactPerson: row.contactPerson || row.contact_person || null,
+          email: row.email || row.Email || null,
+          phone: row.phone || row.Phone || null,
+          address: row.address || row.Address || null,
+          gstin: row.gstin || row.GSTIN || null,
+        },
+      });
+      count++;
+    }
+
+    res.json({ message: `${count} parties imported${errors.length ? ` (${errors.length} errors: ${errors.join('; ')})` : ''}` });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Import failed', error: error.message });
+  }
+};
+
 export const importReturns = async (req: AuthRequest, res: Response) => {
   try {
     const file = req.file;

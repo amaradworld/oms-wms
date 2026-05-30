@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Plus, Search, X, Check, Loader2, Smartphone, Mail, MapPin, User, Hash, FileText } from 'lucide-react';
+import { Building2, Plus, Search, X, Check, Loader2, Smartphone, Mail, MapPin, User, Hash, FileText, Download } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
+import ImportButton from '../components/ImportButton';
+
+const SAMPLE_CSV = `code,name,contactPerson,email,phone,address,gstin
+VENDOR01,Acme Corp,John Doe,john@acme.com,+919876543210,123 Industrial Area New Delhi,07AAAAA0000A1Z5
+VENDOR02,Beta Supplies,Jane Smith,jane@beta.com,+919812345678,456 Sector 21 Gurgaon,06BBBBB1111B2Z6`;
 
 const Parties = () => {
   const [parties, setParties] = useState([]);
@@ -85,6 +90,10 @@ const Parties = () => {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => setSearch(e.target.value)} className="input-field pl-9 py-2 text-sm w-48 md:w-64" placeholder="Search by name or code..." />
           </div>
+          <button onClick={() => { const a = document.createElement('a'); const blob = new Blob([SAMPLE_CSV], { type: 'text/csv' }); a.href = URL.createObjectURL(blob); a.download = 'parties-sample.csv'; a.click(); URL.revokeObjectURL(a.href); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors">
+            <Download size={15} /> Sample
+          </button>
+          <ImportButton label="Parties" endpoint="suppliers" onSuccess={fetchParties} />
           <button onClick={openCreate} className="btn-primary flex items-center gap-1.5 text-sm px-4 py-2">
             <Plus size={16} /> Add Party
           </button>
