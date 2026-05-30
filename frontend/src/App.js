@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Building2 } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import axios from 'axios';
 import Sidebar from './components/Sidebar';
+import FacilitySelector from './components/FacilitySelector';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
 import Inventory from './pages/Inventory';
@@ -145,24 +146,14 @@ const App = () => {
     <div className="flex min-h-screen">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50">
-        <div className="sticky top-0 z-30 md:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(true)} className="p-1.5 hover:bg-slate-100 rounded-lg">
+        <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3">
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg">
             <Menu size={22} />
           </button>
-          <div className="text-base font-bold tracking-tight text-slate-900">SupplyHub</div>
-        </div>
-        {selectedFacility && (
-          <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <Building2 size={14} />
-              <span className="font-medium">{selectedFacility.name}</span>
-              <span className="text-blue-200 text-xs ml-1">(filtered view)</span>
-            </div>
-            <button onClick={clearSelectedFacility} className="flex items-center gap-1 text-blue-200 hover:text-white transition-colors">
-              <X size={14} /> Show All
-            </button>
-          </div>
-        )}
+          <h1 className="text-base font-bold tracking-tight text-slate-900 mr-auto md:mr-0">SupplyHub</h1>
+          <div className="flex-1 md:flex-initial" />
+          <FacilitySelector />
+        </header>
         {renderContent()}
       </main>
       <ToastContainer />
