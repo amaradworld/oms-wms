@@ -160,7 +160,7 @@ const App = () => {
         {renderContent()}
       </main>
       <ToastContainer />
-      <AssistantBot />
+      <AssistantBot onNavigate={setActiveTab} />
     </div>
   );
 };

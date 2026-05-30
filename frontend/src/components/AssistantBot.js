@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader, ChevronRight, Sparkles } from 'lucide-react';
 import API from '../utils/api';
-import { useNavigate } from 'react-router-dom';
 
-const AssistantBot = () => {
-  const navigate = useNavigate();
+const AssistantBot = ({ onNavigate }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', text: 'Hi! I\'m your SupplyHub assistant. Ask me about any process — putaway, GRN, orders, gatepass, inventory, and more.' },
@@ -39,8 +37,8 @@ const AssistantBot = () => {
   };
 
   const handleAction = (action) => {
-    if (action.link) {
-      navigate(`/${action.link}`);
+    if (action.link && onNavigate) {
+      onNavigate(action.link);
       setOpen(false);
     }
   };
