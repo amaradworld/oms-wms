@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield } from 'lucide-react';
-import { useAuth, COMPANIES } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
 
 const LoginPage = () => {
-  const { login } = useAuth();
+  const { login, companies } = useAuth();
   const [step, setStep] = useState('company');
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [email, setEmail] = useState('');
@@ -20,7 +20,7 @@ const LoginPage = () => {
     const host = window.location.hostname;
     const parts = host.split('.');
     if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'localhost') {
-      return COMPANIES.find(c => c.slug === parts[0]) || null;
+      return companies.find(c => c.slug === parts[0]) || null;
     }
     return null;
   };
@@ -111,7 +111,7 @@ const LoginPage = () => {
                 <p className="text-sm text-slate-500 mt-1">Choose your organization to continue</p>
               </div>
               <nav aria-label="Company selection" className="space-y-3">
-                {COMPANIES.map((c) => (
+                {companies.filter(c => c.isActive !== false).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => handleCompanySelect(c)}
