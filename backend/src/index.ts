@@ -42,6 +42,7 @@ import mfaRoutes from './routes/mfa.routes';
 import tenantRoutes from './routes/tenant.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
+import { ensureDefaults } from './ensureDefaults';
 
 dotenv.config();
 
@@ -113,6 +114,8 @@ app.get('/health', async (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+ensureDefaults().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
