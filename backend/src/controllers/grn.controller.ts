@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit } from '../services/audit.service';
 
 export const getGrns = async (req: AuthRequest, res: Response) => {
   const where: any = { tenantId: req.user!.tenant_id };
@@ -78,6 +79,7 @@ export const createGrn = async (req: AuthRequest, res: Response) => {
   await prisma.purchaseOrder.update({ where: { id: poId }, data: { status: 'RECEIVING' } });
 
   res.status(201).json(grn);
+  logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'GRN', entityId: grn.id, newValue: { grnNumber: grn.grnNumber, poId, totalQty } });
 };
 
 export const qcGrnItem = async (req: AuthRequest, res: Response) => {
@@ -119,6 +121,7 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
   });
 
   res.json({ message: 'QC updated' });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'QC', entityType: 'GRN', entityId: id, newValue: { qcResults: items } });
 };
 
 export const approveGrn = async (req: AuthRequest, res: Response) => {
@@ -183,6 +186,7 @@ export const approveGrn = async (req: AuthRequest, res: Response) => {
   await prisma.grn.update({ where: { id: grn.id }, data: { status: 'APPROVED' } });
 
   res.json({ message: 'GRN approved. Inventory updated. Putaway tasks created.', tasksCreated: tasks.length });
+  logAudit({ tenantId, userId: req.user!.id, action: 'APPROVE', entityType: 'GRN', entityId: grn.id, newValue: { status: 'APPROVED', tasksCreated: tasks.length } });
 };
 
 export const rejectGrn = async (req: AuthRequest, res: Response) => {
@@ -193,6 +197,7 @@ export const rejectGrn = async (req: AuthRequest, res: Response) => {
 
   await prisma.grn.update({ where: { id: grn.id }, data: { status: 'REJECTED' } });
   res.json({ message: 'GRN rejected' });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'REJECT', entityType: 'GRN', entityId: req.params.id as string, newValue: { status: 'REJECTED' } });
 };
 
 

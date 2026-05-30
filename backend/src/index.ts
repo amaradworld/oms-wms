@@ -38,13 +38,16 @@ import binRoutes from './routes/bin.routes';
 import putawayRoutes from './routes/putaway.routes';
 import assistantRoutes from './routes/assistant.routes';
 import dataRoutes from './routes/data.routes';
+import mfaRoutes from './routes/mfa.routes';
 import { errorHandler } from './middlewares/error.middleware';
+import { httpsRedirect } from './middlewares/https.middleware';
 
 dotenv.config();
 
 const app = express();
 
 app.use(helmet());
+app.use(httpsRedirect);
 app.use(cors({
   origin: [
     'https://globalsupply.in',
@@ -94,6 +97,7 @@ app.use('/api', binRoutes);
 app.use('/api', putawayRoutes);
 app.use('/api', assistantRoutes);
 app.use('/api/v1/data', dataRoutes);
+app.use('/api/auth/mfa', mfaRoutes);
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';

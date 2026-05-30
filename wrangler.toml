@@ -1,0 +1,8 @@
+name = "supplyhub-security"
+main = "workers/security.js"
+compatibility_date = "2026-05-30"
+
+[env.production]
+routes = [
+  { pattern = "api.globalsupply.in/*", zone_name = "globalsupply.in" }
+]

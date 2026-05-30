@@ -2,6 +2,7 @@ import { Response } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit } from '../services/audit.service';
 
 export const getUsers = async (req: AuthRequest, res: Response) => {
   const users = await prisma.user.findMany({
@@ -30,6 +31,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     select: { id: true, email: true, fullName: true, role: true, warehouseId: true, createdAt: true },
   });
   res.json(updated);
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'UPDATE', entityType: 'User', entityId: id, oldValue: { role: target.role, warehouseId: target.warehouseId }, newValue: { role, warehouseId } });
 };
 
 const VALID_ROLES = ['SUPER_ADMIN', 'WAREHOUSE_MGR', 'PICKER', 'PACKER'];
@@ -57,6 +59,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     select: { id: true, email: true, fullName: true, role: true, warehouseId: true, createdAt: true },
   });
   res.status(201).json(user);
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'CREATE', entityType: 'User', entityId: user.id, newValue: { email, role: finalRole, fullName } });
 };
 
 export const changePassword = async (req: AuthRequest, res: Response) => {
@@ -70,4 +73,5 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
   res.json({ message: 'Password updated' });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'CHANGE_PASSWORD', entityType: 'User', entityId: user.id, newValue: {} });
 };

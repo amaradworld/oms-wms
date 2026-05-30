@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit } from '../services/audit.service';
 
 const SOURCE_BIN_MAP: Record<string, string> = {
   PUTAWAY_GRN_ITEM: 'GRN-RECEIVED',
@@ -300,6 +301,7 @@ export const createPutawayTask = async (req: AuthRequest, res: Response) => {
     await prisma.putawayTask.createMany({ data: tasksData });
 
     res.status(201).json({ message: 'Putaway tasks created', count: tasksData.length });
+    logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'PutawayTask', newValue: { source, warehouseId, itemCount: items.length } });
   } catch (error: any) {
     console.error('Create putaway task error:', error);
     res.status(500).json({ message: error?.message || 'Internal server error' });
@@ -344,6 +346,7 @@ export const assignBinToTask = async (req: AuthRequest, res: Response) => {
   });
 
   res.json({ message: 'Bin assigned to putaway task' });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'ASSIGN_BIN', entityType: 'PutawayTask', entityId: task.id, newValue: { binId } });
 };
 
 export const completePutaway = async (req: AuthRequest, res: Response) => {
@@ -397,6 +400,7 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
     });
 
     res.json({ message: 'Putaway completed. Inventory moved to bin.' });
+    logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'COMPLETE', entityType: 'PutawayTask', entityId: task.id, newValue: { binCode: task.bin?.code, qty: acceptedQty } });
   } catch (error: any) {
     console.error('Complete putaway error:', error);
     res.status(500).json({ message: error?.message || 'Internal server error' });

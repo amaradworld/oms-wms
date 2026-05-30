@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle } from 'lucide-react';
+import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield } from 'lucide-react';
 import { useAuth, COMPANIES } from '../context/AuthContext';
 import API from '../utils/api';
 
@@ -10,6 +10,10 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [mfaToken, setMfaToken] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [mfaStep, setMfaStep] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const getSubdomainCompany = () => {
     const host = window.location.hostname;
@@ -37,6 +41,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     try {
       const res = await API.post('/auth/login', {
@@ -44,6 +49,14 @@ const LoginPage = () => {
         password,
         tenantId: selectedCompany.id,
       });
+
+      if (res.data.mfaRequired) {
+        setMfaToken(res.data.mfaToken);
+        setMfaStep(true);
+        setSubmitting(false);
+        return;
+      }
+
       login(
         { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
         { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
@@ -51,7 +64,28 @@ const LoginPage = () => {
       );
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials');
-    }
+    } finally { setSubmitting(false); }
+  };
+
+  const handleMfaChallenge = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+
+    try {
+      const res = await API.post('/auth/mfa-challenge', {
+        mfaToken,
+        token: totpCode,
+      });
+
+      login(
+        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
+        { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
+        res.data.token
+      );
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid code');
+    } finally { setSubmitting(false); }
   };
 
   const baseDomain = window.location.hostname.includes('globalsupply.in')
@@ -94,6 +128,53 @@ const LoginPage = () => {
                 ))}
               </nav>
             </>
+          ) : mfaStep ? (
+            <form onSubmit={handleMfaChallenge}>
+              <div className="text-center mb-6">
+                <div className="p-3 bg-violet-100 rounded-xl inline-block mb-3">
+                  <Shield size={28} className="text-violet-600" />
+                </div>
+                <h2 className="text-xl font-bold">Two-Factor Authentication</h2>
+                <p className="text-sm text-slate-500 mt-1">Enter the code from your authenticator app</p>
+                <p className="text-xs text-slate-400 mt-1">{email}</p>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-700 flex items-center gap-2">
+                  <AlertCircle size={14} /> {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Authenticator Code</label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    maxLength={6}
+                    value={totpCode}
+                    onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    className="w-full text-center text-2xl tracking-[0.5em] px-4 py-3 border rounded-lg font-mono focus:ring-2 focus:ring-violet-500 outline-none"
+                    placeholder="000000"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={submitting || totpCode.length < 6}
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {submitting ? 'Verifying...' : <><Shield size={18} /> Verify & Sign In</>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setMfaStep(false); setTotpCode(''); setError(''); }}
+                  className="w-full text-xs text-slate-500 hover:underline"
+                >
+                  Back to login
+                </button>
+              </div>
+            </form>
           ) : (
             <form onSubmit={handleLogin}>
               <div className="text-center mb-6">
@@ -152,9 +233,10 @@ const LoginPage = () => {
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Sign In to {selectedCompany.name} <ArrowRight size={18} />
+                  {submitting ? 'Signing In...' : <>Sign In to {selectedCompany.name} <ArrowRight size={18} /></>}
                 </button>
               </div>
             </form>

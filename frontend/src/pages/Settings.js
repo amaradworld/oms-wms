@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff, Check, X, UserPlus, Loader2 } from 'lucide-react';
+import { Building2, Users, Key, Bell, Download, Clock, Save, Lock, Eye, EyeOff, Check, X, UserPlus, Loader2, Shield, Smartphone } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -33,6 +33,15 @@ const Settings = () => {
   const [notifPrefs, setNotifPrefs] = useState({ lowStock: true, rtoAlert: true, syncFailure: true, weeklyReport: false });
   const [exporting, setExporting] = useState(null);
   const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState(null);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState(null);
+  const [mfaQrCode, setMfaQrCode] = useState(null);
+  const [mfaVerifyToken, setMfaVerifyToken] = useState('');
+  const [mfaVerifying, setMfaVerifying] = useState(false);
+  const [mfaDisableToken, setMfaDisableToken] = useState('');
+  const [mfaDisabling, setMfaDisabling] = useState(false);
+  const [mfaSetupLoading, setMfaSetupLoading] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -94,8 +103,58 @@ const Settings = () => {
     } catch { setAuditLogs([]); } finally { setAuditLoading(false); }
   }, []);
 
+  const fetchMfaStatus = useCallback(async () => {
+    setMfaLoading(true);
+    try {
+      const res = await API.get('/auth/mfa/status');
+      setMfaStatus(res.data?.mfaEnabled || false);
+    } catch { setMfaStatus(false); } finally { setMfaLoading(false); }
+  }, []);
+
+  const handleMfaSetup = async () => {
+    setMfaSetupLoading(true);
+    try {
+      const res = await API.post('/auth/mfa/setup');
+      setMfaSecret(res.data.secret);
+      setMfaQrCode(res.data.qrCode);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to setup MFA');
+    } finally { setMfaSetupLoading(false); }
+  };
+
+  const handleMfaVerify = async (e) => {
+    e.preventDefault();
+    if (mfaVerifyToken.length < 6) return toast.error('Enter a valid 6-digit code');
+    setMfaVerifying(true);
+    try {
+      await API.post('/auth/mfa/verify', { token: mfaVerifyToken });
+      toast.success('MFA enabled successfully');
+      setMfaStatus(true);
+      setMfaSecret(null);
+      setMfaQrCode(null);
+      setMfaVerifyToken('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Invalid code');
+    } finally { setMfaVerifying(false); }
+  };
+
+  const handleMfaDisable = async (e) => {
+    e.preventDefault();
+    if (mfaDisableToken.length < 6) return toast.error('Enter a valid 6-digit code');
+    setMfaDisabling(true);
+    try {
+      await API.post('/auth/mfa/disable', { token: mfaDisableToken });
+      toast.success('MFA disabled');
+      setMfaStatus(false);
+      setMfaDisableToken('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to disable MFA');
+    } finally { setMfaDisabling(false); }
+  };
+
   useEffect(() => { if (activeTab === 'users') { fetchUsers(); fetchWarehouses(); } }, [activeTab, fetchUsers, fetchWarehouses]);
   useEffect(() => { if (activeTab === 'audit') fetchAudit(); }, [activeTab, fetchAudit]);
+  useEffect(() => { if (activeTab === 'security') fetchMfaStatus(); }, [activeTab, fetchMfaStatus]);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -302,6 +361,75 @@ const Settings = () => {
               {pwSubmitting ? 'Updating...' : <><Save size={16} /> Update Password</>}
             </button>
           </form>
+
+          <hr className="my-6 border-slate-200" />
+
+          <h2 className="text-lg font-bold flex items-center gap-2"><Shield size={20} /> Two-Factor Authentication (MFA)</h2>
+          {mfaLoading ? (
+            <p className="text-sm text-slate-400">Loading...</p>
+          ) : !mfaStatus ? (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">Add an extra layer of security by requiring a one-time code from your authenticator app (Google Authenticator, Authy, etc.) when signing in.</p>
+              {!mfaQrCode ? (
+                <button onClick={handleMfaSetup} disabled={mfaSetupLoading} className="btn-primary flex items-center gap-2 disabled:opacity-50">
+                  {mfaSetupLoading ? 'Setting up...' : <><Smartphone size={16} /> Setup MFA</>}
+                </button>
+              ) : (
+                <div className="space-y-4 p-4 bg-slate-50 rounded-xl">
+                  <div className="text-center">
+                    <img src={mfaQrCode} alt="MFA QR Code" className="mx-auto w-48 h-48 border-2 border-white shadow-md rounded-lg" />
+                    <p className="text-xs text-slate-500 mt-2">Scan this QR code with your authenticator app</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500 mb-1">Or enter this key manually:</p>
+                    <code className="text-xs bg-white px-3 py-1.5 rounded border font-mono select-all">{mfaSecret}</code>
+                  </div>
+                  <form onSubmit={handleMfaVerify} className="space-y-3 max-w-xs mx-auto">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Enter the 6-digit code from your app</label>
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        value={mfaVerifyToken}
+                        onChange={e => setMfaVerifyToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="w-full text-center text-xl tracking-[0.3em] px-3 py-2 border rounded-lg font-mono focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="000000"
+                      />
+                    </div>
+                    <button type="submit" disabled={mfaVerifying || mfaVerifyToken.length < 6} className="btn-primary w-full disabled:opacity-50">
+                      {mfaVerifying ? 'Verifying...' : 'Verify & Enable MFA'}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <Shield size={20} className="text-emerald-600" />
+                <div>
+                  <p className="font-medium text-emerald-800 text-sm">MFA is enabled</p>
+                  <p className="text-xs text-emerald-600">Your account is protected by two-factor authentication.</p>
+                </div>
+              </div>
+              <form onSubmit={handleMfaDisable} className="space-y-3 max-w-xs">
+                <p className="text-xs text-slate-500">Enter a code from your authenticator app to disable MFA:</p>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={mfaDisableToken}
+                  onChange={e => setMfaDisableToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full text-center text-xl tracking-[0.3em] px-3 py-2 border rounded-lg font-mono focus:ring-2 focus:ring-red-500 outline-none"
+                  placeholder="000000"
+                />
+                <button type="submit" disabled={mfaDisabling || mfaDisableToken.length < 6} className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50 text-sm">
+                  {mfaDisabling ? 'Disabling...' : 'Disable MFA'}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
 

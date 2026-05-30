@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit } from '../services/audit.service';
 
 export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
@@ -134,6 +135,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     });
 
     res.status(201).json(order);
+    logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'Order', entityId: order.id, newValue: { orderNumber, source: src, itemCount: items.length } });
   } catch (error) {
     res.status(400).json({ message: 'Error creating order', error: String(error) });
   }
@@ -148,6 +150,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       data: { orderStatus: status }
     });
     res.json(order);
+    logAudit({ tenantId: (req as any).user?.tenant_id, userId: (req as any).user?.id, action: 'UPDATE_STATUS', entityType: 'Order', entityId: id, newValue: { status } });
   } catch (error) {
     res.status(404).json({ message: 'Order not found' });
   }
@@ -213,6 +216,7 @@ export const splitOrder = async (req: AuthRequest, res: Response) => {
   });
 
   res.status(201).json({ message: `Order split into ${result.length + 1} orders`, splitOrders: result });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'SPLIT', entityType: 'Order', entityId: id, newValue: { splitCount: result.length + 1 } });
 };
 
 export const cancelOrder = async (req: Request, res: Response) => {
@@ -252,6 +256,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
       return tx.order.update({ where: { id }, data: { orderStatus: 'CANCELLED' } });
     });
     res.json(order);
+    logAudit({ tenantId: (req as any).user?.tenant_id, userId: (req as any).user?.id, action: 'CANCEL', entityType: 'Order', entityId: id, newValue: { orderStatus: 'CANCELLED' } });
   } catch (error) {
     res.status(400).json({ message: String(error) });
   }
