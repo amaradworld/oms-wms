@@ -241,7 +241,7 @@ const LoginPage = () => {
                   disabled={submitting}
                   className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {submitting ? 'Signing In...' : <>Sign In to {selectedCompany.name} <ArrowRight size={18} /></>}
+                  {submitting ? 'Signing In...' : <>{platformMode ? 'Sign In as Platform Owner' : <>Sign In to {selectedCompany.name}</>} <ArrowRight size={18} /></>}
                 </button>
               </div>
             </form>
