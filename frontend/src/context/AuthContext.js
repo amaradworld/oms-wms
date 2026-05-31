@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchCompanies = () => {
-    axios.get(`${API}/api/tenants`).then(res => {
+    axios.get(`${API}/api/tenants?public=1`).then(res => {
       if (Array.isArray(res.data) && res.data.length > 0) {
         setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive })));
       }

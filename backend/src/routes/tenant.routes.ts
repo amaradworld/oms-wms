@@ -4,10 +4,11 @@ import { authenticate, authorize } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+router.get('/', getTenants);
 router.use(authenticate);
 router.use(authorize(['PLATFORM_ADMIN']));
 
-router.get('/', getTenants);
+
 router.get('/:id', getTenant);
 router.post('/', createTenant);
 router.put('/:id', updateTenant);

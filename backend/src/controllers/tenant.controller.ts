@@ -2,8 +2,9 @@ import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
-export const getTenants = async (_req: AuthRequest, res: Response) => {
-  const tenants = await prisma.tenant.findMany({ orderBy: { createdAt: 'desc' } });
+export const getTenants = async (req: AuthRequest, res: Response) => {
+  const where = req.query.public === '1' ? { isActive: true } : {};
+  const tenants = await prisma.tenant.findMany({ where, orderBy: { createdAt: 'desc' } });
   res.json(tenants);
 };
 
