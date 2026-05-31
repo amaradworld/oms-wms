@@ -48,6 +48,27 @@ export async function ensureDefaults() {
       });
       console.log('Created default admin: admin@oms.com / admin123');
     }
+
+    // Auto-create default admin user for any tenant that has no users yet
+    const allTenants = await prisma.tenant.findMany({ where: { isActive: true } });
+    for (const tenant of allTenants) {
+      const userCount = await prisma.user.count({ where: { tenantId: tenant.id } });
+      if (userCount === 0) {
+        const domain = tenant.slug.includes('.') ? tenant.slug : `${tenant.slug}.com`;
+        const email = `admin@${domain}`;
+        const passwordHash = await bcrypt.hash('admin123', 10);
+        await prisma.user.create({
+          data: {
+            tenantId: tenant.id,
+            email,
+            passwordHash,
+            fullName: `${tenant.name} Admin`,
+            role: 'SUPER_ADMIN',
+          },
+        });
+        console.log(`Created admin for ${tenant.name}: ${email} / admin123`);
+      }
+    }
   } catch (err) {
     console.error('ensureDefaults failed:', err);
   }
