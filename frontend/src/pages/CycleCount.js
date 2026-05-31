@@ -6,7 +6,7 @@ import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
-const CycleCount = () => {
+const CycleCount = ({ detailId, setDetailId }) => {
   const { selectedFacility } = useAuth();
   const [counts, setCounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +16,10 @@ const CycleCount = () => {
   const [countValues, setCountValues] = useState({});
   const [scanInput, setScanInput] = useState('');
   const scanRef = useRef(null);
+
+  useEffect(() => {
+    if (detailId && !countDetails) openDetails(detailId);
+  }, [detailId]);
 
   useEffect(() => {
     if (countDetails && scanRef.current) scanRef.current.focus();
@@ -34,6 +38,7 @@ const CycleCount = () => {
 
   const openDetails = async (id) => {
     setSelectedCount(id);
+    if (setDetailId) setDetailId(id);
     setDetailsLoading(true);
     try {
       const res = await API.get(`/cycle-counts/${id}`);
@@ -109,6 +114,7 @@ const CycleCount = () => {
       toast.success('Cycle count completed — inventory adjusted');
       setSelectedCount(null);
       setCountDetails(null);
+      if (setDetailId) setDetailId('');
       fetchCounts();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to complete');
@@ -121,6 +127,7 @@ const CycleCount = () => {
       toast.success('Cycle count cancelled');
       setSelectedCount(null);
       setCountDetails(null);
+      if (setDetailId) setDetailId('');
       fetchCounts();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to cancel');
@@ -139,7 +146,7 @@ const CycleCount = () => {
             <p className="text-sm text-slate-500">{countDetails.warehouse?.name} · {countedItems}/{totalItems} items counted</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => { setSelectedCount(null); setCountDetails(null); }} className="px-3 py-2 border rounded-lg text-sm hover:bg-slate-50">Back</button>
+            <button onClick={() => { setSelectedCount(null); setCountDetails(null); if (setDetailId) setDetailId(''); }} className="px-3 py-2 border rounded-lg text-sm hover:bg-slate-50">Back</button>
             {countDetails.status === 'IN_PROGRESS' && (
               <>
                 <button onClick={handleCancel} className="flex items-center gap-1.5 px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50"><XCircle size={16} /> Cancel</button>

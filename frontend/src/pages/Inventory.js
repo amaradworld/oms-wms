@@ -1,13 +1,31 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Filter, MoreVertical, Download, Printer, Loader2, QrCode, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Download, Printer, Loader2, QrCode, CheckCircle2, RefreshCw } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import BarcodeCell from '../components/BarcodeCell';
+import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import EmptyState from '../components/EmptyState';
-import { TableSkeleton } from '../components/Skeleton';
+
+const INVENTORY_COLUMNS = [
+  { key: 'barcode', label: 'Barcode', render: (r) => <BarcodeCell value={r.skuCode} /> },
+  { key: 'skuCode', label: 'SKU', render: (r) => <span className="text-sm font-mono font-medium">{r.skuCode}</span> },
+  { key: 'name', label: 'Product' },
+  { key: 'warehouse', label: 'Shelf', render: (r) => <span className="text-sm text-slate-600" title={`Inventory Allocation: ${r.inventoryAllocation}\nInventory Sync: ${r.inventorySync}\nSku Mixing: ${r.skuMixing}\nShelf on hold: ${r.shelfOnHold}`}>{r.warehouse || '-'}</span> },
+  { key: 'batch', label: 'Batch', render: (r) => <span className="text-sm text-slate-600">{r.batch || '-'}</span> },
+  { key: 'batchStatus', label: 'Batch Status', render: (r) => <span className="text-sm text-slate-600">{r.batchStatus || '-'}</span> },
+  { key: 'type', label: 'Type', render: (r) => <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${r.type === 'Bad' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{r.type}</span> },
+  { key: 'quantityOnHand', label: 'Total', align: 'right', render: (r) => <span className="text-sm font-mono">{r.quantityOnHand ?? '-'}</span> },
+  { key: 'quantityAvailable', label: 'Available', align: 'right', render: (r) => <span className="text-sm font-mono font-semibold text-emerald-600">{r.quantityAvailable ?? '-'}</span> },
+  { key: 'quantityReserved', label: 'Blocked', align: 'right', render: (r) => <span className="text-sm font-mono text-amber-600">{r.quantityReserved ?? 0}</span> },
+  { key: 'notFound', label: 'Not Found', align: 'right', render: (r) => <span className="text-sm font-mono">{r.notFound ?? 0}</span> },
+  { key: 'size', label: 'Size', render: (r) => <span className="text-sm text-slate-600">{r.size || '-'}</span> },
+  { key: 'color', label: 'Color', render: (r) => <span className="text-sm text-slate-600">{r.color || '-'}</span> },
+  { key: 'brand', label: 'Brand', render: (r) => <span className="text-sm text-slate-600">{r.brand || '-'}</span> },
+  { key: 'lastUpdated', label: 'Updated', render: (r) => <span className="text-sm text-slate-500">{r.lastUpdated ? new Date(r.lastUpdated).toLocaleDateString() : '—'}</span> },
+  { key: 'status', label: 'Status', render: (r) => <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${r.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{r.status}</span> },
+];
 
 const Inventory = () => {
   const [search, setSearch] = useState('');
@@ -20,6 +38,7 @@ const Inventory = () => {
   const [scanInput, setScanInput] = useState('');
   const [scanning, setScanning] = useState(false);
   const [lastScanned, setLastScanned] = useState(null);
+  const [selectedItems, setSelectedItems] = useState(new Set());
   const scanRef = useRef(null);
 
   const fetchInventory = useCallback(async (silent) => {
@@ -149,85 +168,22 @@ const Inventory = () => {
         </div>
       </div>
 
-      <div className="flex gap-4 items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search by SKU, name, style, brand, color, shelf..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium"><Filter size={16} /> Filters</button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left min-w-[1800px]">
-            <thead className="bg-slate-50 border-b">
-              <tr>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Barcode</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">SKU</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Product</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Shelf</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Batch Status</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Total</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Available</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Blocked</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Not Found</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Size</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Color</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Brand</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Updated</th>
-                <th className="px-3 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="px-3 py-3 text-right"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="17"><TableSkeleton rows={5} cols={17} /></td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan="17"><EmptyState icon="inventory" title="No SKUs found" description="Add your first SKU using the button above or import via CSV." /></td></tr>
-              ) : filtered.map((item, i) => (
-                <tr key={item.id || i} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-3 py-3"><BarcodeCell value={item.skuCode} /></td>
-                  <td className="px-3 py-3 text-sm font-mono font-medium">{item.skuCode}</td>
-                  <td className="px-3 py-3 text-sm">{item.name}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">
-                    <span title={
-                      `Inventory Allocation: ${item.inventoryAllocation}\nInventory Sync: ${item.inventorySync}\nSku Mixing: ${item.skuMixing}\nShelf on hold: ${item.shelfOnHold}`
-                    }>{item.warehouse || '-'}</span>
-                  </td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{item.batch || '-'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{item.batchStatus || '-'}</td>
-                  <td className="px-3 py-3 text-sm"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${item.type === 'Bad' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{item.type}</span></td>
-                  <td className="px-3 py-3 text-sm font-mono text-right">{item.quantityOnHand ?? '-'}</td>
-                  <td className="px-3 py-3 text-sm font-mono text-right font-semibold text-emerald-600">{item.quantityAvailable ?? '-'}</td>
-                  <td className="px-3 py-3 text-sm font-mono text-right text-amber-600">{item.quantityReserved ?? 0}</td>
-                  <td className="px-3 py-3 text-sm font-mono text-right">{item.notFound ?? 0}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{item.size || '-'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{item.color || '-'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-600">{item.brand || '-'}</td>
-                  <td className="px-3 py-3 text-sm text-slate-500">{item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : '—'}</td>
-                  <td className="px-3 py-3 text-sm"><span className={`px-1.5 py-0.5 rounded text-xs font-medium ${item.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>{item.status}</span></td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => handlePrintLabel(item.skuCode, item.name)} disabled={printingLabel === item.skuCode} className="p-1.5 hover:bg-indigo-100 rounded-lg transition-colors" title="Download PDF label">
-                        {printingLabel === item.skuCode ? <Loader2 size={15} className="text-indigo-500 animate-spin" /> : <Printer size={15} className="text-slate-400" />}
-                      </button>
-                      <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"><MoreVertical size={15} className="text-slate-400" /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={INVENTORY_COLUMNS}
+        data={filtered}
+        loading={loading}
+        searchable
+        searchValue={search}
+        onSearch={setSearch}
+        searchPlaceholder="Search by SKU, name, style, brand, color, shelf..."
+        selectable
+        selected={selectedItems}
+        onSelectionChange={setSelectedItems}
+        actions={(item) => [
+          { label: 'Print Label', icon: Printer, onClick: () => handlePrintLabel(item.skuCode, item.name) },
+        ]}
+        emptyState={{ icon: 'inventory', title: 'No SKUs found', description: 'Add your first SKU using the button above or import via CSV.' }}
+      />
 
       {!selectedFacility && (
         <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg text-sm">

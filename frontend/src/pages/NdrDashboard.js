@@ -17,7 +17,7 @@ const safeDate = (d) => {
   return isNaN(dt.getTime()) ? null : dt;
 };
 
-const NdrDashboard = () => {
+const NdrDashboard = ({ detailId, setDetailId }) => {
   const [cases, setCases] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +33,13 @@ const NdrDashboard = () => {
   const [scheduling, setScheduling] = useState(false);
   const [resolving, setResolving] = useState(null);
   const [creatingId, setCreatingId] = useState(null);
+
+  useEffect(() => {
+    if (detailId && showReattempt !== detailId) {
+      setShowReattempt(detailId);
+      setReattemptDate('');
+    }
+  }, [detailId]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -107,6 +114,7 @@ const NdrDashboard = () => {
       toast.success('Reattempt scheduled');
       setShowReattempt(null);
       setReattemptDate('');
+      if (setDetailId) setDetailId('');
       loadData();
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to schedule');
@@ -215,7 +223,7 @@ const NdrDashboard = () => {
                       <div className="flex items-center justify-end gap-1">
                         {(c.status === 'OPEN' || c.status === 'REATTEMPT_SCHEDULED') && (
                           <>
-                            <button onClick={() => { setShowReattempt(c.id); setReattemptDate(''); }} className="p-2 hover:bg-amber-50 rounded-lg text-amber-600 disabled:opacity-50" disabled={!!resolving} title="Schedule Reattempt">
+                            <button onClick={() => { if (setDetailId) setDetailId(c.id); setShowReattempt(c.id); setReattemptDate(''); }} className="p-2 hover:bg-amber-50 rounded-lg text-amber-600 disabled:opacity-50" disabled={!!resolving} title="Schedule Reattempt">
                               <Calendar size={15} />
                             </button>
                             <button onClick={() => resolveCase(c.id)} disabled={resolving === c.id} className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600 disabled:opacity-50" title="Resolve">
@@ -270,11 +278,11 @@ const NdrDashboard = () => {
       )}
 
       {showReattempt && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowReattempt(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setShowReattempt(null); if (setDetailId) setDetailId(''); }}>
           <div className="bg-white rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold">Schedule Reattempt</h2>
-              <button onClick={() => setShowReattempt(null)} className="p-2 hover:bg-slate-100 rounded-lg"><X size={20} /></button>
+              <button onClick={() => { setShowReattempt(null); if (setDetailId) setDetailId(''); }} className="p-2 hover:bg-slate-100 rounded-lg"><X size={20} /></button>
             </div>
             <div className="mb-4">
               <label className="block text-sm font-medium text-slate-700 mb-1">Reattempt Date</label>

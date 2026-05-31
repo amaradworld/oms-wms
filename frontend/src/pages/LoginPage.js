@@ -31,7 +31,7 @@ const LoginPage = () => {
       setSelectedCompany(company);
       setStep('credentials');
     }
-  }, []);
+  }, [companies]);
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);

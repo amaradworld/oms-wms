@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, RefreshCw, Eye, X, CheckCircle2, QrCode, Loader2 } from 'lucide-react';
+import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
 import API from '../utils/api';
-import EmptyState from '../components/EmptyState';
-import { TableSkeleton } from '../components/Skeleton';
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -23,6 +22,16 @@ const typeColors = {
   MANUAL: 'bg-slate-100 text-slate-600',
 };
 
+const GATEPASS_COLUMNS = [
+  { key: 'code', label: 'Code', render: (r) => <span className="text-sm font-mono font-medium">{r.code}</span> },
+  { key: 'type', label: 'Type', render: (r) => <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeColors[r.type] || 'bg-slate-100 text-slate-600'}`}>{r.type}</span> },
+  { key: 'status', label: 'Status', render: (r) => <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[r.status] || 'bg-slate-100 text-slate-600'}`}>{r.status}</span> },
+  { key: 'quantity', label: 'Quantity', align: 'right', render: (r) => <span className="text-sm font-mono">{r.quantity}</span> },
+  { key: 'toParty', label: 'To Party', render: (r) => <span className="text-sm text-slate-600">{r.toParty || r.stockTransfer?.toWarehouse?.name || '-'}</span> },
+  { key: 'createdBy', label: 'Created By', render: (r) => <span className="text-sm text-slate-600">{r.createdBy?.email || r.createdBy?.fullName || '-'}</span> },
+  { key: 'createdAt', label: 'Date', render: (r) => <span className="text-sm text-slate-500">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '-'}</span> },
+];
+
 const Gatepasses = ({ detailId, setDetailId }) => {
   const [gatepasses, setGatepasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +40,8 @@ const Gatepasses = ({ detailId, setDetailId }) => {
   const [detail, setDetailState] = useState(null);
   const [scanCode, setScanCode] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGps, setSelectedGps] = useState(new Set());
 
   const setDetail = (gp) => {
     setDetailState(gp);
@@ -90,6 +101,10 @@ const Gatepasses = ({ detailId, setDetailId }) => {
   const tabs = ['PENDING', 'ALL', 'INCOMING'];
   const filtered = gatepasses.filter(g => {
     if (tab === 'INCOMING') return g.type === 'INCOMING' || g.type === 'RETURN';
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      return g.code?.toLowerCase().includes(q) || g.toParty?.toLowerCase().includes(q) || g.type?.toLowerCase().includes(q);
+    }
     return true;
   });
 
@@ -115,48 +130,22 @@ const Gatepasses = ({ detailId, setDetailId }) => {
         ))}
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <TableSkeleton rows={6} cols={7} />
-          ) : filtered.length === 0 ? (
-            <EmptyState icon="orders" title="No gatepasses found" description="Create a gatepass to track stock movement." />
-          ) : (
-            <table className="w-full text-left min-w-[700px]">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Code</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Quantity</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">To Party</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Username</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Created At</th>
-                  <th className="px-4 py-3 text-right"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(gp => (
-                  <tr key={gp.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono font-medium">{gp.code}</td>
-                    <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-medium ${typeColors[gp.type] || 'bg-slate-100 text-slate-600'}`}>{gp.type}</span></td>
-                    <td className="px-4 py-3 text-sm"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[gp.status] || 'bg-slate-100 text-slate-600'}`}>{gp.status}</span></td>
-                    <td className="px-4 py-3 text-sm font-mono text-right">{gp.quantity}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{gp.toParty || gp.stockTransfer?.toWarehouse?.name || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{gp.createdBy?.email || gp.createdBy?.fullName || '-'}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{gp.createdAt ? new Date(gp.createdAt).toLocaleDateString() : '-'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => setDetail(gp)} className="p-1.5 hover:bg-indigo-100 rounded-lg transition-colors">
-                        <Eye size={16} className="text-slate-400" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+      <DataTable
+        columns={GATEPASS_COLUMNS}
+        data={filtered}
+        loading={loading}
+        searchable
+        searchValue={searchTerm}
+        onSearch={setSearchTerm}
+        searchPlaceholder="Search by code, party or type..."
+        selectable
+        selected={selectedGps}
+        onSelectionChange={setSelectedGps}
+        actions={(gp) => [
+          { label: 'View Details', icon: Eye, onClick: () => setDetail(gp) },
+        ]}
+        emptyState={{ icon: 'orders', title: 'No gatepasses found', description: 'Create a gatepass to track stock movement.' }}
+      />
 
       {showCreate && (
         <CreateGatepassModal onClose={() => setShowCreate(false)} onSuccess={() => { setShowCreate(false); fetchGatepasses(); }} />

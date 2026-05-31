@@ -15,7 +15,7 @@ const safeDate = (d) => {
   return isNaN(dt.getTime()) ? null : dt;
 };
 
-const Manifests = () => {
+const Manifests = ({ detailId, setDetailId }) => {
   const [manifests, setManifests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
@@ -54,6 +54,10 @@ const Manifests = () => {
   useEffect(() => {
     if (!showCreate) { setShippedOrders([]); setAvailableCouriers([]); }
   }, [showCreate]);
+
+  useEffect(() => {
+    if (detailId && expanded !== detailId) expandManifest(detailId);
+  }, [detailId]);
 
   const openCreate = async () => {
     setFetchingShipped(true);
@@ -104,7 +108,8 @@ const Manifests = () => {
   };
 
   const expandManifest = async (id) => {
-    if (expanded === id) { setExpanded(null); setManifestDetail(null); return; }
+    if (expanded === id) { setExpanded(null); setManifestDetail(null); if (setDetailId) setDetailId(''); return; }
+    if (setDetailId) setDetailId(id);
     setExpanded(id);
     setDetailLoading(true);
     try {

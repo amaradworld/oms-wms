@@ -6,8 +6,8 @@ import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
-const StockTransfer = () => {
-  const { selectedFacility, user } = useAuth();
+const StockTransfer = ({ detailId, setDetailId }) => {
+  const { selectedFacility } = useAuth();
   const [transfers, setTransfers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +32,12 @@ const StockTransfer = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => { if (showModal) setTimeout(() => createScanRef.current?.focus(), 100); }, [showModal]);
+
+  useEffect(() => {
+    if (detailId && !detailTransfer) {
+      API.get(`/transfers/${detailId}`).then(res => { setDetailTransfer(res.data); }).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
 
   const [creating, setCreating] = useState(false);
 
@@ -75,6 +81,7 @@ const StockTransfer = () => {
   };
 
   const openDetail = async (t) => {
+    if (setDetailId) setDetailId(t.id);
     try {
       const { data } = await API.get(`/transfers/${t.id}`);
       setDetailTransfer(data);
@@ -124,6 +131,7 @@ const StockTransfer = () => {
       await API.put(`/transfers/${detailTransfer.id}/complete`);
       toast.success('Transfer completed');
       setDetailTransfer(null);
+      if (setDetailId) setDetailId('');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Complete failed'); }
   };
@@ -176,14 +184,14 @@ const StockTransfer = () => {
       </div>
 
       {detailTransfer && (
-        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50" onClick={() => setDetailTransfer(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50" onClick={() => { setDetailTransfer(null); if (setDetailId) setDetailId(''); }}>
           <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-bold">Transfer Details</h2>
                 <p className="text-xs text-slate-400">{detailTransfer.fromWarehouse?.name} → {detailTransfer.toWarehouse?.name}</p>
               </div>
-              <button onClick={() => setDetailTransfer(null)}><X size={20} /></button>
+              <button onClick={() => { setDetailTransfer(null); if (setDetailId) setDetailId(''); }}><X size={20} /></button>
             </div>
             <div className="flex gap-2">
               <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">

@@ -14,7 +14,7 @@ const statusColors = {
   REJECTED: 'bg-slate-100 text-slate-600',
 };
 
-const Grn = () => {
+const Grn = ({ detailId, setDetailId }) => {
   const { selectedFacility } = useAuth();
   const [tab, setTab] = useState('incoming');
   const [grns, setGrns] = useState([]);
@@ -26,6 +26,12 @@ const Grn = () => {
   const [selectedGrn, setSelectedGrn] = useState(null);
   const [receiveItems, setReceiveItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (detailId && !selectedGrn) {
+      API.get(`/grn/${detailId}`).then(res => { setSelectedGrn(res.data); setShowDetailModal(true); }).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -76,6 +82,7 @@ const Grn = () => {
   };
 
   const openDetail = async (grn) => {
+    if (setDetailId) setDetailId(grn.id);
     try {
       const { data } = await API.get(`/grn/${grn.id}`);
       setSelectedGrn(data);
@@ -104,6 +111,7 @@ const Grn = () => {
       toast.success(data.message);
       setShowDetailModal(false);
       setSelectedGrn(null);
+      if (setDetailId) setDetailId('');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
@@ -114,6 +122,7 @@ const Grn = () => {
       toast.success('GRN rejected');
       setShowDetailModal(false);
       setSelectedGrn(null);
+      if (setDetailId) setDetailId('');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
@@ -255,7 +264,7 @@ const Grn = () => {
                 <h2 className="text-lg font-bold">{selectedGrn.grnNumber}</h2>
                 <p className="text-sm text-slate-500">PO: {selectedGrn.purchaseOrder?.poNumber} | Supplier: {selectedGrn.purchaseOrder?.supplier?.name}</p>
               </div>
-              <button onClick={() => setShowDetailModal(false)}><X size={20} /></button>
+              <button onClick={() => { setShowDetailModal(false); if (setDetailId) setDetailId(''); }}><X size={20} /></button>
             </div>
 
             <div className={`px-3 py-1.5 rounded-full text-xs font-medium inline-block ${statusColors[selectedGrn.status]}`}>{selectedGrn.status}</div>

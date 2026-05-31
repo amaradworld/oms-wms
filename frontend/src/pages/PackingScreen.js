@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState';
 
 const COURIERS = ['Delhivery', 'Shiprocket', 'BlueDart', 'XpressBees', 'FedEx'];
 
-const PackingScreen = () => {
+const PackingScreen = ({ detailId, setDetailId }) => {
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [scanInput, setScanInput] = useState('');
@@ -30,7 +30,14 @@ const PackingScreen = () => {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
+  useEffect(() => {
+    if (detailId && !selectedOrder) {
+      API.get('/orders').then(res => { const o = (res.data.orders || res.data).find(x => x.id === detailId); if (o) setSelectedOrder(o); }).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
+
   const selectOrder = async (order) => {
+    if (setDetailId) setDetailId(order.id);
     setSelectedOrder(order);
     setPackedItems([]);
     setGeneratedAWB(null);
@@ -138,7 +145,7 @@ const PackingScreen = () => {
       ) : (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => setSelectedOrder(null)} className="text-sm text-blue-600 hover:underline">&larr; Back</button>
+            <button onClick={() => { setSelectedOrder(null); if (setDetailId) setDetailId(''); }} className="text-sm text-blue-600 hover:underline">&larr; Back</button>
             <span className="text-sm text-slate-500">Order #{selectedOrder.orderNumber} • {selectedOrder.customerName}</span>
           </div>
 

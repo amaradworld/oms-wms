@@ -15,7 +15,7 @@ const PUTAWAY_SOURCES = [
   { value: 'PUTAWAY_PICKLIST_ITEM', label: 'Picklist Item', desc: 'Picked items from cancelled/returned orders' },
 ];
 
-const Putaway = () => {
+const Putaway = ({ detailId, setDetailId }) => {
   const { selectedFacility } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [bins, setBins] = useState([]);
@@ -23,15 +23,12 @@ const Putaway = () => {
   const [detailTask, setDetailTask] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedBinId, setSelectedBinId] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
-  // Create Putaway modal
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createStep, setCreateStep] = useState(1); // 1=type, 2=items
-  const [selectedSource, setSelectedSource] = useState('');
-  const [sourceItems, setSourceItems] = useState([]);
-  const [loadingSources, setLoadingSources] = useState(false);
-  const [selectedItems, setSelectedItems] = useState([]);
+  useEffect(() => {
+    if (detailId && !detailTask) {
+      API.get(`/putaway/${detailId}`).then(res => { setDetailTask(res.data); setShowAssignModal(true); }).catch(() => setDetailId(''));
+    }
+  }, [detailId]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -49,6 +46,7 @@ const Putaway = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const openAssign = (task) => {
+    if (setDetailId) setDetailId(task.id);
     setDetailTask(task);
     setSelectedBinId(task.binId || '');
     setShowAssignModal(true);
@@ -62,6 +60,7 @@ const Putaway = () => {
       toast.success('Bin assigned');
       setShowAssignModal(false);
       setDetailTask(null);
+      if (setDetailId) setDetailId('');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setSubmitting(false); }
   };
@@ -205,7 +204,7 @@ const Putaway = () => {
           <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-md p-5 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">Assign Bin</h2>
-              <button onClick={() => { setShowAssignModal(false); setDetailTask(null); }}><X size={20} /></button>
+              <button onClick={() => { setShowAssignModal(false); setDetailTask(null); if (setDetailId) setDetailId(''); }}><X size={20} /></button>
             </div>
             <div className="text-sm text-slate-600 space-y-1">
               <p><strong>Source:</strong> <span className="font-mono">{detailTask.source || 'PUTAWAY_GRN_ITEM'}</span></p>
