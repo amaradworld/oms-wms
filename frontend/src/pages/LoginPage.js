@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
+import { toast } from '../components/Toast';
 
 const LoginPage = () => {
   const { login, companies } = useAuth();
@@ -15,6 +16,11 @@ const LoginPage = () => {
   const [mfaStep, setMfaStep] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [platformMode, setPlatformMode] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [resetNewPassword, setResetNewPassword] = useState('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [resetSent, setResetSent] = useState(false);
 
   const getSubdomainCompany = () => {
     const host = window.location.hostname;
@@ -89,6 +95,43 @@ const LoginPage = () => {
     } finally { setSubmitting(false); }
   };
 
+  const handleForgotRequest = async (e) => {
+    e.preventDefault();
+    if (!email) return setError('Enter your email address');
+    setSubmitting(true);
+    setError('');
+    try {
+      const res = await API.post('/auth/forgot-password', { email });
+      setResetCode(res.data.code || '');
+      setResetToken(res.data.token || '');
+      setResetSent(true);
+      toast.success(res.data.message || 'Reset code generated');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send reset code');
+    } finally { setSubmitting(false); }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!resetCode || !resetNewPassword) return setError('Code and new password are required');
+    if (resetNewPassword.length < 4) return setError('Password must be at least 4 characters');
+    if (resetNewPassword !== resetConfirmPassword) return setError('Passwords do not match');
+    setSubmitting(true);
+    setError('');
+    try {
+      await API.post('/auth/reset-password', { email, code: resetCode, newPassword: resetNewPassword });
+      toast.success('Password reset successfully. Sign in with your new password.');
+      setStep('credentials');
+      setResetCode('');
+      setResetNewPassword('');
+      setResetConfirmPassword('');
+      setResetToken('');
+      setResetSent(false);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to reset password');
+    } finally { setSubmitting(false); }
+  };
+
   const baseDomain = window.location.hostname.includes('globalsupply.in')
     ? 'globalsupply.in'
     : 'localhost:3000';
@@ -103,7 +146,55 @@ const LoginPage = () => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          {step === 'company' ? (
+          {step === 'forgot' ? (
+            <form onSubmit={resetSent ? handleResetPassword : handleForgotRequest}>
+              <div className="text-center mb-6">
+                <Lock size={28} className="mx-auto text-blue-600 mb-2" />
+                <h2 className="text-xl font-bold">{resetSent ? 'Enter Reset Code' : 'Reset Password'}</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  {resetSent ? 'Enter the code sent to your email and choose a new password' : 'Enter your email to receive a reset code'}
+                </p>
+                {selectedCompany && <p className="text-xs text-slate-400 mt-1">{selectedCompany.name}</p>}
+              </div>
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 text-sm text-red-700 flex items-center gap-2">
+                  <AlertCircle size={14} /> {error}
+                </div>
+              )}
+              <div className="space-y-4">
+                {!resetSent ? (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                    <div className="relative">
+                      <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                      <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="admin@company.com" />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Reset Code</label>
+                      <input type="text" required value={resetCode} onChange={e => setResetCode(e.target.value)} className="w-full text-center text-lg tracking-[0.3em] px-4 py-2.5 border rounded-lg font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000000" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                      <input type="password" required minLength={4} value={resetNewPassword} onChange={e => setResetNewPassword(e.target.value)} className="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Min 4 characters" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                      <input type="password" required minLength={4} value={resetConfirmPassword} onChange={e => setResetConfirmPassword(e.target.value)} className="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Repeat password" />
+                    </div>
+                  </>
+                )}
+                <button type="submit" disabled={submitting} className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all disabled:opacity-50">
+                  {submitting ? 'Please wait...' : resetSent ? 'Reset Password' : 'Send Reset Code'}
+                </button>
+                <button type="button" onClick={() => { setStep('credentials'); setError(''); setResetSent(false); setResetCode(''); }} className="w-full text-xs text-slate-500 hover:underline">
+                  Back to login
+                </button>
+              </div>
+            </form>
+          ) : step === 'company' ? (
             <>
               <div className="text-center mb-6">
                 <Globe size={32} className="mx-auto text-blue-600 mb-2" />
@@ -235,6 +326,11 @@ const LoginPage = () => {
                         placeholder="••••••••"
                       />
                   </div>
+                </div>
+                <div className="text-right">
+                  <button type="button" onClick={() => setStep('forgot')} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+                    Forgot Password?
+                  </button>
                 </div>
                 <button
                   type="submit"

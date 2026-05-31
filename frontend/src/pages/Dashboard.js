@@ -5,6 +5,7 @@ import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { StatsSkeleton } from '../components/Skeleton';
 import { toast } from '../components/Toast';
+import { usePolling } from '../hooks/usePolling';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, color }) => {
   const colors = {
@@ -54,6 +55,8 @@ const Dashboard = () => {
   }, [selectedFacility]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  usePolling(fetchStats, 30000);
 
   const chartData = stats?.ordersByStatus?.map(s => ({ name: s.orderStatus, count: s._count })) || [];
   const sla = stats?.sla || {};

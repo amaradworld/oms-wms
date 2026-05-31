@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { verify as verifyTotp } from 'otplib';
 import prisma from '../services/prisma';
 import { AppError } from '../middlewares/error.middleware';
@@ -92,6 +93,50 @@ router.post('/mfa-challenge', async (req, res, next) => {
     );
 
     res.json({ token: jwtToken, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// In-memory reset token store (single-instance; replace with Redis for multi-instance)
+const resetTokens = new Map();
+
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (!user) return res.json({ message: 'If the email exists, a reset code has been generated' });
+
+    const code = crypto.randomInt(100000, 999999).toString();
+    const token = crypto.randomUUID();
+    resetTokens.set(email, { code, token, expiresAt: Date.now() + 15 * 60 * 1000, userId: user.id });
+
+    res.json({ message: 'Reset code generated', code, token });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/reset-password', async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) return res.status(400).json({ message: 'Email, code, and new password are required' });
+    if (newPassword.length < 4) return res.status(400).json({ message: 'Password must be at least 4 characters' });
+
+    const entry = resetTokens.get(email);
+    if (!entry) return res.status(400).json({ message: 'No reset request found. Request a new code.' });
+    if (entry.code !== code) return res.status(400).json({ message: 'Invalid reset code' });
+    if (Date.now() > entry.expiresAt) {
+      resetTokens.delete(email);
+      return res.status(400).json({ message: 'Reset code expired. Request a new one.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({ where: { id: entry.userId }, data: { passwordHash } });
+    resetTokens.delete(email);
+    res.json({ message: 'Password reset successfully' });
   } catch (error) {
     next(error);
   }

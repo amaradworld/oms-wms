@@ -15,6 +15,7 @@ const Companies = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ id: '', name: '', slug: '' });
   const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '' });
+  const [createdCreds, setCreatedCreds] = useState(null);
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
@@ -62,7 +63,7 @@ const Companies = () => {
         const res = await API.post('/tenants', payload);
         setCompanies(prev => [res.data, ...prev]);
         if (res.data.adminEmail) {
-          toast.success(`Company created. Initial admin: ${res.data.adminEmail} / ${res.data.adminPassword}`);
+          setCreatedCreds({ email: res.data.adminEmail, password: res.data.adminPassword, company: form.name });
         } else {
           toast.success('Company created');
         }
@@ -261,6 +262,45 @@ const Companies = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {createdCreds && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check size={28} className="text-emerald-600" />
+              </div>
+              <h2 className="text-lg font-bold">Company Created</h2>
+              <p className="text-sm text-slate-500 mt-1">One-time credentials for <strong>{createdCreds.company}</strong></p>
+            </div>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-6">
+              <div>
+                <label className="text-xs font-medium text-slate-500 block mb-0.5">Email</label>
+                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{createdCreds.email}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 block mb-0.5">Password</label>
+                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{createdCreds.password}</p>
+              </div>
+            </div>
+            <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4 text-center">
+              These credentials will not be shown again. Copy them now.
+            </p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`Email: ${createdCreds.email}\nPassword: ${createdCreds.password}`);
+                toast.success('Credentials copied');
+                setCreatedCreds(null);
+                setShowModal(false);
+                resetForm();
+              }}
+              className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            >
+              Copy & Close
+            </button>
           </div>
         </div>
       )}
