@@ -36,12 +36,16 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
 
+    fetchCompanies();
+  }, []);
+
+  const fetchCompanies = () => {
     axios.get(`${API}/api/tenants`).then(res => {
       if (Array.isArray(res.data) && res.data.length > 0) {
         setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive })));
       }
     }).catch(() => { /* use fallback */ });
-  }, []);
+  };
 
   const login = (userData, companyData, token) => {
     const tenant = companyData.tenantId || companyData.id;
@@ -92,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, company, tenantId, loading, login, logout,
-      detectSubdomain, findCompanyBySubdomain, companies,
+      detectSubdomain, findCompanyBySubdomain, companies, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
     }}>

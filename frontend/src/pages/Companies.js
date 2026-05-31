@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Building2, Plus, Search, X, Check, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
 import API from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 
 const Companies = () => {
+  const { refreshCompanies } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -55,6 +57,7 @@ const Companies = () => {
       }
       setShowModal(false);
       resetForm();
+      refreshCompanies();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Operation failed');
     } finally { setSubmitting(false); }
@@ -65,6 +68,7 @@ const Companies = () => {
       const res = await API.put(`/tenants/${c.id}`, { isActive: !c.isActive });
       setCompanies(prev => prev.map(x => x.id === c.id ? res.data : x));
       toast.success(`Company ${res.data.isActive ? 'enabled' : 'disabled'}`);
+      refreshCompanies();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to toggle');
     }
@@ -76,6 +80,7 @@ const Companies = () => {
       await API.delete(`/tenants/${c.id}`);
       setCompanies(prev => prev.filter(x => x.id !== c.id));
       toast.success('Company deleted');
+      refreshCompanies();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete');
     }
