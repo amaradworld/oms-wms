@@ -102,10 +102,8 @@ const LoginPage = () => {
     setError('');
     try {
       const res = await API.post('/auth/forgot-password', { email });
-      setResetCode(res.data.code || '');
-      setResetToken(res.data.token || '');
       setResetSent(true);
-      toast.success(res.data.message || 'Reset code generated');
+      toast.success('Reset code sent to your email');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send reset code');
     } finally { setSubmitting(false); }

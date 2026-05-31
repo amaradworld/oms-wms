@@ -9,6 +9,7 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { loginSchema } from '../schemas';
 import { changePassword } from '../controllers/user.controller';
+import { sendResetCode } from '../services/email.service';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -113,7 +114,13 @@ router.post('/forgot-password', async (req, res, next) => {
     const token = crypto.randomUUID();
     resetTokens.set(email, { code, token, expiresAt: Date.now() + 15 * 60 * 1000, userId: user.id });
 
-    res.json({ message: 'Reset code generated', code, token });
+    try {
+      await sendResetCode(email, code, user.fullName ? undefined : undefined);
+    } catch (mailErr) {
+      console.error('Failed to send reset email:', mailErr);
+    }
+
+    res.json({ message: 'If the email exists, a reset code has been sent.' });
   } catch (error) {
     next(error);
   }
