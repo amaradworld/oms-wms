@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import axios from 'axios';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { toast } from './components/Toast';
 import ToastContainer from './components/Toast';
 import Sidebar from './components/Sidebar';
@@ -217,6 +218,7 @@ const App = () => {
         </header>
         {renderContent()}
       </main>
+      <VercelAnalytics />
       <ToastContainer />
       <AssistantBot onNavigate={setActiveTab} />
     </div>
