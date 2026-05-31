@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import bcrypt from 'bcryptjs';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
@@ -16,7 +17,7 @@ export const getTenant = async (req: AuthRequest, res: Response) => {
 };
 
 export const createTenant = async (req: AuthRequest, res: Response) => {
-  const { id, name, slug } = req.body;
+  const { id, name, slug, adminEmail, adminPassword, adminName } = req.body;
   if (!id || !name || !slug) return res.status(400).json({ message: 'id, name, and slug are required' });
 
   const existing = await prisma.tenant.findUnique({ where: { id } });
@@ -26,6 +27,26 @@ export const createTenant = async (req: AuthRequest, res: Response) => {
   if (slugExisting) return res.status(409).json({ message: 'Slug already in use' });
 
   const tenant = await prisma.tenant.create({ data: { id, name, slug } });
+
+  // Optionally create an initial admin user for the tenant
+  if (adminEmail && adminPassword) {
+    const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (existingUser) {
+      return res.status(409).json({ message: 'A user with this email already exists' });
+    }
+    const passwordHash = await bcrypt.hash(adminPassword, 10);
+    const user = await prisma.user.create({
+      data: {
+        tenantId: id,
+        email: adminEmail,
+        passwordHash,
+        fullName: adminName || `${name} Admin`,
+        role: 'SUPER_ADMIN',
+      },
+    });
+    return res.status(201).json({ ...tenant, adminEmail: user.email, adminPassword });
+  }
+
   res.status(201).json(tenant);
 };
 

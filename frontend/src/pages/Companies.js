@@ -14,6 +14,7 @@ const Companies = () => {
   const [editId, setEditId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ id: '', name: '', slug: '' });
+  const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '' });
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
@@ -27,6 +28,7 @@ const Companies = () => {
 
   const resetForm = () => {
     setForm({ id: '', name: '', slug: '' });
+    setAdminForm({ email: '', password: '', fullName: '' });
     setEditId(null);
   };
 
@@ -51,9 +53,19 @@ const Companies = () => {
         setCompanies(prev => prev.map(c => c.id === editId ? res.data : c));
         toast.success('Company updated');
       } else {
-        const res = await API.post('/tenants', form);
+        const payload = { ...form };
+        if (adminForm.email && adminForm.password) {
+          payload.adminEmail = adminForm.email;
+          payload.adminPassword = adminForm.password;
+          payload.adminName = adminForm.fullName;
+        }
+        const res = await API.post('/tenants', payload);
         setCompanies(prev => [res.data, ...prev]);
-        toast.success('Company created');
+        if (res.data.adminEmail) {
+          toast.success(`Company created. Initial admin: ${res.data.adminEmail} / ${res.data.adminPassword}`);
+        } else {
+          toast.success('Company created');
+        }
       }
       setShowModal(false);
       resetForm();
@@ -205,6 +217,40 @@ const Companies = () => {
                 />
                 <p className="text-xs text-slate-400 mt-1">Used for subdomain routing (e.g. mycompany.app.globalsupply.in)</p>
               </div>
+              {!editId && (
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-sm font-medium text-slate-700 mb-3">Initial Admin User (optional)</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                      <input
+                        type="email"
+                        value={adminForm.email} onChange={e => setAdminForm({ ...adminForm, email: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g. admin@leosales.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                      <input
+                        type="text"
+                        value={adminForm.password} onChange={e => setAdminForm({ ...adminForm, password: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g. admin123"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Full Name (optional)</label>
+                      <input
+                        type="text"
+                        value={adminForm.fullName} onChange={e => setAdminForm({ ...adminForm, fullName: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g. Leo Sales Admin"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                   Cancel
