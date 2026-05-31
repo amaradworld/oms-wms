@@ -249,7 +249,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         })}
       </nav>
       <div className={collapsed ? 'p-4 border-t border-slate-700/50 flex justify-center' : 'p-4 border-t border-slate-700/50'}>
-        <SidebarItem icon={LogOut} label="Logout" onClick={() => { logout(); window.location.reload(); }} collapsed={collapsed} />
+        <SidebarItem icon={LogOut} label="Logout" onClick={() => { logout(); sessionStorage.setItem('logoutMsg', 'Logged out successfully'); window.location.reload(); }} collapsed={collapsed} />
       </div>
     </>
   );

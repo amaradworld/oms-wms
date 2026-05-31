@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import axios from 'axios';
+import { toast } from './components/Toast';
+import ToastContainer from './components/Toast';
 import Sidebar from './components/Sidebar';
 import FacilitySelector from './components/FacilitySelector';
 import Dashboard from './pages/Dashboard';
@@ -36,7 +38,6 @@ import AuditLogs from './pages/AuditLogs';
 import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
-import ToastContainer from './components/Toast';
 import { useAuth } from './context/AuthContext';
 
 const FallbackPage = () => (
@@ -108,6 +109,11 @@ const App = () => {
     const hash = TAB_TO_HASH[activeTab];
     if (hash) window.location.hash = id ? `#/${hash}?id=${id}` : `#/${hash}`;
   };
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem('logoutMsg');
+    if (msg) { sessionStorage.removeItem('logoutMsg'); toast.success(msg); }
+  }, []);
 
   useEffect(() => {
     const onHashChange = () => {
