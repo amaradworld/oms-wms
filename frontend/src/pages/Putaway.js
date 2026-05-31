@@ -23,6 +23,15 @@ const Putaway = ({ detailId, setDetailId }) => {
   const [detailTask, setDetailTask] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedBinId, setSelectedBinId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Create Putaway modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createStep, setCreateStep] = useState(1);
+  const [selectedSource, setSelectedSource] = useState('');
+  const [sourceItems, setSourceItems] = useState([]);
+  const [loadingSources, setLoadingSources] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
     if (detailId && !detailTask) {

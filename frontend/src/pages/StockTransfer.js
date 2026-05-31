@@ -7,7 +7,7 @@ import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
 const StockTransfer = ({ detailId, setDetailId }) => {
-  const { selectedFacility } = useAuth();
+  const { user, selectedFacility } = useAuth();
   const [transfers, setTransfers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [loading, setLoading] = useState(true);
