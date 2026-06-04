@@ -300,10 +300,10 @@ const Grn = ({ detailId, setDetailId }) => {
               ))}
             </div>
 
-            {selectedGrn.status === 'QC_PENDING' && (
+            {(selectedGrn.status === 'QC_PENDING' || selectedGrn.status === 'QC_FAILED') && (
               <div className="flex gap-2">
                 <button onClick={handleApprove} className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
-                  Approve GRN & Create Putaway
+                  {selectedGrn.status === 'QC_FAILED' ? 'Approve only Passed Items & Create Putaway' : 'Approve GRN & Create Putaway'}
                 </button>
                 <button onClick={handleReject} className="px-4 py-2.5 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200">
                   Reject
