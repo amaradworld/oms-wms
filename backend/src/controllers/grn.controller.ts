@@ -205,4 +205,59 @@ export const rejectGrn = async (req: AuthRequest, res: Response) => {
   logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'REJECT', entityType: 'GRN', entityId: req.params.id as string, newValue: { status: 'REJECTED' } });
 };
 
+export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
+  const grnId = req.params.id as string;
+  const { skuCode, epcCode, qcStatus } = req.body; // qcStatus: 'PASSED' | 'FAILED'
+
+  const code = skuCode || epcCode;
+  if (!code) return res.status(400).json({ message: 'skuCode or epcCode required' });
+  if (!qcStatus || !['PASSED', 'FAILED'].includes(qcStatus)) return res.status(400).json({ message: 'qcStatus must be PASSED or FAILED' });
+
+  const grn = await prisma.grn.findFirst({
+    where: { id: grnId, tenantId: req.user!.tenant_id },
+    include: { items: { include: { sku: { select: { skuCode: true, name: true } } } } },
+  });
+  if (!grn) return res.status(404).json({ message: 'GRN not found' });
+  if (grn.status === 'APPROVED' || grn.status === 'REJECTED') return res.status(400).json({ message: 'GRN already approved/rejected' });
+
+  const grnItem = grn.items.find(i => i.sku.skuCode === code || i.sku.skuCode === epcCode);
+  if (!grnItem) return res.status(404).json({ message: `SKU ${code} not found in this GRN` });
+  if (grnItem.receivedQty >= grnItem.expectedQty) return res.status(400).json({ message: `Already fully received for ${grnItem.sku.skuCode}` });
+
+  const isPass = qcStatus === 'PASSED';
+  await prisma.grnItem.update({
+    where: { id: grnItem.id },
+    data: {
+      receivedQty: { increment: 1 },
+      qcStatus: isPass ? 'PASSED' : 'FAILED',
+      acceptedQty: isPass ? { increment: 1 } : undefined,
+      rejectedQty: isPass ? undefined : { increment: 1 },
+    },
+  });
+
+  const updatedItems = await prisma.grnItem.findMany({ where: { grnId } });
+  const totalReceived = updatedItems.reduce((s, i) => s + i.receivedQty, 0);
+  const totalAccepted = updatedItems.reduce((s, i) => s + i.acceptedQty, 0);
+  const totalRejected = updatedItems.reduce((s, i) => s + i.rejectedQty, 0);
+  const allReceived = updatedItems.every(i => i.receivedQty >= i.expectedQty);
+  const allQcDone = updatedItems.every(i => i.qcStatus === 'PASSED' || i.qcStatus === 'FAILED');
+  const anyFailed = updatedItems.some(i => i.qcStatus === 'FAILED');
+
+  await prisma.grn.update({
+    where: { id: grnId },
+    data: {
+      totalQty: totalReceived,
+      acceptedQty: totalAccepted,
+      rejectedQty: totalRejected,
+      status: allQcDone ? (anyFailed ? 'QC_FAILED' : 'QC_PENDING') : allReceived ? 'QC_PENDING' : 'RECEIVING',
+    },
+  });
+
+  res.json({
+    message: `Scanned ${grnItem.sku.skuCode} — marked as ${qcStatus}`,
+    item: { skuCode: grnItem.sku.skuCode, name: grnItem.sku.name, qcStatus, receivedQty: grnItem.receivedQty + 1 },
+  });
+  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'SCAN_RECEIVE', entityType: 'GRN', entityId: grnId, newValue: { skuCode: grnItem.sku.skuCode, qcStatus } });
+};
+
 

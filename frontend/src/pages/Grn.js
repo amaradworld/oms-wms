@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, CheckCircle, XCircle, Eye, Loader } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, CheckCircle, XCircle, Eye, Loader, QrCode } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
@@ -27,6 +27,10 @@ const Grn = ({ detailId, setDetailId }) => {
   const [receiveItems, setReceiveItems] = useState([]);
   const [vendorInvoiceNo, setVendorInvoiceNo] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [scanCode, setScanCode] = useState('');
+  const [scannedItem, setScannedItem] = useState(null);
+  const [scanningGrn, setScanningGrn] = useState(false);
+  const scanRef = useRef(null);
 
   useEffect(() => {
     if (detailId && !selectedGrn) {
@@ -94,6 +98,8 @@ const Grn = ({ detailId, setDetailId }) => {
 
   const openDetail = async (grn) => {
     if (setDetailId) setDetailId(grn.id);
+    setScannedItem(null);
+    setScanCode('');
     try {
       const { data } = await API.get(`/grn/${grn.id}`);
       setSelectedGrn(data);
@@ -136,6 +142,35 @@ const Grn = ({ detailId, setDetailId }) => {
       if (setDetailId) setDetailId('');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+  };
+
+  const handleScanReceive = async (e) => {
+    e.preventDefault();
+    if (!scanCode.trim()) return;
+    setScanningGrn(true);
+    try {
+      const code = scanCode.trim();
+      const isEpc = /^\d{11}$/.test(code);
+      const payload = isEpc ? { epcCode: code, qcStatus: '' } : { skuCode: code, qcStatus: '' };
+      const item = selectedGrn.items.find(i => i.sku?.skuCode === code || i.sku?.skuCode === (isEpc ? code : ''));
+      if (!item) return toast.error('SKU not found in this GRN');
+      if (item.receivedQty >= item.expectedQty) return toast.error('Already fully received');
+      setScannedItem({ ...item, isEpc });
+      setScanCode('');
+    } catch { toast.error('Scan failed'); } finally { setScanningGrn(false); }
+  };
+
+  const handleConfirmScanQc = async (qcStatus) => {
+    if (!scannedItem) return;
+    setScanningGrn(true);
+    try {
+      const payload = scannedItem.isEpc ? { epcCode: scannedItem.sku.skuCode, qcStatus } : { skuCode: scannedItem.sku.skuCode, qcStatus };
+      await API.post(`/grn/${selectedGrn.id}/scan-receive`, payload);
+      toast.success(`${scannedItem.sku.skuCode} → ${qcStatus}`);
+      setScannedItem(null);
+      const res = await API.get(`/grn/${selectedGrn.id}`);
+      setSelectedGrn(res.data);
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setScanningGrn(false); scanRef.current?.focus(); }
   };
 
   return (
@@ -308,6 +343,34 @@ const Grn = ({ detailId, setDetailId }) => {
             </div>
 
             <div className={`px-3 py-1.5 rounded-full text-xs font-medium inline-block ${statusColors[selectedGrn.status]}`}>{selectedGrn.status}</div>
+
+            {selectedGrn.status !== 'APPROVED' && selectedGrn.status !== 'REJECTED' && (
+              <div className="space-y-2">
+                <form onSubmit={handleScanReceive} className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <QrCode size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input ref={scanRef} type="text" value={scanCode} onChange={e => setScanCode(e.target.value)} placeholder="Scan SKU code or EPC..." autoFocus className="w-full pl-9 pr-3 py-2 border rounded-lg text-sm" />
+                  </div>
+                  <button type="submit" disabled={scanningGrn} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">Scan</button>
+                </form>
+                {scannedItem && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{scannedItem.sku?.name}</p>
+                      <p className="text-xs text-slate-500">{scannedItem.sku?.skuCode} — Received {scannedItem.receivedQty}/{scannedItem.expectedQty}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleConfirmScanQc('PASSED')} disabled={scanningGrn} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center gap-1">
+                        <CheckCircle size={16} /> Good
+                      </button>
+                      <button onClick={() => handleConfirmScanQc('FAILED')} disabled={scanningGrn} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-1">
+                        <XCircle size={16} /> Bad
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               {selectedGrn.items.map(item => (
