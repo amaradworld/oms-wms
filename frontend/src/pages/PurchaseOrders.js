@@ -141,7 +141,7 @@ const PurchaseOrders = () => {
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         {po.status === 'DRAFT' && <button onClick={() => handleReceive(po.id)} className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium" title="Quick receive all"><Truck size={14} /> Quick</button>}
-                        {(po.status === 'DRAFT' || po.status === 'PARTIALLY_RECEIVED' || po.status === 'RECEIVING') && <button onClick={() => openGrnReceive(po)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"><ClipboardCheck size={14} /> GRN</button>}
+                        {(po.status === 'APPROVED' || po.status === 'DRAFT' || po.status === 'PARTIALLY_RECEIVED' || po.status === 'RECEIVING') && <button onClick={() => openGrnReceive(po)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"><ClipboardCheck size={14} /> GRN</button>}
                       </div>
                     </td>
                   </tr>

@@ -41,7 +41,7 @@ const Grn = ({ detailId, setDetailId }) => {
         API.get('/purchase/orders', params),
         API.get('/grn', params),
       ]);
-      setPos(Array.isArray(poRes.data) ? poRes.data.filter(p => p.status === 'DRAFT' || p.status === 'RECEIVING' || p.status === 'PARTIALLY_RECEIVED') : []);
+      setPos(Array.isArray(poRes.data) ? poRes.data.filter(p => p.status === 'APPROVED' || p.status === 'DRAFT' || p.status === 'RECEIVING' || p.status === 'PARTIALLY_RECEIVED') : []);
       setGrns(Array.isArray(grnRes.data) ? grnRes.data : []);
     } catch { setPos([]); setGrns([]); } finally { setLoading(false); }
   }, [selectedFacility]);
