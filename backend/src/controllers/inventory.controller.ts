@@ -19,10 +19,35 @@ export const getInventory = async (req: AuthRequest, res: Response) => {
     }),
   ]);
 
-  const invMap = new Map(invItems.map(i => [i.skuId, i]));
+  const invAgg = new Map<string, { qty: number; avail: number; resv: number; virt: number; nf: number; bin: string; wh: string; whId: string; last: Date | null }>();
+  for (const inv of invItems) {
+    const key = inv.skuId;
+    const existing = invAgg.get(key);
+    if (existing) {
+      existing.qty += inv.quantityOnHand;
+      existing.avail += inv.quantityAvailable;
+      existing.resv += inv.quantityReserved;
+      existing.virt += inv.virtualInventory;
+      existing.nf += inv.notFound;
+      if (inv.quantityOnHand > 0) existing.bin = inv.binLocation;
+      if (!existing.last || (inv.lastUpdated && inv.lastUpdated > existing.last)) {
+        existing.last = inv.lastUpdated;
+        if (inv.warehouse?.name) existing.wh = inv.warehouse.name;
+        if (inv.warehouseId) existing.whId = inv.warehouseId;
+      }
+    } else {
+      invAgg.set(key, {
+        qty: inv.quantityOnHand, avail: inv.quantityAvailable, resv: inv.quantityReserved,
+        virt: inv.virtualInventory, nf: inv.notFound,
+        bin: inv.quantityOnHand > 0 ? inv.binLocation : '',
+        wh: inv.warehouse?.name || '', whId: inv.warehouseId || '',
+        last: inv.lastUpdated,
+      });
+    }
+  }
 
   const result = skus.map(sku => {
-    const inv = invMap.get(sku.id);
+    const agg = invAgg.get(sku.id);
     return {
       id: sku.id,
       skuCode: sku.skuCode,
@@ -39,24 +64,24 @@ export const getInventory = async (req: AuthRequest, res: Response) => {
       hsnCode: sku.hsnCode,
       weight: sku.weight,
       dimensions: sku.dimensions,
-      warehouse: inv?.warehouse?.name || null,
-      warehouseId: inv?.warehouseId || null,
-      binLocation: inv?.binLocation || null,
-      reorderPoint: inv?.reorderPoint ?? 0,
-      quantityOnHand: inv?.quantityOnHand ?? 0,
-      quantityReserved: inv?.quantityReserved ?? 0,
-      quantityAvailable: inv?.quantityAvailable ?? 0,
-      virtualInventory: inv?.virtualInventory ?? 0,
-      notFound: inv?.notFound ?? 0,
-      type: inv?.type || 'Good',
-      batch: inv?.batch || null,
-      batchStatus: inv?.batchStatus || null,
-      status: inv?.status || 'ACTIVE',
-      inventoryAllocation: inv?.inventoryAllocation ?? true,
-      inventorySync: inv?.inventorySync ?? true,
-      skuMixing: inv?.skuMixing ?? true,
-      shelfOnHold: inv?.shelfOnHold ?? false,
-      lastUpdated: inv?.lastUpdated || null,
+      warehouse: agg?.wh || null,
+      warehouseId: agg?.whId || null,
+      binLocation: agg?.bin || null,
+      reorderPoint: 0,
+      quantityOnHand: agg?.qty ?? 0,
+      quantityReserved: agg?.resv ?? 0,
+      quantityAvailable: agg?.avail ?? 0,
+      virtualInventory: agg?.virt ?? 0,
+      notFound: agg?.nf ?? 0,
+      type: 'Good',
+      batch: null,
+      batchStatus: null,
+      status: 'ACTIVE',
+      inventoryAllocation: true,
+      inventorySync: true,
+      skuMixing: true,
+      shelfOnHold: false,
+      lastUpdated: agg?.last || null,
     };
   });
 

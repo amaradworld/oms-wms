@@ -83,6 +83,18 @@ const Putaway = ({ detailId, setDetailId }) => {
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setSubmitting(false); }
   };
 
+  const handleQuickComplete = async (task) => {
+    if (!bins.length) return toast.error('No bins available');
+    setSubmitting(true);
+    try {
+      const binId = task.binId || bins[0].id;
+      await API.put(`/putaway/${task.id}/assign-bin`, { binId });
+      await API.put(`/putaway/${task.id}/complete`);
+      toast.success('Quick complete done');
+      fetchData();
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setSubmitting(false); }
+  };
+
   // Create Putaway flow
   const openCreateModal = () => {
     setCreateStep(1);
@@ -189,9 +201,15 @@ const Putaway = ({ detailId, setDetailId }) => {
                     </td>
                     <td className="px-4 py-3">
                       {task.status === 'PENDING' && (
-                        <button onClick={() => openAssign(task)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
-                          Assign Bin
-                        </button>
+                        <div className="flex gap-1">
+                          <button onClick={() => openAssign(task)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                            Assign Bin
+                          </button>
+                          <button onClick={() => handleQuickComplete(task)} disabled={submitting} className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-medium">
+                            {submitting ? <Loader size={12} className="animate-spin" /> : <CheckCircle size={14} />}
+                            Quick
+                          </button>
+                        </div>
                       )}
                       {task.status === 'IN_PROGRESS' && (
                         <button onClick={() => handleComplete(task.id)} disabled={submitting} className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-medium">
