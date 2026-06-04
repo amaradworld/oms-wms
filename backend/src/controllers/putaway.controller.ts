@@ -311,7 +311,7 @@ export const createPutawayTask = async (req: AuthRequest, res: Response) => {
 export const getPutawayTasks = async (req: AuthRequest, res: Response) => {
   const where: any = { tenantId: req.user!.tenant_id };
   const status = req.query.status as string;
-  if (status) where.status = status;
+  if (status) where.status = { in: status.split(',') };
   if (req.query.warehouseId) where.warehouseId = req.query.warehouseId as string;
   const source = req.query.source as string;
   if (source) where.source = source;
