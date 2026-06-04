@@ -25,6 +25,7 @@ const Grn = ({ detailId, setDetailId }) => {
   const [selectedPo, setSelectedPo] = useState(null);
   const [selectedGrn, setSelectedGrn] = useState(null);
   const [receiveItems, setReceiveItems] = useState([]);
+  const [vendorInvoiceNo, setVendorInvoiceNo] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ const Grn = ({ detailId, setDetailId }) => {
 
   const openReceive = (po) => {
     setSelectedPo(po);
+    setVendorInvoiceNo('');
     setReceiveItems(po.items.map(item => ({
       poItemId: item.id,
       skuId: item.skuId,
@@ -57,6 +59,10 @@ const Grn = ({ detailId, setDetailId }) => {
       skuName: item.sku?.name || '',
       expectedQty: item.quantity,
       receivedQty: item.quantity - (item.receivedQty || 0),
+      batchNo: '',
+      expiryDate: '',
+      manufacturingDate: '',
+      mrp: item.sku?.mrp || '',
     })));
     setShowReceiveModal(true);
   };
@@ -67,11 +73,16 @@ const Grn = ({ detailId, setDetailId }) => {
     try {
       await API.post('/grn', {
         poId: selectedPo.id,
+        vendorInvoiceNo,
         items: receiveItems.filter(i => i.receivedQty > 0).map(i => ({
           poItemId: i.poItemId,
           skuId: i.skuId,
           expectedQty: i.expectedQty,
           receivedQty: i.receivedQty,
+          batchNo: i.batchNo || undefined,
+          expiryDate: i.expiryDate || undefined,
+          manufacturingDate: i.manufacturingDate || undefined,
+          mrp: i.mrp ? Number(i.mrp) : undefined,
         })),
       });
       toast.success('GRN created');
@@ -221,29 +232,57 @@ const Grn = ({ detailId, setDetailId }) => {
       {/* Receive Modal */}
       {showReceiveModal && selectedPo && (
         <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
-          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto p-5 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold">Receive - {selectedPo.poNumber}</h2>
               <button onClick={() => setShowReceiveModal(false)}><X size={20} /></button>
             </div>
             <p className="text-sm text-slate-500">{selectedPo.supplier?.name}</p>
+            <div>
+              <label className="text-xs font-semibold text-slate-500 uppercase">Vendor Invoice No.</label>
+              <input type="text" value={vendorInvoiceNo} onChange={e => setVendorInvoiceNo(e.target.value)} placeholder="e.g. INV-001" className="w-full mt-1 px-3 py-2 border rounded-lg text-sm" />
+            </div>
             <div className="space-y-3">
               {receiveItems.map((item, i) => (
-                <div key={item.poItemId} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{item.skuName || item.skuCode}</div>
-                    <div className="text-xs text-slate-400">Expected: {item.expectedQty}</div>
+                <div key={item.poItemId} className="bg-slate-50 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{item.skuName || item.skuCode}</div>
+                      <div className="text-xs text-slate-400">Expected: {item.expectedQty}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500">Received</span>
+                      <input type="number" min="0" max={item.expectedQty} value={item.receivedQty}
+                        onChange={e => { const u = [...receiveItems]; u[i].receivedQty = Math.min(parseInt(e.target.value) || 0, item.expectedQty); setReceiveItems(u); }}
+                        className="w-16 px-2 py-1.5 border rounded text-sm text-center" />
+                    </div>
                   </div>
-                  <input
-                    type="number" min="0" max={item.expectedQty}
-                    value={item.receivedQty}
-                    onChange={e => {
-                      const updated = [...receiveItems];
-                      updated[i].receivedQty = Math.min(parseInt(e.target.value) || 0, item.expectedQty);
-                      setReceiveItems(updated);
-                    }}
-                    className="w-20 px-2 py-1.5 border rounded text-sm text-center"
-                  />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-400">Batch No.</label>
+                      <input type="text" value={item.batchNo} placeholder="B001"
+                        onChange={e => { const u = [...receiveItems]; u[i].batchNo = e.target.value; setReceiveItems(u); }}
+                        className="w-full px-2 py-1 border rounded text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-400">MRP</label>
+                      <input type="number" step="0.01" value={item.mrp} placeholder="999"
+                        onChange={e => { const u = [...receiveItems]; u[i].mrp = e.target.value; setReceiveItems(u); }}
+                        className="w-full px-2 py-1 border rounded text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-400">Expiry</label>
+                      <input type="date" value={item.expiryDate}
+                        onChange={e => { const u = [...receiveItems]; u[i].expiryDate = e.target.value; setReceiveItems(u); }}
+                        className="w-full px-2 py-1 border rounded text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-400">Mfg Date</label>
+                      <input type="date" value={item.manufacturingDate}
+                        onChange={e => { const u = [...receiveItems]; u[i].manufacturingDate = e.target.value; setReceiveItems(u); }}
+                        className="w-full px-2 py-1 border rounded text-xs" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -263,6 +302,7 @@ const Grn = ({ detailId, setDetailId }) => {
               <div>
                 <h2 className="text-lg font-bold">{selectedGrn.grnNumber}</h2>
                 <p className="text-sm text-slate-500">PO: {selectedGrn.purchaseOrder?.poNumber} | Supplier: {selectedGrn.purchaseOrder?.supplier?.name}</p>
+                {selectedGrn.vendorInvoiceNo && <p className="text-xs text-slate-400 mt-0.5">Invoice: {selectedGrn.vendorInvoiceNo}</p>}
               </div>
               <button onClick={() => { setShowDetailModal(false); if (setDetailId) setDetailId(''); }}><X size={20} /></button>
             </div>
@@ -271,14 +311,23 @@ const Grn = ({ detailId, setDetailId }) => {
 
             <div className="space-y-2">
               {selectedGrn.items.map(item => (
-                <div key={item.id} className="flex items-center gap-3 bg-slate-50 rounded-lg p-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{item.sku?.name || item.sku?.skuCode}</div>
-                    <div className="text-xs text-slate-400">{item.sku?.skuCode} {item.sku?.size ? `| ${item.sku.size}` : ''}</div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      Expected: {item.expectedQty} | Received: {item.receivedQty} | Accepted: {item.acceptedQty} | Rejected: {item.rejectedQty}
+                <div key={item.id} className="bg-slate-50 rounded-lg p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{item.sku?.name || item.sku?.skuCode}</div>
+                      <div className="text-xs text-slate-400">{item.sku?.skuCode} {item.sku?.size ? `| ${item.sku.size}` : ''}</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        Expected: {item.expectedQty} | Received: {item.receivedQty} | Accepted: {item.acceptedQty} | Rejected: {item.rejectedQty}
+                      </div>
+                      {(item.batchNo || item.mrp || item.expiryDate || item.manufacturingDate) && (
+                        <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-slate-400">
+                          {item.batchNo && <span className="bg-white px-1.5 py-0.5 rounded border">Batch: {item.batchNo}</span>}
+                          {item.mrp && <span className="bg-white px-1.5 py-0.5 rounded border">MRP: ₹{Number(item.mrp).toFixed(2)}</span>}
+                          {item.expiryDate && <span className="bg-white px-1.5 py-0.5 rounded border">Exp: {new Date(item.expiryDate).toLocaleDateString()}</span>}
+                          {item.manufacturingDate && <span className="bg-white px-1.5 py-0.5 rounded border">Mfg: {new Date(item.manufacturingDate).toLocaleDateString()}</span>}
+                        </div>
+                      )}
                     </div>
-                  </div>
                   <div className="text-right">
                     {item.qcStatus === 'PENDING' && selectedGrn.status !== 'APPROVED' && selectedGrn.status !== 'REJECTED' && (
                       <div className="flex gap-1">

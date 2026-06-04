@@ -37,7 +37,7 @@ export const getGrnDetail = async (req: AuthRequest, res: Response) => {
 };
 
 export const createGrn = async (req: AuthRequest, res: Response) => {
-  const { poId, items } = req.body;
+  const { poId, vendorInvoiceNo, items } = req.body;
   const tenantId = req.user!.tenant_id;
 
   const po = await prisma.purchaseOrder.findFirst({
@@ -57,6 +57,7 @@ export const createGrn = async (req: AuthRequest, res: Response) => {
       poId,
       warehouseId: po.warehouseId,
       grnNumber,
+      vendorInvoiceNo: vendorInvoiceNo || null,
       status: 'RECEIVING',
       totalQty,
       createdById: req.user!.id,
@@ -66,6 +67,10 @@ export const createGrn = async (req: AuthRequest, res: Response) => {
           skuId: i.skuId,
           expectedQty: i.expectedQty || 0,
           receivedQty: i.receivedQty || 0,
+          batchNo: i.batchNo || null,
+          expiryDate: i.expiryDate ? new Date(i.expiryDate) : null,
+          manufacturingDate: i.manufacturingDate ? new Date(i.manufacturingDate) : null,
+          mrp: i.mrp ?? null,
           qcStatus: 'PENDING',
         })),
       },
@@ -79,7 +84,7 @@ export const createGrn = async (req: AuthRequest, res: Response) => {
   await prisma.purchaseOrder.update({ where: { id: poId }, data: { status: 'RECEIVING' } });
 
   res.status(201).json(grn);
-  logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'GRN', entityId: grn.id, newValue: { grnNumber: grn.grnNumber, poId, totalQty } });
+  logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'GRN', entityId: grn.id, newValue: { grnNumber: grn.grnNumber, poId, vendorInvoiceNo, totalQty } });
 };
 
 export const qcGrnItem = async (req: AuthRequest, res: Response) => {

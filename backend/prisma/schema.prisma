@@ -500,18 +500,19 @@ model BinLocation {
 }
 
 model Grn {
-  id          String   @id @default(uuid())
-  tenantId    String
-  poId        String
-  asnId       String?
-  warehouseId String
-  grnNumber   String   @unique
-  status      String   @default("RECEIVING") // RECEIVING, QC_PENDING, QC_FAILED, APPROVED, REJECTED
-  totalQty    Int      @default(0)
-  acceptedQty Int      @default(0)
-  rejectedQty Int      @default(0)
-  notes       String?
-  createdById String?
+  id              String   @id @default(uuid())
+  tenantId        String
+  poId            String
+  asnId           String?
+  warehouseId     String
+  grnNumber       String   @unique
+  vendorInvoiceNo String?
+  status          String   @default("RECEIVING") // RECEIVING, QC_PENDING, QC_FAILED, APPROVED, REJECTED
+  totalQty        Int      @default(0)
+  acceptedQty     Int      @default(0)
+  rejectedQty     Int      @default(0)
+  notes           String?
+  createdById     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -525,18 +526,20 @@ model Grn {
 }
 
 model GrnItem {
-  id          String    @id @default(uuid())
-  grnId       String
-  poItemId    String
-  skuId       String
-  expectedQty Int       @default(0)
-  receivedQty Int       @default(0)
-  acceptedQty Int       @default(0)
-  rejectedQty Int       @default(0)
-  qcStatus    String    @default("PENDING") // PENDING, PASSED, FAILED
-  qcNotes     String?
-  batchNo     String?
-  expiryDate  DateTime?
+  id                 String    @id @default(uuid())
+  grnId              String
+  poItemId           String
+  skuId              String
+  expectedQty        Int       @default(0)
+  receivedQty        Int       @default(0)
+  acceptedQty        Int       @default(0)
+  rejectedQty        Int       @default(0)
+  qcStatus           String    @default("PENDING") // PENDING, PASSED, FAILED
+  qcNotes            String?
+  batchNo            String?
+  expiryDate         DateTime?
+  manufacturingDate  DateTime?
+  mrp                Decimal?  @default(0)
 
   grn    Grn              @relation(fields: [grnId], references: [id])
   poItem PurchaseOrderItem @relation(fields: [poItemId], references: [id])
