@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RefreshCw, Plus, X, Filter, Eye, XCircle, Loader2, Hash, Clock, Tag, User, Building2, CreditCard, DollarSign, Package, FileText, Truck, MapPin, Scissors } from 'lucide-react';
+import { RefreshCw, Plus, X, Filter, Eye, XCircle, Loader2, Hash, Clock, Tag, User, Building2, CreditCard, DollarSign, Package, FileText, Truck, MapPin, Scissors, Save } from 'lucide-react';
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import DataTable from '../components/DataTable';
@@ -17,6 +17,7 @@ const statusColors = {
   DELIVERED: 'bg-emerald-100 text-emerald-700',
   CANCELLED: 'bg-red-100 text-red-700',
   RETURNED: 'bg-purple-100 text-purple-700',
+  ON_HOLD: 'bg-rose-100 text-rose-700',
 };
 
 const sourceColors = {
@@ -140,6 +141,38 @@ const Orders = ({ detailId, setDetailId }) => {
     }
   };
 
+  const handleHoldUnhold = async (order) => {
+    const isHeld = order.orderStatus === 'ON_HOLD';
+    if (!window.confirm(`${isHeld ? 'Unhold' : 'Hold'} order ${order.orderNumber}?`)) return;
+    try {
+      await API.patch(`/orders/${order.id}/status`, { status: isHeld ? 'PENDING' : 'ON_HOLD' });
+      toast.success(`Order ${order.orderNumber} ${isHeld ? 'unheld' : 'held'}`);
+      fetchOrders();
+      if (detailOrder?.id === order.id) setDetailOrder({ ...detailOrder, orderStatus: isHeld ? 'PENDING' : 'ON_HOLD' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || `Failed to ${isHeld ? 'unhold' : 'hold'} order`);
+    }
+  };
+
+  const handleSplitOrder = async (order) => {
+    const items = order.items || [];
+    if (items.length < 2) return toast.error('Need at least 2 items to split');
+    const choices = items.map((item, i) => `${i + 1}. ${item.sku?.name || item.skuId} x${item.quantity}`);
+    const input = prompt(`Split order ${order.orderNumber}\nEnter item numbers for the NEW order (comma-separated, e.g. "1,3"):\n\n${choices.join('\n')}`);
+    if (!input) return;
+    const indices = input.split(',').map(s => parseInt(s.trim()) - 1).filter(n => n >= 0 && n < items.length);
+    if (indices.length === 0 || indices.length >= items.length) return toast.error('Select at least 1 but not all items for the new order');
+    const splitItemIds = indices.map(i => items[i].id);
+    try {
+      const res = await API.post(`/orders/${order.id}/split`, { splits: [{ itemIds: [] }, { itemIds: splitItemIds }] });
+      toast.success(res.data?.message || 'Order split successfully');
+      fetchOrders();
+      setDetailOrder(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to split order');
+    }
+  };
+
   const handleBulkCancel = async (selected) => {
     const count = selected.size;
     if (!window.confirm(`Cancel ${count} order(s)?`)) return;
@@ -159,6 +192,9 @@ const Orders = ({ detailId, setDetailId }) => {
 
   const actionsConfig = (order) => [
     { label: 'View Details', icon: Eye, onClick: () => openOrderDetail(order) },
+    { label: 'Edit Order', icon: () => <span className="text-base leading-none">✏️</span>, onClick: () => openOrderDetail(order, 'edit') },
+    { label: 'Hold Order', icon: () => <span className="text-base leading-none">⏸</span>, onClick: () => handleHoldUnhold(order), disabled: order.orderStatus === 'ON_HOLD' || order.orderStatus === 'CANCELLED' || order.orderStatus === 'DELIVERED' },
+    { label: 'Unhold Order', icon: () => <span className="text-base leading-none">▶</span>, onClick: () => handleHoldUnhold(order), hidden: order.orderStatus !== 'ON_HOLD' },
     { label: 'Cancel Order', icon: XCircle, onClick: () => handleCancelOrder(order), variant: 'danger', disabled: order.orderStatus === 'CANCELLED' || order.orderStatus === 'DELIVERED' },
     ...(order.orderStatus === 'SHIPPED' ? [{ label: 'Mark Delivered', icon: () => <span className="text-lg leading-none">✓</span>, onClick: () => handleMarkDelivered(order), variant: 'success' }] : []),
   ];
@@ -231,8 +267,10 @@ const Orders = ({ detailId, setDetailId }) => {
         <OrderDetailModal
           order={detailOrder}
           onClose={closeOrderDetail}
-          onUpdate={(updated) => setDetailOrder(updated)}
+          onUpdate={(updated) => { setDetailOrder(updated); fetchOrders(); }}
           onMarkDelivered={handleMarkDelivered}
+          onHoldUnhold={handleHoldUnhold}
+          onSplitOrder={handleSplitOrder}
         />
       )}
 
@@ -619,11 +657,33 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
   );
 };
 
-const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered }) => {
+const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered, onHoldUnhold, onSplitOrder }) => {
   const [activeTab, setActiveTab] = useState('details');
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({ customerName: order.customerName, shippingAddress: order.shippingAddress, notificationEmail: order.notificationEmail || '', notificationMobile: order.notificationMobile || '' });
+  const [saving, setSaving] = useState(false);
 
   const tr = order.tracking || {};
   const fmt = (d) => d ? new Date(d).toLocaleString() : '—';
+
+  useEffect(() => { setEditForm({ customerName: order.customerName, shippingAddress: order.shippingAddress, notificationEmail: order.notificationEmail || '', notificationMobile: order.notificationMobile || '' }); }, [order]);
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      const res = await API.patch(`/orders/${order.id}`, {
+        customerName: editForm.customerName,
+        shippingAddress: editForm.shippingAddress,
+        notificationEmail: editForm.notificationEmail,
+        notificationMobile: editForm.notificationMobile,
+      });
+      toast.success('Order updated');
+      onUpdate({ ...order, ...res.data, ...editForm });
+      setEditMode(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update order');
+    } finally { setSaving(false); }
+  };
 
   const tabs = [
     { id: 'details', label: 'Order Details' },
@@ -632,20 +692,41 @@ const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered }) => {
     { id: 'invoices', label: 'Invoices' },
   ];
 
+  const canEdit = order.orderStatus === 'PENDING' || order.orderStatus === 'ON_HOLD';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 space-y-5 max-h-[95vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">Order #{order.orderNumber}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+          <div className="flex items-center gap-2">
+            {canEdit && !editMode && (
+              <button onClick={() => setEditMode(true)} className="flex items-center gap-1 px-2.5 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                ✏️ Edit
+              </button>
+            )}
+            <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+          </div>
         </div>
 
-        <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit overflow-x-auto">
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${activeTab === t.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
-              {t.label}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg w-fit overflow-x-auto">
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${activeTab === t.id ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {order.orderStatus === 'ON_HOLD' && (
+            <button onClick={() => { onHoldUnhold(order); onClose(); }} className="flex items-center gap-1 px-3 py-1.5 border border-rose-300 text-rose-700 rounded-lg text-xs font-medium hover:bg-rose-50">
+              ▶ Unhold
             </button>
-          ))}
+          )}
+          {(order.orderStatus === 'PENDING' || order.orderStatus === 'PROCESSING') && (
+            <button onClick={() => { onHoldUnhold(order); onClose(); }} className="flex items-center gap-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-medium hover:bg-slate-50">
+              ⏸ Hold
+            </button>
+          )}
         </div>
 
         {activeTab === 'details' && (
@@ -656,20 +737,56 @@ const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered }) => {
             <DetailField icon={Tag} label="Priority" value={order.priority || 'Normal'} />
             <DetailField icon={Clock} label="Order Date" value={fmt(order.createdAt)} />
             <DetailField label="Status" value={<span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusColors[order.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{order.orderStatus}</span>} />
-            <DetailField icon={User} label="Customer" value={order.customerName} />
-            <DetailField icon={Building2} label="Customer GSTIN" value={order.customerGstin || '—'} />
-            <DetailField icon={Tag} label="Channel" value={order.source || '—'} />
-            <DetailField icon={CreditCard} label="Payment Method" value={order.paymentMode || order.paymentStatus || '—'} />
-            <DetailField icon={DollarSign} label="Order Amount" value={order.orderAmount ? `₹${Number(order.orderAmount).toFixed(2)}` : '—'} />
-            <DetailField icon={Clock} label="Channel Created" value={fmt(order.createdAt)} />
-            <DetailField icon={Clock} label="Uniware Created" value={fmt(order.createdAt)} />
-            <DetailField icon={Clock} label="Channel Processing Time" value={order.channelProcessingTime ? fmt(order.channelProcessingTime) : '—'} />
-            <DetailField icon={Clock} label="Updated at" value={fmt(order.updatedAt)} />
-            <DetailField icon={Package} label="Notification Email" value={order.notificationEmail || '—'} />
-            <DetailField icon={Package} label="Notification Mobile" value={order.notificationMobile || '—'} />
-            <DetailField icon={FileText} label="PDF Attachment" value={order.pdfAttachment || '—'} />
-            <DetailField icon={Truck} label="deliverMode" value={order.deliverMode || '—'} />
-            <div className="col-span-2"><DetailField icon={MapPin} label="Shipping Address" value={order.shippingAddress || '—'} /></div>
+            <div className="col-span-2">
+              {editMode ? (
+                <div className="space-y-3 p-3 bg-slate-50 rounded-xl">
+                  <p className="font-semibold text-xs text-slate-500">✏️ Edit Mode</p>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-0.5">Customer Name</label>
+                    <input value={editForm.customerName} onChange={e => setEditForm({ ...editForm, customerName: e.target.value })} className="input-field text-sm w-full" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-0.5">Shipping Address</label>
+                    <textarea value={editForm.shippingAddress} onChange={e => setEditForm({ ...editForm, shippingAddress: e.target.value })} className="input-field text-sm w-full" rows={3} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-0.5">Notification Email</label>
+                      <input value={editForm.notificationEmail} onChange={e => setEditForm({ ...editForm, notificationEmail: e.target.value })} className="input-field text-sm w-full" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-400 block mb-0.5">Notification Mobile</label>
+                      <input value={editForm.notificationMobile} onChange={e => setEditForm({ ...editForm, notificationMobile: e.target.value })} className="input-field text-sm w-full" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={handleSaveEdit} disabled={saving} className="btn-primary flex items-center gap-1.5 text-xs px-3 py-1.5 disabled:opacity-50">
+                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save
+                    </button>
+                    <button onClick={() => setEditMode(false)} className="px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <DetailField icon={User} label="Customer" value={order.customerName} />
+                  <DetailField icon={Building2} label="Customer GSTIN" value={order.customerGstin || '—'} />
+                  <DetailField icon={Tag} label="Channel" value={order.source || '—'} />
+                  <DetailField icon={CreditCard} label="Payment Method" value={order.paymentMode || order.paymentStatus || '—'} />
+                  <DetailField icon={DollarSign} label="Order Amount" value={order.orderAmount ? `₹${Number(order.orderAmount).toFixed(2)}` : '—'} />
+                  <DetailField icon={Clock} label="Channel Created" value={fmt(order.createdAt)} />
+                  <DetailField icon={Clock} label="Uniware Created" value={fmt(order.createdAt)} />
+                  <DetailField icon={Clock} label="Channel Processing Time" value={order.channelProcessingTime ? fmt(order.channelProcessingTime) : '—'} />
+                  <DetailField icon={Clock} label="Updated at" value={fmt(order.updatedAt)} />
+                  <DetailField icon={Package} label="Notification Email" value={order.notificationEmail || '—'} />
+                  <DetailField icon={Package} label="Notification Mobile" value={order.notificationMobile || '—'} />
+                  <DetailField icon={FileText} label="PDF Attachment" value={order.pdfAttachment || '—'} />
+                  <DetailField icon={Truck} label="deliverMode" value={order.deliverMode || '—'} />
+                  <div className="col-span-2"><DetailField icon={MapPin} label="Shipping Address" value={order.shippingAddress || '—'} /></div>
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -699,7 +816,7 @@ const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered }) => {
             </table>
             <div className="flex gap-2 mt-3">
               {(order.orderStatus === 'PENDING' || order.orderStatus === 'PROCESSING') && order.items?.length > 1 && (
-                <button onClick={() => { const v = prompt('Split: enter order numbers for each split (comma-separated):'); if (v) toast.info('Split feature invoked'); }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 text-amber-600">
+                <button onClick={() => { onSplitOrder(order); }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50 text-amber-600">
                   <Scissors size={13} /> Split Order
                 </button>
               )}

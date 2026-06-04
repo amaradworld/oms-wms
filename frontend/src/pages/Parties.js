@@ -21,7 +21,7 @@ const Parties = () => {
   const fetchParties = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get('/suppliers');
+      const res = await API.get('/purchase/suppliers');
       setParties(Array.isArray(res.data) ? res.data : []);
     } catch { setParties([]); } finally { setLoading(false); }
   }, []);
@@ -50,7 +50,7 @@ const Parties = () => {
     setSubmitting(true);
     try {
       if (editId) {
-        const res = await API.put(`/suppliers/${editId}`, form);
+        const res = await API.put(`/purchase/suppliers/${editId}`, form);
         setParties(prev => prev.map(p => p.id === editId ? res.data : p));
         toast.success('Party updated');
       } else {
@@ -67,7 +67,7 @@ const Parties = () => {
 
   const toggleActive = async (p) => {
     try {
-      const res = await API.put(`/suppliers/${p.id}`, { isActive: !p.isActive });
+      const res = await API.put(`/purchase/suppliers/${p.id}`, { isActive: !p.isActive });
       setParties(prev => prev.map(x => x.id === p.id ? res.data : x));
       toast.success(res.data.isActive ? 'Party enabled' : 'Party disabled');
     } catch { toast.error('Failed to toggle status'); }

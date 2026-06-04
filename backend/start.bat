@@ -1,4 +1,4 @@
 @echo off
-cd /d "C:\Users\alokg\oms-wms-app\backend"
+cd /d "%~dp0"
 npx ts-node src/index.ts
 pause

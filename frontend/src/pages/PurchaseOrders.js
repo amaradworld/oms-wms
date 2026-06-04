@@ -24,7 +24,7 @@ const PurchaseOrders = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [poRes, supRes] = await Promise.all([API.get('/purchase-orders'), API.get('/suppliers')]);
+      const [poRes, supRes] = await Promise.all([API.get('/purchase/orders'), API.get('/purchase/suppliers')]);
       setPos(Array.isArray(poRes.data) ? poRes.data : []);
       setSuppliers(Array.isArray(supRes.data) ? supRes.data : []);
     } catch { setPos([]); setSuppliers([]); } finally { setLoading(false); }
@@ -34,7 +34,7 @@ const PurchaseOrders = () => {
 
   const handleCreateSupplier = async () => {
     try {
-      await API.post('/suppliers', supForm);
+      await API.post('/purchase/suppliers', supForm);
       toast.success('Supplier created');
       setShowSupplierModal(false);
       setSupForm({ name: '', contactPerson: '', email: '', phone: '', address: '' });
@@ -46,7 +46,7 @@ const PurchaseOrders = () => {
     if (!form.supplierId) return toast.error('Select supplier');
     if (!selectedFacility?.id) return toast.error('Select a warehouse/facility before creating PO');
     try {
-      await API.post('/purchase-orders', { ...form, warehouseId: selectedFacility.id });
+      await API.post('/purchase/orders', { ...form, warehouseId: selectedFacility.id });
       toast.success('Purchase order created');
       setShowModal(false);
       setForm({ supplierId: '', expectedDate: '', notes: '', items: [{ skuCode: '', quantity: 1, unitPrice: 0 }] });
@@ -56,7 +56,7 @@ const PurchaseOrders = () => {
 
   const handleReceive = async (id) => {
     try {
-      await API.put(`/purchase-orders/${id}/receive`);
+      await API.put(`/purchase/orders/${id}/receive`);
       toast.success('PO received, inventory updated');
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }

@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { resolveSku } from '../utils/sku-resolver';
 
 const LOGO_PATH = path.join(__dirname, '../../assets/logo.png');
 
@@ -60,9 +61,11 @@ export const createTransfer = async (req: AuthRequest, res: Response) => {
 };
 
 export const scanTransferItem = async (req: AuthRequest, res: Response) => {
-  const { skuCode } = req.body;
+  const { skuCode, epcCode } = req.body;
+  const code = skuCode || epcCode;
   const id = req.params.id as string;
   const tenantId = req.user!.tenant_id;
+  if (!code) return res.status(400).json({ message: 'skuCode or epcCode is required' });
 
   const transfer = await prisma.stockTransfer.findFirst({ where: { id, tenantId } });
   if (!transfer) return res.status(404).json({ message: 'Transfer not found' });
@@ -72,15 +75,15 @@ export const scanTransferItem = async (req: AuthRequest, res: Response) => {
     return res.status(403).json({ message: 'Only receiving facility users can scan items' });
   }
 
-  const sku = await prisma.skuMaster.findFirst({ where: { skuCode, tenantId } });
-  if (!sku) return res.status(404).json({ message: 'SKU not found' });
+  const sku = await resolveSku(tenantId, code);
+  if (!sku) return res.status(404).json({ message: `SKU with code ${code} not found` });
 
   const item = await prisma.stockTransferItem.findFirst({
     where: { transferId: id, skuId: sku.id },
   });
   if (!item) return res.status(404).json({ message: 'Item not in this transfer' });
 
-  if (item.receivedQty >= item.quantity) return res.status(400).json({ message: `${skuCode} already fully scanned` });
+  if (item.receivedQty >= item.quantity) return res.status(400).json({ message: `${code} already fully scanned` });
 
   const newQty = item.receivedQty + 1;
   const newStatus = newQty >= item.quantity ? 'RECEIVED' : 'PARTIAL';

@@ -156,6 +156,32 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const updateOrder = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const { customerName, shippingAddress, notificationEmail, notificationMobile, billingName, billingAddress1, billingCity, billingPinCode, billingPhone } = req.body;
+  try {
+    const order = await prisma.order.findFirst({ where: { id, tenantId: req.user!.tenant_id } });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    const data: Record<string, unknown> = {};
+    if (customerName !== undefined) data.customerName = customerName;
+    if (shippingAddress !== undefined) data.shippingAddress = shippingAddress;
+    if (notificationEmail !== undefined) data.notificationEmail = notificationEmail;
+    if (notificationMobile !== undefined) data.notificationMobile = notificationMobile;
+    if (billingName !== undefined) data.billingName = billingName;
+    if (billingAddress1 !== undefined) data.billingAddress1 = billingAddress1;
+    if (billingCity !== undefined) data.billingCity = billingCity;
+    if (billingPinCode !== undefined) data.billingPinCode = billingPinCode;
+    if (billingPhone !== undefined) data.billingPhone = billingPhone;
+
+    const updated = await prisma.order.update({ where: { id }, data });
+    res.json(updated);
+    logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'UPDATE', entityType: 'Order', entityId: id, newValue: data });
+  } catch (error) {
+    res.status(400).json({ message: String(error) });
+  }
+};
+
 export const splitOrder = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const { splits } = req.body;

@@ -10,10 +10,10 @@ import {
 
 const router = Router();
 
-router.get('/putaway/sources', authenticate, getPutawaySources);
-router.post('/putaway/task', authenticate, createPutawayTask);
-router.get('/putaway', authenticate, getPutawayTasks);
-router.put('/putaway/:id/assign-bin', authenticate, assignBinToTask);
-router.put('/putaway/:id/complete', authenticate, completePutaway);
+router.get('/sources', authenticate, getPutawaySources);
+router.post('/task', authenticate, createPutawayTask);
+router.get('/', authenticate, getPutawayTasks);
+router.put('/:id/assign-bin', authenticate, assignBinToTask);
+router.put('/:id/complete', authenticate, completePutaway);
 
 export default router;

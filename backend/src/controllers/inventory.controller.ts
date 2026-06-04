@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { resolveSku } from '../utils/sku-resolver';
 
 export const getInventory = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
@@ -64,16 +65,17 @@ export const getInventory = async (req: AuthRequest, res: Response) => {
 
 export const scanInventory = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
-  const { skuCode, warehouseId } = req.body;
+  const { skuCode, epcCode, warehouseId } = req.body;
+  const code = skuCode || epcCode;
 
-  if (!skuCode) {
-    res.status(400).json({ message: 'skuCode is required' });
+  if (!code) {
+    res.status(400).json({ message: 'skuCode or epcCode is required' });
     return;
   }
 
-  const sku = await prisma.skuMaster.findUnique({ where: { skuCode } });
+  const sku = await resolveSku(tenantId, code);
   if (!sku) {
-    res.status(404).json({ message: `SKU ${skuCode} not found` });
+    res.status(404).json({ message: `SKU with code ${code} not found` });
     return;
   }
 

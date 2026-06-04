@@ -36,6 +36,12 @@ import SkuHistory from './pages/SkuHistory';
 import Parties from './pages/Parties';
 import Companies from './pages/Companies';
 import AuditLogs from './pages/AuditLogs';
+import StockExpiry from './pages/StockExpiry';
+import Replenishment from './pages/Replenishment';
+import BatchTrace from './pages/BatchTrace';
+import MobileScan from './pages/MobileScan';
+import AsnPage from './pages/AsnPage';
+import Productivity from './pages/Productivity';
 import AssistantBot from './components/AssistantBot';
 import LoginPage from './pages/LoginPage';
 import OnboardingWizard from './components/OnboardingWizard';
@@ -63,8 +69,8 @@ const UNAUTHORIZED = () => (
 
 const roleAccess = {
   PLATFORM_ADMIN: ['dashboard','companies','audit-logs'],
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','audit-logs'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','audit-logs'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -78,6 +84,7 @@ const TAB_TO_HASH = {
   'inventory-alerts':'inventory-alerts', gatepass:'gatepass', 'gatepass-order':'gatepass-order',
   integrations:'integrations', grn:'grn', putaway:'putaway', bins:'bin-locations',
   'sku-history':'sku-history', parties:'parties', companies:'companies', settings:'settings',
+  'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan',
 };
 
 const HASH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_HASH).map(([k, v]) => [v, k]));
@@ -199,6 +206,12 @@ const App = () => {
       case 'parties': return <Parties {...pageProps} />;
       case 'companies': return <Companies {...pageProps} />;
       case 'audit-logs': return <AuditLogs {...pageProps} />;
+      case 'stock-expiry': return <StockExpiry {...pageProps} />;
+      case 'replenishment': return <Replenishment {...pageProps} />;
+      case 'asn': return <AsnPage {...pageProps} />;
+      case 'productivity': return <Productivity {...pageProps} />;
+      case 'batch-trace': return <BatchTrace {...pageProps} />;
+      case 'mobile-scan': return <MobileScan {...pageProps} />;
       case 'settings': return <Settings {...pageProps} />;
       default: return <FallbackPage />;
     }

@@ -10,12 +10,12 @@ const OnboardingWizard = ({ onComplete, getToken }) => {
 
   const [company, setCompany] = useState({ name: '', email: '', phone: '' });
   const [warehouse, setWarehouse] = useState({ name: '', address: '', city: '' });
-  const [products, setProducts] = useState([{ skuCode: '', name: '', qty: 0 }]);
+  const [products, setProducts] = useState([{ skuCode: '', epcCode: '', name: '', qty: 0 }]);
 
   const API = process.env.REACT_APP_API_URL;
   const headers = () => ({ headers: { Authorization: `Bearer ${getToken()}` } });
 
-  const addProduct = () => setProducts([...products, { skuCode: '', name: '', qty: 0 }]);
+  const addProduct = () => setProducts([...products, { skuCode: '', epcCode: '', name: '', qty: 0 }]);
   const updateProduct = (i, field, value) => {
     const copy = [...products];
     copy[i][field] = value;
@@ -27,9 +27,11 @@ const OnboardingWizard = ({ onComplete, getToken }) => {
     try {
       if (warehouse.name) {
         const { data: wh } = await axios.post(`${API}/api/warehouses`, warehouse, headers());
-        for (const p of products) {
-          if (!p.skuCode) continue;
-          const { data: sku } = await axios.post(`${API}/api/skus`, { skuCode: p.skuCode, name: p.name }, headers());
+          for (const p of products) {
+            if (!p.skuCode) continue;
+            const payload = { skuCode: p.skuCode, name: p.name };
+            if (p.epcCode) payload.epcCode = p.epcCode;
+            const { data: sku } = await axios.post(`${API}/api/skus`, payload, headers());
           await axios.post(`${API}/api/inventory`, { skuId: sku.id, warehouseId: wh.id, quantityAvailable: Number(p.qty) }, headers());
         }
       }
@@ -119,6 +121,7 @@ const OnboardingWizard = ({ onComplete, getToken }) => {
                 <div key={i} className="flex gap-2 items-start bg-slate-50 p-3 rounded-lg">
                   <div className="flex-1">
                     <input value={p.skuCode} onChange={e => updateProduct(i, 'skuCode', e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none mb-1" placeholder="SKU Code (e.g. TSH-BLU-M)" />
+                    <input value={p.epcCode} onChange={e => updateProduct(i, 'epcCode', e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none mb-1" placeholder="EPC Code (11 digits, optional)" maxLength={11} />
                     <input value={p.name} onChange={e => updateProduct(i, 'name', e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none mb-1" placeholder="Product Name" />
                     <input type="number" value={p.qty} onChange={e => updateProduct(i, 'qty', e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none" placeholder="Quantity" />
                   </div>

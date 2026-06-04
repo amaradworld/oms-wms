@@ -8,6 +8,7 @@ export const loginSchema = z.object({
 
 export const createSkuSchema = z.object({
   skuCode: z.string().min(1, 'SKU code is required'),
+  epcCode: z.string().length(11, 'EPC code must be exactly 11 digits').regex(/^\d{11}$/, 'EPC code must be 11 digits').optional(),
   name: z.string().min(1, 'Product name is required'),
   styleName: z.string().optional(),
   size: z.string().optional(),

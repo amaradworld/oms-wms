@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 const INVENTORY_COLUMNS = [
   { key: 'barcode', label: 'Barcode', render: (r) => <BarcodeCell value={r.skuCode} /> },
   { key: 'skuCode', label: 'SKU', render: (r) => <span className="text-sm font-mono font-medium">{r.skuCode}</span> },
+  { key: 'epcCode', label: 'EPC', render: (r) => <span className="text-sm font-mono text-amber-700">{r.epcCode || '-'}</span> },
   { key: 'name', label: 'Product' },
   { key: 'warehouse', label: 'Shelf', render: (r) => <span className="text-sm text-slate-600" title={`Inventory Allocation: ${r.inventoryAllocation}\nInventory Sync: ${r.inventorySync}\nSku Mixing: ${r.skuMixing}\nShelf on hold: ${r.shelfOnHold}`}>{r.warehouse || '-'}</span> },
   { key: 'batch', label: 'Batch', render: (r) => <span className="text-sm text-slate-600">{r.batch || '-'}</span> },
@@ -64,10 +65,11 @@ const Inventory = () => {
     if (!selectedFacility) return toast.error('Select a facility first');
     setScanning(true);
     try {
-      const res = await API.post('/inventory/scan', {
-        skuCode: scanInput.trim(),
-        warehouseId: selectedFacility.id,
-      });
+      const code = scanInput.trim();
+      const isEpc = /^\d{11}$/.test(code);
+      const payload = { warehouseId: selectedFacility.id };
+      if (isEpc) payload.epcCode = code; else payload.skuCode = code;
+      const res = await API.post('/inventory/scan', payload);
       setLastScanned(res.data.sku);
       toast.success(`+1 ${res.data.sku.skuCode} (${res.data.sku.name})`);
       fetchInventory(true);

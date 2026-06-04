@@ -56,6 +56,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       children: [
         { id: 'warehouse', label: 'Warehouse', icon: Warehouse },
         { id: 'scanning', label: 'Barcode Scan', icon: Barcode },
+        { id: 'mobile-scan', label: 'Mobile Scan', icon: ScanLine },
       ],
     },
     {
@@ -65,12 +66,16 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'cyclecount', label: 'Cycle Count', icon: ClipboardCheck },
         { id: 'inventory-alerts', label: 'Inventory Alerts', icon: AlertTriangle },
         { id: 'sku-history', label: 'SKU History', icon: Search },
+        { id: 'stock-expiry', label: 'Stock Expiry', icon: Clock },
+        { id: 'replenishment', label: 'Replenishment', icon: Layers },
+        { id: 'batch-trace', label: 'Batch Trace', icon: Search },
       ],
     },
     {
       id: 'inbound-supply', label: 'Inbound & Supply Chain', icon: Truck, group: true,
       children: [
         { id: 'purchaseorders', label: 'Purchase Orders', icon: ShoppingBag },
+        { id: 'asn', label: 'ASN', icon: Truck },
         { id: 'grn', label: 'GRN', icon: ClipboardCheck },
         { id: 'putaway', label: 'Putaway', icon: ScanLine },
       ],
@@ -92,6 +97,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
         { id: 'marketplace', label: 'Marketplace', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+        { id: 'productivity', label: 'Productivity', icon: BarChart3 },
         { id: 'bins', label: 'Bin Locations', icon: MapPin },
         { id: 'audit-logs', label: 'Audit Logs', icon: Clock },
         { id: 'settings', label: 'Settings', icon: Settings },

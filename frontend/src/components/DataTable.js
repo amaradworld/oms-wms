@@ -183,7 +183,7 @@ const DataTable = ({
                           ref={menuRef}
                           className="absolute right-2 top-10 z-40 w-44 bg-white rounded-xl shadow-xl border border-indigo-100/60 py-1 animate-fade-in"
                         >
-                          {(typeof actions === 'function' ? actions(row) : actions).map((action, i) => (
+                          {(typeof actions === 'function' ? actions(row) : actions).filter(a => !a.hidden).map((action, i) => (
                             <button
                               key={i}
                               onClick={() => { action.onClick(row); setOpenMenuId(null); }}

@@ -38,7 +38,7 @@ const Grn = ({ detailId, setDetailId }) => {
     try {
       const params = selectedFacility?.id ? { params: { warehouseId: selectedFacility.id } } : {};
       const [poRes, grnRes] = await Promise.all([
-        API.get('/purchase-orders', params),
+        API.get('/purchase/orders', params),
         API.get('/grn', params),
       ]);
       setPos(Array.isArray(poRes.data) ? poRes.data.filter(p => p.status === 'DRAFT' || p.status === 'RECEIVING' || p.status === 'PARTIALLY_RECEIVED') : []);

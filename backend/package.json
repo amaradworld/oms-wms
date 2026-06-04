@@ -4,7 +4,9 @@
   "description": "OMS-WMS Backend API",
   "main": "dist/index.js",
   "scripts": {
+    "postinstall": "npx prisma generate",
     "build": "npx prisma generate && tsc",
+    "prestart": "node scripts/validate-env.js",
     "start": "npx prisma db push --accept-data-loss && node dist/index.js",
     "dev": "nodemon src/index.ts",
     "migrate": "npx prisma db push",

@@ -3,11 +3,12 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export const getSkus = async (req: AuthRequest, res: Response) => {
-  const search = req.query.search as string | undefined;
+  const search = (req.query.search || req.query.q) as string | undefined;
   const where: any = { tenantId: req.user!.tenant_id };
   if (search) {
     where.OR = [
       { skuCode: { contains: search, mode: 'insensitive' } },
+      { epcCode: { contains: search, mode: 'insensitive' } },
       { name: { contains: search, mode: 'insensitive' } },
     ];
   }
@@ -133,7 +134,7 @@ export const getSkuHistory = async (req: AuthRequest, res: Response) => {
     });
 
     res.json({
-      sku: { skuCode: sku.skuCode, name: sku.name, size: sku.size, unitType: sku.unitType, mrp: sku.mrp },
+      sku: { skuCode: sku.skuCode, epcCode: sku.epcCode, name: sku.name, size: sku.size, unitType: sku.unitType, mrp: sku.mrp },
       inventory,
       timeline,
     });
@@ -143,15 +144,36 @@ export const getSkuHistory = async (req: AuthRequest, res: Response) => {
   }
 };
 
+async function generateEpcCode(): Promise<string> {
+  const last = await prisma.skuMaster.findFirst({
+    where: { epcCode: { not: null } },
+    orderBy: { epcCode: 'desc' },
+    select: { epcCode: true },
+  });
+  let next = 1;
+  if (last?.epcCode) {
+    const num = parseInt(last.epcCode, 10);
+    if (!isNaN(num)) next = num + 1;
+  }
+  return String(10000000000 + next);
+}
+
 export const createSku = async (req: AuthRequest, res: Response) => {
-  const { skuCode, name, styleName, size, color, brand, category, material, gender, unitType, mrp, description, hsnCode, weight, dimensions } = req.body;
+  const { skuCode, epcCode, name, styleName, size, color, brand, category, material, gender, unitType, mrp, description, hsnCode, weight, dimensions } = req.body;
   try {
     const existing = await prisma.skuMaster.findUnique({ where: { skuCode } });
     if (existing) return res.status(400).json({ message: 'SKU code already exists' });
 
+    if (epcCode) {
+      const epcExists = await prisma.skuMaster.findUnique({ where: { epcCode } });
+      if (epcExists) return res.status(400).json({ message: 'EPC code already exists' });
+    }
+
     const sku = await prisma.skuMaster.create({
       data: {
-        skuCode, name, styleName, size, color, brand, category, material, gender, unitType,
+        skuCode,
+        epcCode: epcCode || await generateEpcCode(),
+        name, styleName, size, color, brand, category, material, gender, unitType,
         mrp: mrp ? parseFloat(mrp) : null,
         description, hsnCode,
         weight: weight ? parseFloat(weight) : null,

@@ -30,7 +30,8 @@ const Settings = () => {
   const [auditLoading, setAuditLoading] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPw, setShowPw] = useState(false);
-  const [notifPrefs, setNotifPrefs] = useState({ lowStock: true, rtoAlert: true, syncFailure: true, weeklyReport: false });
+  const [notifPrefs, setNotifPrefs] = useState({});
+  const [notifLoading, setNotifLoading] = useState(false);
   const [exporting, setExporting] = useState(null);
   const [pwSubmitting, setPwSubmitting] = useState(false);
   const [mfaStatus, setMfaStatus] = useState(null);
@@ -155,6 +156,7 @@ const Settings = () => {
   useEffect(() => { if (activeTab === 'users') { fetchUsers(); fetchWarehouses(); } }, [activeTab, fetchUsers, fetchWarehouses]);
   useEffect(() => { if (activeTab === 'audit') fetchAudit(); }, [activeTab, fetchAudit]);
   useEffect(() => { if (activeTab === 'security') fetchMfaStatus(); }, [activeTab, fetchMfaStatus]);
+  useEffect(() => { if (activeTab === 'notifications') { setNotifLoading(true); API.get('/notifications/preferences').then(r => { setNotifPrefs(r.data || {}); }).catch(() => {}).finally(() => setNotifLoading(false)); } }, [activeTab]);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -436,21 +438,31 @@ const Settings = () => {
       {activeTab === 'notifications' && (
         <div className="card p-4 md:p-6 space-y-4">
           <h2 className="text-lg font-bold flex items-center gap-2"><Bell size={20} /> Notification Preferences</h2>
-          <div className="space-y-3">
-            {[
-              { key: 'lowStock', label: 'Low Stock Alerts', desc: 'Notify when inventory falls below threshold' },
-              { key: 'rtoAlert', label: 'RTO Alerts', desc: 'Notify when an order is returned to origin' },
-              { key: 'syncFailure', label: 'Sync Failures', desc: 'Notify when marketplace sync fails' },
-              { key: 'weeklyReport', label: 'Weekly Report', desc: 'Receive a weekly summary via email' },
-            ].map(n => (
-              <label key={n.key} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 cursor-pointer">
-                <div><p className="font-medium text-sm">{n.label}</p><p className="text-xs text-slate-400">{n.desc}</p></div>
-                <div className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${notifPrefs[n.key] ? 'bg-blue-600' : 'bg-slate-300'}`} onClick={() => setNotifPrefs({ ...notifPrefs, [n.key]: !notifPrefs[n.key] })}>
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifPrefs[n.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                </div>
-              </label>
-            ))}
-          </div>
+          {notifLoading ? (
+            <p className="text-sm text-slate-400">Loading...</p>
+          ) : (
+            <div className="space-y-3">
+              {[
+                { key: 'stockExpiry', label: 'Stock Expiry Alerts', desc: 'Notify when inventory expires within 30 days' },
+                { key: 'slaBreach', label: 'SLA Breach Alerts', desc: 'Notify when orders miss their SLA deadline' },
+                { key: 'lowStock', label: 'Low Stock Alerts', desc: 'Notify when inventory falls below reorder point' },
+                { key: 'rtoAlert', label: 'RTO Alerts', desc: 'Notify when an order is returned to origin' },
+                { key: 'syncFailure', label: 'Sync Failures', desc: 'Notify when marketplace sync fails' },
+                { key: 'weeklyReport', label: 'Weekly Report', desc: 'Receive a weekly summary via email' },
+              ].map(n => (
+                <label key={n.key} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 cursor-pointer">
+                  <div><p className="font-medium text-sm">{n.label}</p><p className="text-xs text-slate-400">{n.desc}</p></div>
+                  <div className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${notifPrefs[n.key] ? 'bg-blue-600' : 'bg-slate-300'}`} onClick={async () => {
+                    const updated = { ...notifPrefs, [n.key]: !notifPrefs[n.key] };
+                    setNotifPrefs(updated);
+                    try { await API.put('/notifications/preferences', updated); } catch { toast.error('Failed to save preference'); setNotifPrefs(notifPrefs); }
+                  }}>
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${notifPrefs[n.key] ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

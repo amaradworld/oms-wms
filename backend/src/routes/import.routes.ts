@@ -4,9 +4,9 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/orders/import', authenticate, upload.single('file'), importOrders);
-router.post('/inventory/import', authenticate, upload.single('file'), importInventory);
-router.post('/returns/import', authenticate, upload.single('file'), importReturns);
-router.post('/suppliers/import', authenticate, upload.single('file'), importParties);
+router.post('/orders', authenticate, upload.single('file'), importOrders);
+router.post('/inventory', authenticate, upload.single('file'), importInventory);
+router.post('/returns', authenticate, upload.single('file'), importReturns);
+router.post('/suppliers', authenticate, upload.single('file'), importParties);
 
 export default router;

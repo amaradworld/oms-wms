@@ -12,6 +12,7 @@ model Tenant {
   name      String
   slug      String     @unique
   isActive  Boolean    @default(true)
+  notificationPrefs Json?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -128,6 +129,7 @@ model SkuMaster {
   id          String   @id @default(uuid())
   tenantId    String
   skuCode     String   @unique
+  epcCode     String?  @unique
   name        String
   styleName   String?
   size        String?
@@ -152,6 +154,8 @@ model SkuMaster {
   gatepassItems      GatepassItem[]
   grnItems           GrnItem[]
   putawayTasks       PutawayTask[]
+  replenishmentTasks ReplenishmentTask[]
+  asnItems           AsnItem[]
 
   @@map("sku_master")
 }
@@ -170,6 +174,8 @@ model Inventory {
   type                String   @default("Good")
   batch               String?
   batchStatus         String?
+  expiryDate          DateTime?
+  expiryAlertSent     Boolean  @default(false)
   status              String   @default("ACTIVE")
   inventoryAllocation Boolean  @default(true)
   inventorySync       Boolean  @default(true)
@@ -252,6 +258,8 @@ model OrderItem {
   discountAmount Decimal? @default(0)
   totalAmount    Decimal
   status         String   @default("PENDING")
+  batchNo        String?
+  expiryDate     DateTime?
 
   order Order @relation(fields: [orderId], references: [id])
   sku   SkuMaster @relation(fields: [skuId], references: [id])
@@ -495,6 +503,7 @@ model Grn {
   id          String   @id @default(uuid())
   tenantId    String
   poId        String
+  asnId       String?
   warehouseId String
   grnNumber   String   @unique
   status      String   @default("RECEIVING") // RECEIVING, QC_PENDING, QC_FAILED, APPROVED, REJECTED
@@ -507,6 +516,7 @@ model Grn {
   updatedAt   DateTime @updatedAt
 
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  asn           Asn?          @relation(fields: [asnId], references: [id])
   warehouse     Warehouse     @relation(fields: [warehouseId], references: [id])
   items         GrnItem[]
   putawayTasks  PutawayTask[]
@@ -741,4 +751,75 @@ model PlatformIntegration {
 
   @@unique([tenantId, name])
   @@map("platform_integrations")
+}
+
+model ReplenishmentTask {
+  id              String   @id @default(uuid())
+  tenantId        String
+  warehouseId     String?
+  skuId           String
+  fromBin         String?
+  toBin           String
+  quantity        Int
+  priority        String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status          String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  assignedTo      String?
+  notes           String?
+  completedAt     DateTime?
+  completedBy     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sku SkuMaster @relation(fields: [skuId], references: [id])
+
+  @@map("replenishment_tasks")
+}
+
+model Asn {
+  id              String   @id @default(uuid())
+  tenantId        String
+  warehouseId     String?
+  asnNumber       String   @unique
+  supplierId      String?
+  supplierName    String?
+  expectedDate    DateTime?
+  status          String   @default("PENDING") // PENDING, PARTIAL, RECEIVED, CANCELLED
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items  AsnItem[]
+  grns   Grn[]
+
+  @@map("asns")
+}
+
+model AsnItem {
+  id          String   @id @default(uuid())
+  asnId       String
+  skuId       String
+  expectedQty Int      @default(0)
+  receivedQty Int      @default(0)
+  batchNo     String?
+  expiryDate  DateTime?
+
+  asn Asn       @relation(fields: [asnId], references: [id])
+  sku  SkuMaster @relation(fields: [skuId], references: [id])
+
+  @@map("asn_items")
+}
+
+model ProductivityLog {
+  id          String   @id @default(uuid())
+  tenantId    String
+  warehouseId String?
+  userId      String?
+  activity    String   // PICKING, PACKING, PUTAWAY, GRN, CYCLE_COUNT
+  entityType  String?
+  entityId    String?
+  quantity    Int      @default(0)
+  durationMin Int?     // time spent in minutes
+  recordedAt  DateTime @default(now())
+
+  @@map("productivity_logs")
 }

@@ -4,11 +4,11 @@ import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.get('/grn', authenticate, getGrns);
-router.get('/grn/:id', authenticate, getGrnDetail);
-router.post('/grn', authenticate, createGrn);
-router.post('/grn/:id/qc', authenticate, qcGrnItem);
-router.post('/grn/:id/approve', authenticate, approveGrn);
-router.post('/grn/:id/reject', authenticate, rejectGrn);
+router.get('/', authenticate, getGrns);
+router.get('/:id', authenticate, getGrnDetail);
+router.post('/', authenticate, createGrn);
+router.post('/:id/qc', authenticate, qcGrnItem);
+router.post('/:id/approve', authenticate, approveGrn);
+router.post('/:id/reject', authenticate, rejectGrn);
 
 export default router;

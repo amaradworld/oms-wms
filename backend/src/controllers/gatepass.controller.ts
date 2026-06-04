@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { resolveSku } from '../utils/sku-resolver';
 
 async function generateCode(tenantId: string, type: string): Promise<string> {
   const prefix = type === 'STOCK_TRANSFER' ? 'STN' : 'GP';
@@ -174,7 +175,8 @@ export const scanGatepassItem = async (req: AuthRequest, res: Response) => {
   try {
     const { tenant_id } = req.user!;
     const id = req.params.id as string;
-    const { skuCode } = req.body;
+    const { skuCode, epcCode } = req.body;
+    const code = skuCode || epcCode;
 
     const gp = await prisma.gatepass.findFirst({
       where: { id, tenantId: tenant_id },
@@ -182,10 +184,13 @@ export const scanGatepassItem = async (req: AuthRequest, res: Response) => {
     });
     if (!gp) { res.status(404).json({ message: 'Gatepass not found' }); return; }
 
-    const gpItem = gp.items.find(i => i.sku.skuCode === skuCode);
-    if (!gpItem) { res.status(404).json({ message: `SKU ${skuCode} not found in gatepass items` }); return; }
+    const sku = code === skuCode ? null : await resolveSku(tenant_id, code);
+    const resolvedCode = sku?.skuCode || skuCode;
 
-    if (gpItem.scannedQty >= gpItem.quantity) { res.status(400).json({ message: `${skuCode} already fully scanned` }); return; }
+    const gpItem = gp.items.find(i => i.sku.skuCode === resolvedCode);
+    if (!gpItem) { res.status(404).json({ message: `SKU ${resolvedCode} not found in gatepass items` }); return; }
+
+    if (gpItem.scannedQty >= gpItem.quantity) { res.status(400).json({ message: `${resolvedCode} already fully scanned` }); return; }
 
     const updated = await prisma.gatepassItem.update({
       where: { id: gpItem.id },
@@ -213,7 +218,7 @@ export const scanGatepassItem = async (req: AuthRequest, res: Response) => {
       await prisma.gatepass.update({ where: { id }, data: { status: 'RECEIVED' } });
     }
 
-    res.json({ message: `Scanned ${skuCode}`, item: updated, allScanned });
+    res.json({ message: `Scanned ${resolvedCode}`, item: updated, allScanned });
   } catch (error) {
     res.status(400).json({ message: 'Error scanning item', error });
   }

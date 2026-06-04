@@ -105,6 +105,7 @@ const SkuHistory = () => {
                 <h2 className="text-lg font-bold">{data.sku.name}</h2>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-slate-500">
                   <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{data.sku.skuCode}</span>
+                  {data.sku.epcCode && <span className="font-mono bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">EPC: {data.sku.epcCode}</span>}
                   {data.sku.size && <span>Size: {data.sku.size}</span>}
                   {data.sku.unitType && <span>Unit: {data.sku.unitType}</span>}
                   {data.sku.mrp && <span>MRP: {formatCurrency(data.sku.mrp)}</span>}

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { resolveSku } from '../utils/sku-resolver';
 
 export const verifyScan = async (req: AuthRequest, res: Response) => {
   const { code: scanValue, type } = req.body;
@@ -9,10 +10,8 @@ export const verifyScan = async (req: AuthRequest, res: Response) => {
 
   try {
     if (scanType === 'SKU') {
-      const sku = await prisma.skuMaster.findFirst({
-        where: { skuCode: scanValue, tenantId: tenant_id }
-      });
-      if (!sku) return res.status(404).json({ message: 'Invalid SKU' });
+      const sku = await resolveSku(tenant_id, scanValue);
+      if (!sku) return res.status(404).json({ message: 'Invalid SKU or EPC' });
       return res.json({ status: 'SUCCESS', data: sku });
     }
 

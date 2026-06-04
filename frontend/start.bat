@@ -1,4 +1,4 @@
 @echo off
-cd /d "C:\Users\alokg\oms-wms-app\frontend"
+cd /d "%~dp0"
 npm start
 pause
