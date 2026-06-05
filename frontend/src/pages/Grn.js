@@ -151,8 +151,7 @@ const Grn = ({ detailId, setDetailId }) => {
     try {
       const code = scanCode.trim();
       const isEpc = /^\d{11}$/.test(code);
-      const payload = isEpc ? { epcCode: code, qcStatus: '' } : { skuCode: code, qcStatus: '' };
-      const item = selectedGrn.items.find(i => i.sku?.skuCode === code || i.sku?.skuCode === (isEpc ? code : ''));
+      const item = selectedGrn.items.find(i => i.sku?.skuCode === code);
       if (!item) return toast.error('SKU not found in this GRN');
       if (item.receivedQty >= item.expectedQty) return toast.error('Already fully received');
       setScannedItem({ ...item, isEpc });
@@ -391,22 +390,23 @@ const Grn = ({ detailId, setDetailId }) => {
                         </div>
                       )}
                     </div>
-                  <div className="text-right">
-                    {item.qcStatus === 'PENDING' && selectedGrn.status !== 'APPROVED' && selectedGrn.status !== 'REJECTED' && (
-                      <div className="flex gap-1">
-                        <button onClick={() => handleQcItem(item.id, 'PASSED')} className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200" title="Pass QC">
-                          <CheckCircle size={16} />
-                        </button>
-                        <button onClick={() => handleQcItem(item.id, 'FAILED')} className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200" title="Fail QC">
-                          <XCircle size={16} />
-                        </button>
-                      </div>
-                    )}
-                    {item.qcStatus !== 'PENDING' && (
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.qcStatus === 'PASSED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {item.qcStatus}
-                      </span>
-                    )}
+                    <div className="text-right">
+                      {item.qcStatus === 'PENDING' && selectedGrn.status !== 'APPROVED' && selectedGrn.status !== 'REJECTED' && (
+                        <div className="flex gap-1">
+                          <button onClick={() => handleQcItem(item.id, 'PASSED')} className="p-1.5 bg-green-100 text-green-700 rounded hover:bg-green-200" title="Pass QC">
+                            <CheckCircle size={16} />
+                          </button>
+                          <button onClick={() => handleQcItem(item.id, 'FAILED')} className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200" title="Fail QC">
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      )}
+                      {item.qcStatus !== 'PENDING' && (
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${item.qcStatus === 'PASSED' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {item.qcStatus}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
