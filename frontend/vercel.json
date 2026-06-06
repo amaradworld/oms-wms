@@ -1,15 +1,22 @@
 {
+  "cleanUrls": false,
+  "trailingSlash": false,
   "rewrites": [
     { "source": "/landing", "destination": "/landing/index.html" },
     { "source": "/landing/(.*)", "destination": "/landing/$1" },
-    { "source": "/:path(features|pricing|about|contact|blog|changelog)", "destination": "/landing/index.html" },
-    { "source": "/:path(features|pricing|about|contact|blog|changelog)/", "destination": "/landing/index.html" },
+    { "source": "/features", "destination": "/landing/index.html" },
+    { "source": "/pricing", "destination": "/landing/index.html" },
+    { "source": "/about", "destination": "/landing/index.html" },
+    { "source": "/contact", "destination": "/landing/index.html" },
+    { "source": "/blog", "destination": "/landing/index.html" },
+    { "source": "/changelog", "destination": "/landing/index.html" },
     { "source": "/", "destination": "/landing/index.html" },
-    { "source": "/:next(.*)", "destination": "/index.html" }
+    { "source": "/app", "destination": "/index.html" },
+    { "source": "/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {
-      "source": "/:path(.*)",
+      "source": "/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "private, no-cache, no-store, must-revalidate" },
         { "key": "CDN-Cache-Control", "value": "no-cache" }
