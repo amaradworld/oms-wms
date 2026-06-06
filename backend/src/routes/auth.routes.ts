@@ -48,7 +48,7 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, tenant_id: user.tenantId, role: user.role, warehouseId: user.warehouseId },
+      { id: user.id, tenant_id: user.tenantId, role: user.role, email: user.email, warehouseId: user.warehouseId },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -88,7 +88,7 @@ router.post('/mfa-challenge', async (req, res, next) => {
     }
 
     const jwtToken = jwt.sign(
-      { id: user.id, tenant_id: user.tenantId, role: user.role, warehouseId: user.warehouseId },
+      { id: user.id, tenant_id: user.tenantId, role: user.role, email: user.email, warehouseId: user.warehouseId },
       JWT_SECRET,
       { expiresIn: '24h' }
     );

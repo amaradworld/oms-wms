@@ -121,8 +121,48 @@ model Warehouse {
   binLocations    BinLocation[]
   grns            Grn[]
   putawayTasks    PutawayTask[]
+  sequences       FacilitySequence[]
+  activityLogs    FacilityActivityLog[]
 
   @@map("warehouses")
+}
+
+model FacilitySequence {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  warehouseId          String
+  sequenceName         String
+  description          String?
+  prefix               String?  @default("")
+  currentValue         Int      @default(1)
+  nextYearPrefix       String?  @default("")
+  resetCounterNextYear Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@unique([warehouseId, sequenceName])
+  @@map("facility_sequences")
+}
+
+model FacilityActivityLog {
+  id           String   @id @default(uuid())
+  tenantId     String
+  warehouseId  String
+  userId       String?
+  userEmail    String?
+  action       String   // FIELD_CHANGE, SEQUENCE_CHANGE, SETTINGS_CHANGE
+  field        String?
+  oldValue     String?
+  newValue     String?
+  description  String?
+  timestamp    DateTime @default(now())
+
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@index([warehouseId, timestamp])
+  @@map("facility_activity_logs")
 }
 
 model SkuMaster {

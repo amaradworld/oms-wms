@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, ChevronDown, ChevronRight, Building2, Package, ShoppingCart, Eye, ArrowRight, Save, Upload, Pencil } from 'lucide-react';
+import { Plus, X, ChevronDown, ChevronRight, Building2, Package, ShoppingCart, Eye, ArrowRight, Save, Upload, Pencil, Hash, Activity, PencilLine, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import EmptyState from '../components/EmptyState';
@@ -10,6 +10,8 @@ const SECTIONS = [
   { id: 'accounting', label: 'Accounting', icon: Package },
   { id: 'billing', label: 'Billing', icon: Package },
   { id: 'shipping', label: 'Shipping', icon: Package },
+  { id: 'sequence', label: 'Sequence', icon: Hash },
+  { id: 'activity', label: 'Activity Details', icon: Activity },
 ];
 
 const emptyForm = () => ({
@@ -69,6 +71,12 @@ const Warehouse = () => {
   const [expandWH, setExpandWH] = useState(null);
   const [masterView, setMasterView] = useState(null);
   const [showMaster, setShowMaster] = useState(false);
+  const [sequences, setSequences] = useState([]);
+  const [sequencesLoading, setSequencesLoading] = useState(false);
+  const [sequenceEdits, setSequenceEdits] = useState({});
+  const [sequenceSaving, setSequenceSaving] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   const fetchWarehouses = async () => {
     setLoading(true);
@@ -87,6 +95,102 @@ const Warehouse = () => {
   };
 
   useEffect(() => { fetchWarehouses(); }, []);
+
+  const fetchSequences = async (whId) => {
+    if (!whId) return;
+    setSequencesLoading(true);
+    try {
+      const res = await API.get(`/warehouses/${whId}/sequences`);
+      setSequences(Array.isArray(res.data) ? res.data : []);
+      setSequenceEdits({});
+    } catch { setSequences([]); } finally { setSequencesLoading(false); }
+  };
+
+  const fetchActivity = async (whId) => {
+    if (!whId) return;
+    setActivityLoading(true);
+    try {
+      const res = await API.get(`/warehouses/${whId}/activity`);
+      setActivity(Array.isArray(res.data) ? res.data : []);
+    } catch { setActivity([]); } finally { setActivityLoading(false); }
+  };
+
+  const handleSequenceEdit = (seqId, field, value) => {
+    setSequenceEdits(prev => ({
+      ...prev,
+      [seqId]: { ...(prev[seqId] || {}), [field]: value },
+    }));
+  };
+
+  const handleSaveSequence = async (seqId) => {
+    const edit = sequenceEdits[seqId];
+    if (!edit) return;
+    setSequenceSaving(seqId);
+    try {
+      await API.patch(`/warehouses/${editingId}/sequences/${seqId}`, edit);
+      toast.success('Sequence updated');
+      await fetchSequences(editingId);
+      await fetchActivity(editingId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update sequence');
+    } finally { setSequenceSaving(null); }
+  };
+
+  const startEdit = async (id) => {
+    await openEdit(id);
+    setTimeout(() => {
+      fetchSequences(id);
+      fetchActivity(id);
+    }, 100);
+  };
+
+  const fetchSequences = async (whId) => {
+    if (!whId) return;
+    setSequencesLoading(true);
+    try {
+      const res = await API.get(`/warehouses/${whId}/sequences`);
+      setSequences(Array.isArray(res.data) ? res.data : []);
+      setSequenceEdits({});
+    } catch { setSequences([]); } finally { setSequencesLoading(false); }
+  };
+
+  const fetchActivity = async (whId) => {
+    if (!whId) return;
+    setActivityLoading(true);
+    try {
+      const res = await API.get(`/warehouses/${whId}/activity`);
+      setActivity(Array.isArray(res.data) ? res.data : []);
+    } catch { setActivity([]); } finally { setActivityLoading(false); }
+  };
+
+  const handleSequenceEdit = (seqId, field, value) => {
+    setSequenceEdits(prev => ({
+      ...prev,
+      [seqId]: { ...(prev[seqId] || {}), [field]: value },
+    }));
+  };
+
+  const handleSaveSequence = async (seqId) => {
+    const edit = sequenceEdits[seqId];
+    if (!edit) return;
+    setSequenceSaving(seqId);
+    try {
+      await API.patch(`/warehouses/${editingId}/sequences/${seqId}`, edit);
+      toast.success('Sequence updated');
+      await fetchSequences(editingId);
+      await fetchActivity(editingId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update sequence');
+    } finally { setSequenceSaving(null); }
+  };
+
+  const startEdit = async (id) => {
+    await openEdit(id);
+    setTimeout(() => {
+      fetchSequences(id);
+      fetchActivity(id);
+    }, 100);
+  };
 
   const openAdd = (whId = null) => {
     setForm(emptyForm());
@@ -128,6 +232,8 @@ const Warehouse = () => {
       setParentId(w.parentId || null);
       setActiveSection('general');
       setShowModal(true);
+      fetchSequences(id);
+      fetchActivity(id);
     } catch {
       toast.error('Failed to load facility');
     }
@@ -499,6 +605,136 @@ const Warehouse = () => {
                         <Input label="Latitude" value={form.shippingLatitude} onChange={up('shippingLatitude')} placeholder="Enter Latitude" />
                         <Input label="Longitude" value={form.shippingLongitude} onChange={up('shippingLongitude')} placeholder="Enter Longitude" />
                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sequence */}
+              {activeSection === 'sequence' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800 mb-1">Sequence</h3>
+                    <p className="text-xs text-slate-400 mb-4">Configure number sequences used to generate serial numbers for invoices, gatepasses, manifests and other facility documents.</p>
+                  </div>
+                  {sequencesLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500 py-8 justify-center">
+                      <Loader2 size={16} className="animate-spin" /> Loading sequences...
+                    </div>
+                  ) : sequences.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">No sequences configured</div>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                          <tr>
+                            <th className="px-3 py-2 font-semibold">Sequence Name</th>
+                            <th className="px-3 py-2 font-semibold">Description</th>
+                            <th className="px-3 py-2 font-semibold w-24">Prefix</th>
+                            <th className="px-3 py-2 font-semibold w-24">Current Value</th>
+                            <th className="px-3 py-2 font-semibold w-28">Next Year Prefix</th>
+                            <th className="px-3 py-2 font-semibold w-28 text-center">Reset Counter</th>
+                            <th className="px-3 py-2 font-semibold w-16"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {sequences.map(seq => {
+                            const edit = sequenceEdits[seq.id] || {};
+                            const hasChanges = Object.keys(edit).length > 0;
+                            return (
+                              <tr key={seq.id} className="hover:bg-slate-50">
+                                <td className="px-3 py-2 font-mono text-[11px] font-semibold text-slate-700">{seq.sequenceName}</td>
+                                <td className="px-3 py-2 text-slate-500 max-w-xs">
+                                  <input
+                                    value={edit.description ?? seq.description ?? ''}
+                                    onChange={e => handleSequenceEdit(seq.id, 'description', e.target.value)}
+                                    className="w-full px-2 py-1 border border-transparent hover:border-slate-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 rounded text-[11px] bg-transparent focus:bg-white outline-none"
+                                  />
+                                </td>
+                                <td className="px-3 py-2">
+                                  <input
+                                    value={edit.prefix ?? seq.prefix ?? ''}
+                                    onChange={e => handleSequenceEdit(seq.id, 'prefix', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-200 rounded text-[11px] font-mono text-center focus:ring-1 focus:ring-blue-400 outline-none"
+                                  />
+                                </td>
+                                <td className="px-3 py-2">
+                                  <input
+                                    type="number"
+                                    value={edit.currentValue ?? seq.currentValue}
+                                    onChange={e => handleSequenceEdit(seq.id, 'currentValue', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-200 rounded text-[11px] text-center focus:ring-1 focus:ring-blue-400 outline-none"
+                                  />
+                                </td>
+                                <td className="px-3 py-2">
+                                  <input
+                                    value={edit.nextYearPrefix ?? seq.nextYearPrefix ?? ''}
+                                    onChange={e => handleSequenceEdit(seq.id, 'nextYearPrefix', e.target.value)}
+                                    className="w-full px-2 py-1 border border-slate-200 rounded text-[11px] font-mono text-center focus:ring-1 focus:ring-blue-400 outline-none"
+                                  />
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSequenceEdit(seq.id, 'resetCounterNextYear', !(edit.resetCounterNextYear ?? seq.resetCounterNextYear))}
+                                    className={`relative w-9 h-4 rounded-full transition-colors ${(edit.resetCounterNextYear ?? seq.resetCounterNextYear) ? 'bg-blue-600' : 'bg-slate-300'}`}
+                                  >
+                                    <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${(edit.resetCounterNextYear ?? seq.resetCounterNextYear) ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                                  </button>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {hasChanges && (
+                                    <button
+                                      onClick={() => handleSaveSequence(seq.id)}
+                                      disabled={sequenceSaving === seq.id}
+                                      className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-medium hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                      {sequenceSaving === seq.id ? <Loader2 size={10} className="animate-spin" /> : 'Save'}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Activity Details */}
+              {activeSection === 'activity' && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800 mb-1">Activity Details</h3>
+                    <p className="text-xs text-slate-400 mb-4">History of changes made to this facility's configuration.</p>
+                  </div>
+                  {activityLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500 py-8 justify-center">
+                      <Loader2 size={16} className="animate-spin" /> Loading activity...
+                    </div>
+                  ) : activity.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400 text-sm">No activity recorded yet</div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                      <ul className="divide-y divide-slate-100">
+                        {activity.map(log => (
+                          <li key={log.id} className="p-3 md:p-4 hover:bg-slate-50 transition-colors">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                              <p className="text-sm text-slate-700 flex-1">{log.description}</p>
+                              <span className="text-[10px] font-mono text-slate-400 whitespace-nowrap shrink-0">
+                                {new Date(log.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              <span className="font-mono">{log.userEmail || 'system'}</span>
+                              {log.field && <span className="text-slate-300"> &middot; </span>}
+                              {log.field && <span className="text-slate-400">{log.field}</span>}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
