@@ -55,10 +55,21 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     e.preventDefault();
     if (!scanInput || !selectedOrder) return;
     const item = selectedOrder.items?.find(i => i.sku?.skuCode === scanInput || i.skuCode === scanInput);
-    const verified = !!item;
-    setPackedItems([...packedItems, { id: Date.now(), sku: scanInput, time: new Date().toLocaleTimeString(), verified }]);
-    if (verified) toast.success(`${scanInput} verified`);
-    else toast.error(`${scanInput} not found in order`);
+    if (!item) {
+      toast.error(`${scanInput} not found in order`);
+      setPackedItems([...packedItems, { id: Date.now(), sku: scanInput, time: new Date().toLocaleTimeString(), verified: false }]);
+      setScanInput('');
+      return;
+    }
+    // Count already packed qty for this SKU
+    const alreadyPacked = packedItems.filter(p => p.verified && (p.sku === item.sku?.skuCode || p.sku === item.skuCode)).length;
+    if (alreadyPacked >= item.quantity) {
+      toast.error(`${scanInput} — already packed ${item.quantity}/${item.quantity}`);
+      setScanInput('');
+      return;
+    }
+    setPackedItems([...packedItems, { id: Date.now(), sku: scanInput, time: new Date().toLocaleTimeString(), verified: true }]);
+    toast.success(`${scanInput} verified (${alreadyPacked + 1}/${item.quantity})`);
     setScanInput('');
   };
 
@@ -117,9 +128,10 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     win.document.close();
   };
 
-  const packedCount = packedItems.filter(i => i.verified).length;
-  const totalItems = selectedOrder?.items?.length || 0;
-  const allPacked = packedCount >= totalItems && totalItems > 0;
+  const totalQty = selectedOrder?.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0;
+  const getPackedQty = (skuCode) => packedItems.filter(p => p.verified && (p.sku === skuCode || p.sku === skuCode)).length;
+  const packedTotal = selectedOrder?.items?.reduce((s, i) => s + getPackedQty(i.sku?.skuCode || i.skuCode), 0) || 0;
+  const allPacked = packedTotal >= totalQty && totalQty > 0;
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-5xl mx-auto">
@@ -156,17 +168,21 @@ const PackingScreen = ({ detailId, setDetailId }) => {
                   <div className="flex items-center gap-3 mb-3"><Box size={18} className="text-slate-500" /><span className="font-semibold text-sm">Order Items</span></div>
                   <div className="divide-y">
                     {selectedOrder.items?.map((item, i) => {
-                      const isPacked = packedItems.some(p => p.verified && (p.sku === item.sku?.skuCode || p.sku === item.skuCode));
+                      const skuCode = item.sku?.skuCode || item.skuCode;
+                      const packedQty = getPackedQty(skuCode);
+                      const fullyPacked = packedQty >= item.quantity;
                       return (
                         <div key={i} className="flex items-center justify-between py-3">
                           <div className="flex items-center gap-3 min-w-0">
-                            {isPacked ? <PackageCheck size={16} className="text-green-500 flex-shrink-0" /> : <CheckCircle2 size={16} className="text-amber-500 flex-shrink-0" />}
+                            {fullyPacked ? <PackageCheck size={16} className="text-green-500 flex-shrink-0" /> : packedQty > 0 ? <CheckCircle2 size={16} className="text-amber-400 flex-shrink-0" /> : <CheckCircle2 size={16} className="text-slate-300 flex-shrink-0" />}
                             <div className="min-w-0">
-                              <p className="font-medium text-sm truncate">{item.sku?.skuCode || item.skuCode} • {item.sku?.name || item.name}</p>
+                              <p className="font-medium text-sm truncate">{skuCode} • {item.sku?.name || item.name}</p>
                               <p className="text-xs text-slate-400">Qty: {item.quantity}</p>
                             </div>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2 ${isPacked ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>{isPacked ? 'Packed' : 'Pending'}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2 ${fullyPacked ? 'bg-green-100 text-green-700' : packedQty > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                            {fullyPacked ? `${packedQty}/${item.quantity} Packed` : packedQty > 0 ? `${packedQty}/${item.quantity}` : 'Pending'}
+                          </span>
                         </div>
                       );
                     })}
@@ -200,9 +216,9 @@ const PackingScreen = ({ detailId, setDetailId }) => {
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="font-bold text-sm mb-4">Packing Summary</h3>
                 <div className="space-y-3">
-                  <div className="flex justify-between text-sm"><span className="text-slate-500">Total Items</span><span className="font-medium">{totalItems}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-slate-500">Packed</span><span className="font-medium text-green-600">{packedCount}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-slate-500">Pending</span><span className="font-medium text-amber-600">{totalItems - packedCount}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Total Items</span><span className="font-medium">{totalQty}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Packed</span><span className="font-medium text-green-600">{packedTotal}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">Pending</span><span className="font-medium text-amber-600">{totalQty - packedTotal}</span></div>
                 </div>
               </div>
 
