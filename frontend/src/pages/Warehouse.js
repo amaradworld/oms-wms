@@ -144,54 +144,6 @@ const Warehouse = () => {
     }, 100);
   };
 
-  const fetchSequences = async (whId) => {
-    if (!whId) return;
-    setSequencesLoading(true);
-    try {
-      const res = await API.get(`/warehouses/${whId}/sequences`);
-      setSequences(Array.isArray(res.data) ? res.data : []);
-      setSequenceEdits({});
-    } catch { setSequences([]); } finally { setSequencesLoading(false); }
-  };
-
-  const fetchActivity = async (whId) => {
-    if (!whId) return;
-    setActivityLoading(true);
-    try {
-      const res = await API.get(`/warehouses/${whId}/activity`);
-      setActivity(Array.isArray(res.data) ? res.data : []);
-    } catch { setActivity([]); } finally { setActivityLoading(false); }
-  };
-
-  const handleSequenceEdit = (seqId, field, value) => {
-    setSequenceEdits(prev => ({
-      ...prev,
-      [seqId]: { ...(prev[seqId] || {}), [field]: value },
-    }));
-  };
-
-  const handleSaveSequence = async (seqId) => {
-    const edit = sequenceEdits[seqId];
-    if (!edit) return;
-    setSequenceSaving(seqId);
-    try {
-      await API.patch(`/warehouses/${editingId}/sequences/${seqId}`, edit);
-      toast.success('Sequence updated');
-      await fetchSequences(editingId);
-      await fetchActivity(editingId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to update sequence');
-    } finally { setSequenceSaving(null); }
-  };
-
-  const startEdit = async (id) => {
-    await openEdit(id);
-    setTimeout(() => {
-      fetchSequences(id);
-      fetchActivity(id);
-    }, 100);
-  };
-
   const openAdd = (whId = null) => {
     setForm(emptyForm());
     setEditingId(null);
