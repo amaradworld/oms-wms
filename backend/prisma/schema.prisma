@@ -258,6 +258,7 @@ model OrderItem {
   discountAmount Decimal? @default(0)
   totalAmount    Decimal
   status         String   @default("PENDING")
+  scannedQty     Int      @default(0)
   batchNo        String?
   expiryDate     DateTime?
 

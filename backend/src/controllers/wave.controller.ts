@@ -107,15 +107,22 @@ export const scanWaveItem = async (req: AuthRequest, res: Response) => {
   const orderItem = pickOrder.order.items.find(i => i.sku.skuCode === skuCode);
   if (!orderItem) { res.status(400).json({ message: `SKU ${skuCode} is not in this order` }); return; }
 
-  if (orderItem.status === 'PICKED') { res.status(400).json({ message: `${skuCode} already picked` }); return; }
-
-  if (orderItem.quantity <= 0) { res.status(400).json({ message: 'Invalid quantity' }); return; }
+  if (orderItem.status === 'PICKED') { res.status(400).json({ message: `${skuCode} already fully picked` }); return; }
 
   const updatedItem = await prisma.orderItem.update({
     where: { id: orderItem.id },
-    data: { status: 'PICKED' },
+    data: { scannedQty: { increment: 1 } },
     include: { sku: { select: { skuCode: true, name: true } } },
   });
+
+  // Auto-mark PICKED when scanned qty reaches order qty
+  const nowFull = updatedItem.scannedQty >= orderItem.quantity;
+  if (nowFull) {
+    await prisma.orderItem.update({
+      where: { id: orderItem.id },
+      data: { status: 'PICKED' },
+    });
+  }
 
   // Check if all items in the order are picked
   const allItems = await prisma.orderItem.findMany({ where: { orderId } });
@@ -137,7 +144,45 @@ export const scanWaveItem = async (req: AuthRequest, res: Response) => {
     });
   }
 
-  res.json({ message: `Verified ${skuCode} ✓`, item: updatedItem, allPicked, orderStatus: allPicked ? 'PACKING' : 'PICKING' });
+  res.json({
+    message: nowFull ? `${skuCode} fully picked ✓` : `${skuCode} scanned (${updatedItem.scannedQty}/${orderItem.quantity})`,
+    item: updatedItem,
+    allPicked,
+    orderStatus: allPicked ? 'PACKING' : 'PICKING',
+  });
+};
+
+export const confirmWaveOrder = async (req: AuthRequest, res: Response) => {
+  const waveId = req.params.id as string;
+  const { orderId } = req.body;
+  const tenantId = req.user!.tenant_id;
+
+  const wave = await prisma.pickWave.findFirst({
+    where: { id: waveId, tenantId },
+    include: { orders: { where: { orderId } } },
+  });
+  if (!wave) { res.status(404).json({ message: 'Wave not found' }); return; }
+  if (wave.status !== 'IN_PROGRESS') { res.status(400).json({ message: 'Wave must be IN_PROGRESS to confirm' }); return; }
+
+  const pickOrder = wave.orders[0];
+  if (!pickOrder) { res.status(404).json({ message: 'Order not found in this wave' }); return; }
+
+  // Mark all non-PICKED items as PICKED (short-pick confirmation)
+  await prisma.orderItem.updateMany({
+    where: { orderId, status: { not: 'PICKED' } },
+    data: { status: 'PICKED' },
+  });
+
+  await prisma.pickWaveOrder.update({
+    where: { id: pickOrder.id },
+    data: { status: 'COMPLETED' },
+  });
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { orderStatus: 'PACKING' },
+  });
+
+  res.json({ message: 'Order confirmed with short pick ✓' });
 };
 
 export const completeWave = async (req: AuthRequest, res: Response) => {

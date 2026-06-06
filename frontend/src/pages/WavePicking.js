@@ -112,7 +112,6 @@ const WavePicking = () => {
         orderId: scanOrderId,
       });
       toast.success(data.message);
-      // Refresh wave orders to show updated status
       const refreshed = await API.get(`/waves/${expanded}/orders`);
       setWaveOrders(refreshed.data);
       setScanInput('');
@@ -123,6 +122,17 @@ const WavePicking = () => {
       scanRef.current?.focus();
     } finally {
       setScanning(false);
+    }
+  };
+
+  const handleConfirmShortPick = async (orderId) => {
+    try {
+      await API.post(`/waves/${expanded}/confirm-order`, { orderId });
+      toast.success('Short pick confirmed — order moved to PACKING');
+      const refreshed = await API.get(`/waves/${expanded}/orders`);
+      setWaveOrders(refreshed.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to confirm');
     }
   };
 
@@ -218,25 +228,48 @@ const WavePicking = () => {
                           <tr>
                             <th className="px-3 py-2 text-xs font-semibold text-slate-500">SKU</th>
                             <th className="px-3 py-2 text-xs font-semibold text-slate-500">Product</th>
-                            <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Qty</th>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Order Qty</th>
+                            <th className="px-3 py-2 text-xs font-semibold text-slate-500 text-right">Scanned</th>
                             <th className="px-3 py-2 text-xs font-semibold text-slate-500">Status</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {currentOrderItems.map((item, i) => (
-                            <tr key={item.id || i} className="border-b border-slate-100">
-                              <td className="px-3 py-2 font-mono text-xs">{item.sku?.skuCode}</td>
-                              <td className="px-3 py-2 text-slate-600">{item.sku?.name || '—'}</td>
-                              <td className="px-3 py-2 text-right">{item.quantity}</td>
-                              <td className="px-3 py-2">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${item.status === 'PICKED' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                                  {item.status === 'PICKED' ? '✓ Picked' : 'Pending'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
+                          {currentOrderItems.map((item, i) => {
+                            const scanned = item.scannedQty || 0;
+                            const partial = scanned > 0 && scanned < item.quantity;
+                            return (
+                              <tr key={item.id || i} className="border-b border-slate-100">
+                                <td className="px-3 py-2 font-mono text-xs">{item.sku?.skuCode}</td>
+                                <td className="px-3 py-2 text-slate-600">{item.sku?.name || '—'}</td>
+                                <td className="px-3 py-2 text-right font-medium">{item.quantity}</td>
+                                <td className="px-3 py-2 text-right">
+                                  <span className={`font-mono text-xs ${partial ? 'text-amber-600 font-semibold' : scanned === item.quantity ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {scanned}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2">
+                                  {item.status === 'PICKED' ? (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">✓ Picked</span>
+                                  ) : scanned > 0 ? (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Partial ({scanned}/{item.quantity})</span>
+                                  ) : (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Pending</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
+
+                      {currentOrderItems.some(i => (i.scannedQty || 0) > 0 && i.status !== 'PICKED') && (
+                        <div className="flex justify-end pt-1">
+                          <button onClick={() => handleConfirmShortPick(scanOrderId)}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-medium hover:bg-amber-600 transition-colors">
+                            Process with Short Pick ({currentOrderItems.filter(i => i.status !== 'PICKED').length} items remaining)
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
