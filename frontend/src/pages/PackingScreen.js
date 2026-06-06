@@ -106,26 +106,20 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     } finally { setGeneratingAWB(false); }
   };
 
-  const handlePrintLabel = () => {
-    if (!generatedAWB) return;
-    const win = window.open('', '_blank');
-    win.document.write(`
-      <html><head><title>Shipping Label</title>
-      <style>body{font-family:monospace;padding:40px;text-align:center}
-      h1{font-size:24px;letter-spacing:2px;border:2px dashed #333;display:inline-block;padding:30px 50px}
-      .info{text-align:left;margin-top:20px;font-size:14px}
-      </style></head><body>
-      <h1>${generatedAWB}</h1>
-      <div class="info">
-        <p><strong>Courier:</strong> ${selectedCourier}</p>
-        <p><strong>Order:</strong> ${selectedOrder?.orderNumber}</p>
-        <p><strong>Customer:</strong> ${selectedOrder?.customerName}</p>
-        <p><strong>Address:</strong> ${selectedOrder?.shippingAddress}</p>
-      </div>
-      <script>window.print()</script>
-      </body></html>
-    `);
-    win.document.close();
+  const handlePrintLabel = async () => {
+    if (!selectedOrder) return;
+    try {
+      const res = await API.post('/labels/generate-shipping', { orderId: selectedOrder.id }, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `label_${selectedOrder.orderNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Shipping label downloaded');
+    } catch (err) {
+      toast.error('Failed to generate shipping label');
+    }
   };
 
   const totalQty = selectedOrder?.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0;

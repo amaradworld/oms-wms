@@ -28,6 +28,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.77.2",
+    "bwip-js": "^4.11.1",
     "cors": "^2.8.6",
     "csv-parse": "^6.2.1",
     "dotenv": "^17.4.2",
@@ -48,6 +49,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/bwip-js": "^3.2.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
