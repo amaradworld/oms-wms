@@ -71,67 +71,80 @@ export const getSkuHistory = async (req: AuthRequest, res: Response) => {
       }),
     ]);
 
-    // Build unified timeline
-    const timeline: any[] = [];
-
-    for (const inv of inventory) {
-      timeline.push({ type: 'STOCK', date: '', warehouse: inv.warehouse.name, binLocation: inv.binLocation, quantityOnHand: inv.quantityOnHand, quantityAvailable: inv.quantityAvailable, quantityReserved: inv.quantityReserved });
-    }
+    // Build unified timeline with qtyChanged and running qtySoFar
+    const raw: any[] = [];
 
     for (const gi of grnItems) {
-      timeline.push({
-        type: 'GRN', date: gi.grn.createdAt, ref: gi.grn.grnNumber, warehouse: gi.grn.warehouse?.name,
-        receivedQty: gi.receivedQty, acceptedQty: gi.acceptedQty, status: gi.grn.status, details: `Qty ${gi.receivedQty} (Accepted: ${gi.acceptedQty})`,
+      raw.push({
+        type: 'GRN', date: gi.grn.createdAt, ref: gi.grn.grnNumber,
+        sourceFacility: gi.grn.warehouse?.name || '', targetFacility: '',
+        qty: gi.receivedQty, qtyChanged: gi.receivedQty, status: gi.grn.status,
+        eventSourceId: `GRN - ${gi.grn.grnNumber}`,
       });
     }
 
     for (const oi of orderItems) {
-      timeline.push({
-        type: 'ORDER', date: oi.order.createdAt, ref: oi.order.orderNumber, warehouse: oi.order.warehouse?.name,
-        qty: oi.quantity, unitPrice: oi.unitPrice, totalAmount: oi.totalAmount, customer: oi.order.customerName, status: oi.order.orderStatus,
-        details: `${oi.quantity} × ₹${oi.unitPrice} = ₹${oi.totalAmount} — ${oi.order.customerName}`,
+      raw.push({
+        type: 'ORDER', date: oi.order.createdAt, ref: oi.order.orderNumber,
+        sourceFacility: oi.order.warehouse?.name || '', targetFacility: oi.order.customerName || '',
+        qty: oi.quantity, qtyChanged: -oi.quantity, status: oi.order.orderStatus,
+        eventSourceId: `ORDER - ${oi.order.orderNumber}`,
       });
     }
 
     for (const pt of putawayTasks) {
-      timeline.push({
-        type: 'PUTAWAY', date: pt.createdAt, ref: pt.grn?.grnNumber || pt.source, source: pt.source,
-        qty: pt.expectedQty, bin: pt.bin?.code, status: pt.status,
-        details: `From ${pt.source} → Bin ${pt.bin?.code || 'unassigned'} (${pt.status})`,
+      raw.push({
+        type: 'PUTAWAY', date: pt.createdAt, ref: pt.grn?.grnNumber || pt.source,
+        sourceFacility: pt.source, targetFacility: pt.bin?.code || '',
+        qty: pt.expectedQty, qtyChanged: 0, status: pt.status,
+        eventSourceId: `PUTAWAY - ${pt.grn?.grnNumber || pt.source}`,
       });
     }
 
     for (const pi of poItems) {
-      timeline.push({
-        type: 'PURCHASE_ORDER', date: pi.po.createdAt, ref: pi.po.poNumber, supplier: pi.po.supplier?.name,
-        qty: pi.quantity, receivedQty: pi.receivedQty, status: pi.po.status,
-        details: `Ordered ${pi.quantity}, Received ${pi.receivedQty} — from ${pi.po.supplier?.name || 'unknown'}`,
+      raw.push({
+        type: 'PURCHASE_ORDER', date: pi.po.createdAt, ref: pi.po.poNumber,
+        sourceFacility: pi.po.supplier?.name || '', targetFacility: '',
+        qty: pi.quantity, qtyChanged: 0, status: pi.po.status,
+        eventSourceId: `PO - ${pi.po.poNumber}`,
       });
     }
 
     for (const gi of gpItems) {
-      timeline.push({
-        type: 'GATEPASS', date: gi.gatepass.createdAt, ref: gi.gatepass.code, gatepassType: gi.gatepass.type,
-        qty: gi.quantity, status: gi.gatepass.status,
-        details: `${gi.gatepass.code} (${gi.gatepass.type}) — ${gi.quantity} qty — ${gi.gatepass.status}`,
+      const qtyCh = gi.gatepass.type === 'INBOUND' ? gi.quantity : -gi.quantity;
+      raw.push({
+        type: 'GATEPASS', date: gi.gatepass.createdAt, ref: gi.gatepass.code,
+        sourceFacility: gi.gatepass.type || '', targetFacility: '',
+        qty: gi.quantity, qtyChanged: qtyCh, status: gi.gatepass.status,
+        eventSourceId: `GATEPASS - ${gi.gatepass.code}`,
       });
     }
 
     for (const si of stItems) {
-      timeline.push({
+      raw.push({
         type: 'STOCK_TRANSFER', date: si.transfer.createdAt, ref: si.transfer.id.substring(0, 8),
-        fromWarehouse: si.transfer.fromWarehouse.name, toWarehouse: si.transfer.toWarehouse.name,
-        qty: si.quantity, status: si.transfer.status,
-        details: `${si.transfer.fromWarehouse.name} → ${si.transfer.toWarehouse.name} — ${si.quantity} qty`,
+        sourceFacility: si.transfer.fromWarehouse.name, targetFacility: si.transfer.toWarehouse.name,
+        qty: si.quantity, qtyChanged: 0, status: si.transfer.status,
+        eventSourceId: `STOCK_TRANSFER - ${si.transfer.id.substring(0, 8)}`,
       });
     }
 
-    timeline.sort((a, b) => {
+    // Sort oldest-first for running total
+    raw.sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return -1;
       if (!b.date) return 1;
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
+
+    let running = 0;
+    for (const ev of raw) {
+      running += ev.qtyChanged;
+      ev.qtySoFar = running;
+    }
+
+    // Reverse to newest-first for display
+    const timeline = raw.reverse();
 
     res.json({
       sku: { skuCode: sku.skuCode, epcCode: sku.epcCode, name: sku.name, size: sku.size, unitType: sku.unitType, mrp: sku.mrp },

@@ -1,16 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Package, X, Loader, ArrowRight, Box, Truck, ClipboardCheck, ShoppingCart, Warehouse, FileText, GitPullRequest } from 'lucide-react';
+import { Search, Package, Loader, Warehouse } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 
-const TYPE_CONFIG = {
-  STOCK: { label: 'Current Stock', color: 'bg-slate-100 text-slate-700', icon: Warehouse },
-  GRN: { label: 'GRN Received', color: 'bg-green-100 text-green-700', icon: ClipboardCheck },
-  ORDER: { label: 'Sales Order', color: 'bg-blue-100 text-blue-700', icon: ShoppingCart },
-  PUTAWAY: { label: 'Putaway', color: 'bg-amber-100 text-amber-700', icon: Package },
-  PURCHASE_ORDER: { label: 'Purchase Order', color: 'bg-purple-100 text-purple-700', icon: FileText },
-  GATEPASS: { label: 'Gatepass', color: 'bg-indigo-100 text-indigo-700', icon: GitPullRequest },
-  STOCK_TRANSFER: { label: 'Stock Transfer', color: 'bg-cyan-100 text-cyan-700', icon: Truck },
+const TYPE_LABELS = {
+  GRN: 'GRN', ORDER: 'SALES_ORDER', PUTAWAY: 'PUTAWAY',
+  PURCHASE_ORDER: 'PURCHASE_ORDER', GATEPASS: 'GATEPASS', STOCK_TRANSFER: 'STOCK_TRANSFER',
 };
 
 const SkuHistory = () => {
@@ -108,7 +103,7 @@ const SkuHistory = () => {
                   {data.sku.epcCode && <span className="font-mono bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">EPC: {data.sku.epcCode}</span>}
                   {data.sku.size && <span>Size: {data.sku.size}</span>}
                   {data.sku.unitType && <span>Unit: {data.sku.unitType}</span>}
-                  {data.sku.mrp && <span>MRP: {formatCurrency(data.sku.mrp)}</span>}
+                  {data.sku.mrp && <span>MRP: ₹{Number(data.sku.mrp).toLocaleString('en-IN')}</span>}
                 </div>
               </div>
               <span className="text-xs text-slate-400">{data.timeline.length} events</span>
@@ -146,50 +141,57 @@ const SkuHistory = () => {
             </div>
           )}
 
-          {/* Timeline */}
-          <div className="space-y-2">
-            {data.timeline
-              .filter(t => t.type !== 'STOCK')
-              .map((event, i) => {
-                const cfg = TYPE_CONFIG[event.type] || { label: event.type, color: 'bg-slate-100 text-slate-700', icon: Package };
-                const Icon = cfg.icon;
-                return (
-                  <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 hover:border-slate-300 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg shrink-0 ${cfg.color.split(' ')[0]} ${cfg.color.split(' ')[1]}`}>
-                        <Icon size={16} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
-                          <span className="font-mono text-sm font-medium">{event.ref}</span>
-                          {event.status && (
-                            <span className={`px-1.5 py-0.5 rounded text-xs ${event.status === 'COMPLETED' || event.status === 'DELIVERED' || event.status === 'APPROVED' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                              {event.status}
-                            </span>
-                          )}
-                          {event.date && <span className="text-xs text-slate-400 ml-auto">{formatDate(event.date)}</span>}
-                        </div>
-                        <p className="text-sm text-slate-600 mt-1">{event.details}</p>
-                        {event.type === 'PURCHASE_ORDER' && event.supplier && (
-                          <p className="text-xs text-slate-400 mt-0.5">Supplier: {event.supplier}</p>
-                        )}
-                        {event.type === 'ORDER' && event.customer && (
-                          <p className="text-xs text-slate-400 mt-0.5">Customer: {event.customer}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Timeline table */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="bg-slate-50 border-b text-xs text-slate-500 uppercase font-semibold">
+                  <th className="px-3 py-2.5 whitespace-nowrap">Timestamp</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">SKU Code</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">Event Source ID</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">Source Facility</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">Target Facility</th>
+                  <th className="px-3 py-2.5 whitespace-nowrap">Event Type</th>
+                  <th className="px-3 py-2.5 text-right whitespace-nowrap">Qty</th>
+                  <th className="px-3 py-2.5 text-right whitespace-nowrap">Qty Changed</th>
+                  <th className="px-3 py-2.5 text-right whitespace-nowrap">Qty So Far</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.timeline.map((ev, i) => (
+                  <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">{ev.date ? formatDate(ev.date) : '-'}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs">{data.sku.skuCode}</td>
+                    <td className="px-3 py-2.5 font-mono text-xs text-slate-700">{ev.eventSourceId || ev.ref || '-'}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{ev.sourceFacility || '-'}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{ev.targetFacility || '-'}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        ev.type === 'GRN' ? 'bg-green-100 text-green-700' :
+                        ev.type === 'ORDER' ? 'bg-blue-100 text-blue-700' :
+                        ev.type === 'PUTAWAY' ? 'bg-amber-100 text-amber-700' :
+                        ev.type === 'PURCHASE_ORDER' ? 'bg-purple-100 text-purple-700' :
+                        ev.type === 'GATEPASS' ? 'bg-indigo-100 text-indigo-700' :
+                        ev.type === 'STOCK_TRANSFER' ? 'bg-cyan-100 text-cyan-700' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>{TYPE_LABELS[ev.type] || ev.type}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs">{ev.qty ?? '-'}</td>
+                    <td className={`px-3 py-2.5 text-right font-mono text-xs font-medium ${ev.qtyChanged > 0 ? 'text-green-600' : ev.qtyChanged < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                      {ev.qtyChanged !== undefined ? (ev.qtyChanged > 0 ? `+${ev.qtyChanged}` : String(ev.qtyChanged)) : '-'}
+                    </td>
+                    <td className="px-3 py-2.5 text-right font-mono text-xs font-semibold">{ev.qtySoFar ?? '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {data.timeline.length === 0 && (
+              <div className="text-center py-8 text-slate-400">
+                <Package size={32} className="mx-auto mb-2 opacity-40" />
+                <p className="text-sm">No transaction history found for this SKU.</p>
+              </div>
+            )}
           </div>
-
-          {data.timeline.filter(t => t.type !== 'STOCK').length === 0 && (
-            <div className="text-center py-8 text-slate-400 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <Package size={32} className="mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No transaction history found for this SKU.</p>
-            </div>
-          )}
         </div>
       )}
     </div>
