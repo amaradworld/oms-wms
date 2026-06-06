@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PackageCheck, QrCode, CheckCircle2, XCircle, Truck, Download, FileText, Box, Search, Printer, Loader2 } from 'lucide-react';
+import { PackageCheck, QrCode, CheckCircle2, XCircle, Truck, Download, FileText, Box, Search, Printer, Loader2, Clock, CheckCheck, RefreshCw } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
@@ -7,32 +7,57 @@ import EmptyState from '../components/EmptyState';
 
 const COURIERS = ['Delhivery', 'Shiprocket', 'BlueDart', 'XpressBees', 'FedEx'];
 
+const STATUS_BADGE = {
+  PACKING: 'bg-blue-100 text-blue-800',
+  SHIPPED: 'bg-emerald-100 text-emerald-800',
+  DISPATCHED: 'bg-purple-100 text-purple-800',
+};
+
 const PackingScreen = ({ detailId, setDetailId }) => {
+  const [tab, setTab] = useState('ready');
   const [orders, setOrders] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [scanInput, setScanInput] = useState('');
   const [packedItems, setPackedItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recentLoading, setRecentLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [selectedCourier, setSelectedCourier] = useState('');
   const [generatingAWB, setGeneratingAWB] = useState(false);
   const [generatedAWB, setGeneratedAWB] = useState(null);
   const [invoicing, setInvoicing] = useState(false);
+  const [printingLabel, setPrintingLabel] = useState(false);
 
-  const fetchOrders = useCallback(async () => {
+  const fetchReadyToPack = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await API.get('/orders');
-      const ordersData = res.data.orders || (Array.isArray(res.data) ? res.data : []);
-      setOrders(ordersData.filter(o => o.orderStatus !== 'DELIVERED' && o.orderStatus !== 'CANCELLED'));
+      const res = await API.get('/orders', { params: { orderStatus: 'PACKING', limit: 100 } });
+      const data = res.data.orders || [];
+      setOrders(data);
     } catch { setOrders([]); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchOrders(); }, [fetchOrders]);
+  const fetchRecentlyPacked = useCallback(async () => {
+    setRecentLoading(true);
+    try {
+      const res = await API.get('/orders', { params: { orderStatus: 'SHIPPED,DISPATCHED', limit: 50 } });
+      const data = res.data.orders || [];
+      setRecentOrders(data);
+    } catch { setRecentOrders([]); } finally { setRecentLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    fetchReadyToPack();
+    fetchRecentlyPacked();
+  }, [fetchReadyToPack, fetchRecentlyPacked]);
 
   useEffect(() => {
     if (detailId && !selectedOrder) {
-      API.get('/orders').then(res => { const o = (res.data.orders || res.data).find(x => x.id === detailId); if (o) setSelectedOrder(o); }).catch(() => setDetailId(''));
+      API.get('/orders').then(res => {
+        const o = (res.data.orders || res.data).find(x => x.id === detailId);
+        if (o) setSelectedOrder(o);
+      }).catch(() => setDetailId(''));
     }
   }, [detailId]);
 
@@ -61,7 +86,6 @@ const PackingScreen = ({ detailId, setDetailId }) => {
       setScanInput('');
       return;
     }
-    // Count already packed qty for this SKU
     const alreadyPacked = packedItems.filter(p => p.verified && (p.sku === item.sku?.skuCode || p.sku === item.skuCode)).length;
     if (alreadyPacked >= item.quantity) {
       toast.error(`${scanInput} — already packed ${item.quantity}/${item.quantity}`);
@@ -73,25 +97,66 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     setScanInput('');
   };
 
-  const handleDownloadInvoice = async () => {
-    if (!selectedOrder) return;
-    setInvoicing(true);
+  const getPackedQty = (skuCode) => packedItems.filter(p => p.verified && p.sku === skuCode).length;
+
+  const totalQty = selectedOrder?.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0;
+  const packedTotal = selectedOrder?.items?.reduce((s, i) => s + getPackedQty(i.sku?.skuCode || i.skuCode), 0) || 0;
+  const allPacked = packedTotal >= totalQty && totalQty > 0;
+
+  const downloadPdf = async (url, filename, errorMsg, setBusy) => {
     try {
+      setBusy(true);
       const token = localStorage.getItem('token');
       const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${API_BASE}/api/invoice/${selectedOrder.id}/pdf`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Invoice failed');
+      const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
+      const res = await fetch(fullUrl, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('download failed');
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(objectUrl);
+      toast.success('Downloaded');
+    } catch {
+      toast.error(errorMsg);
+    } finally { setBusy(false); }
+  };
+
+  const handleDownloadInvoice = () => {
+    if (!selectedOrder) return;
+    downloadPdf(
+      `/api/invoice/${selectedOrder.id}/pdf`,
+      `invoice_${selectedOrder.orderNumber}.pdf`,
+      'Failed to generate invoice',
+      setInvoicing
+    );
+  };
+
+  const reprintInvoice = (order) => {
+    downloadPdf(
+      `/api/invoice/${order.id}/pdf`,
+      `invoice_${order.orderNumber}.pdf`,
+      'Failed to reprint invoice',
+      () => {}
+    );
+  };
+
+  const reprintLabel = async (order) => {
+    setPrintingLabel(order.id);
+    try {
+      const res = await API.post('/labels/generate-shipping', { orderId: order.id }, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `invoice_${selectedOrder.orderNumber}.pdf`;
+      a.download = `label_${order.orderNumber}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Invoice downloaded');
-    } catch { toast.error('Failed to generate invoice'); } finally { setInvoicing(false); }
+      toast.success('Label reprinted');
+    } catch {
+      toast.error('Failed to reprint label');
+    } finally { setPrintingLabel(false); }
   };
 
   const handleGenerateAWB = async () => {
@@ -106,8 +171,9 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     } finally { setGeneratingAWB(false); }
   };
 
-  const handlePrintLabel = async () => {
+  const printShippingLabel = async () => {
     if (!selectedOrder) return;
+    setPrintingLabel(selectedOrder.id);
     try {
       const res = await API.post('/labels/generate-shipping', { orderId: selectedOrder.id }, { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data]));
@@ -117,15 +183,12 @@ const PackingScreen = ({ detailId, setDetailId }) => {
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Shipping label downloaded');
-    } catch (err) {
+    } catch {
       toast.error('Failed to generate shipping label');
-    }
+    } finally { setPrintingLabel(false); }
   };
 
-  const totalQty = selectedOrder?.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0;
-  const getPackedQty = (skuCode) => packedItems.filter(p => p.verified && (p.sku === skuCode || p.sku === skuCode)).length;
-  const packedTotal = selectedOrder?.items?.reduce((s, i) => s + getPackedQty(i.sku?.skuCode || i.skuCode), 0) || 0;
-  const allPacked = packedTotal >= totalQty && totalQty > 0;
+  if (loading) return <Skeleton />;
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6 max-w-5xl mx-auto">
@@ -134,25 +197,102 @@ const PackingScreen = ({ detailId, setDetailId }) => {
       </div>
 
       {!selectedOrder ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b font-semibold text-sm flex items-center gap-2"><Search size={16} /> Select Order to Pack</div>
-          {loading ? <TableSkeleton rows={5} cols={4} />
-          : orders.length === 0 ? <EmptyState icon="orders" title="No pending orders" description="All orders have been processed or there are no orders yet." />
-          : orders.map(o => (
-            <div key={o.id} onClick={() => selectOrder(o)} className="px-4 py-3 flex items-center justify-between border-b last:border-0 hover:bg-slate-50 cursor-pointer">
-              <div>
-                <span className="font-mono text-sm font-medium">{o.orderNumber}</span>
-                <span className="text-xs text-slate-400 ml-2">{o.customerName}</span>
+        <>
+          <div className="flex border-b border-slate-200">
+            <button
+              onClick={() => setTab('ready')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === 'ready' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              <PackageCheck size={16} /> Ready to Pack
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{orders.length}</span>
+            </button>
+            <button
+              onClick={() => setTab('recent')}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === 'recent' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              <CheckCheck size={16} /> Recently Packed
+              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">{recentOrders.length}</span>
+            </button>
+          </div>
+
+          {tab === 'ready' && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b font-semibold text-sm flex items-center gap-2">
+                <Box size={16} /> Orders From Wave Picking
               </div>
-              <span className="text-xs text-slate-400">{o.items?.length || 0} items</span>
+              {loading ? <TableSkeleton rows={5} cols={4} />
+              : orders.length === 0 ? <EmptyState icon="box" title="No orders ready to pack" description="Orders will appear here once they complete wave picking." />
+              : (
+                <div className="divide-y">
+                  {orders.map(o => {
+                    const totalQty = (o.items || []).reduce((s, i) => s + (i.quantity || 0), 0);
+                    return (
+                      <div key={o.id} onClick={() => selectOrder(o)} className="px-4 py-3 flex items-center justify-between hover:bg-blue-50 cursor-pointer">
+                        <div>
+                          <span className="font-mono text-sm font-medium">{o.orderNumber}</span>
+                          <span className="text-xs text-slate-400 ml-2">{o.customerName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[o.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{o.orderStatus}</span>
+                          <span className="text-xs text-slate-400">{totalQty} units</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          )}
+
+          {tab === 'recent' && (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b font-semibold text-sm flex items-center gap-2">
+                <CheckCheck size={16} /> Packed & Dispatched (Reprint)
+              </div>
+              {recentLoading ? <TableSkeleton rows={5} cols={4} />
+              : recentOrders.length === 0 ? <EmptyState icon="search" title="No recently packed orders" description="Once orders are packed and shipped, they'll appear here for reprint." />
+              : (
+                <div className="divide-y">
+                  {recentOrders.map(o => (
+                    <div key={o.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-50">
+                      <div>
+                        <span className="font-mono text-sm font-medium">{o.orderNumber}</span>
+                        <span className="text-xs text-slate-400 ml-2">{o.customerName}</span>
+                        {o.tracking?.awbNumber && (
+                          <span className="text-xs text-slate-400 ml-2">AWB: {o.tracking.awbNumber}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[o.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{o.orderStatus}</span>
+                        <button
+                          onClick={() => reprintInvoice(o)}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100"
+                          title="Reprint Invoice"
+                        >
+                          <FileText size={12} /> Invoice
+                        </button>
+                        <button
+                          onClick={() => reprintLabel(o)}
+                          disabled={printingLabel === o.id}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 disabled:opacity-50"
+                          title="Reprint Label"
+                        >
+                          {printingLabel === o.id ? <Loader2 size={12} className="animate-spin" /> : <Printer size={12} />} Label
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => { setSelectedOrder(null); if (setDetailId) setDetailId(''); }} className="text-sm text-blue-600 hover:underline">&larr; Back</button>
+            <button onClick={() => { setSelectedOrder(null); if (setDetailId) setDetailId(''); setGeneratedAWB(null); setSelectedCourier(''); setPackedItems([]); fetchReadyToPack(); fetchRecentlyPacked(); }} className="text-sm text-blue-600 hover:underline">&larr; Back</button>
             <span className="text-sm text-slate-500">Order #{selectedOrder.orderNumber} • {selectedOrder.customerName}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[selectedOrder.orderStatus] || 'bg-slate-100 text-slate-600'}`}>{selectedOrder.orderStatus}</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -233,10 +373,19 @@ const PackingScreen = ({ detailId, setDetailId }) => {
                   </button>
 
                   {generatedAWB && (
-                    <button onClick={handlePrintLabel} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
-                      <Printer size={16} /> Print Label
+                    <button onClick={printShippingLabel} disabled={printingLabel === selectedOrder.id} className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">
+                      {printingLabel === selectedOrder.id ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />} Print Shipping Label
                     </button>
                   )}
+
+                  <div className="pt-2 border-t flex gap-2">
+                    <button onClick={() => reprintInvoice(selectedOrder)} className="flex-1 flex items-center justify-center gap-1 text-xs px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-lg">
+                      <RefreshCw size={12} /> Reprint Invoice
+                    </button>
+                    <button onClick={printShippingLabel} disabled={printingLabel === selectedOrder.id} className="flex-1 flex items-center justify-center gap-1 text-xs px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-lg disabled:opacity-50">
+                      <RefreshCw size={12} /> Reprint Label
+                    </button>
+                  </div>
                 </div>
             </div>
           </div>
@@ -245,5 +394,7 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     </div>
   );
 };
+
+const Skeleton = () => <div className="p-8"><TableSkeleton rows={5} cols={3} /></div>;
 
 export default PackingScreen;

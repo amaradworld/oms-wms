@@ -16,7 +16,11 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
     const where: any = { tenantId: tenant_id };
     if (warehouseId) where.warehouseId = warehouseId;
     if (source && source !== 'ALL') where.source = source;
-    if (orderStatus && orderStatus !== 'ALL') where.orderStatus = orderStatus;
+    if (orderStatus && orderStatus !== 'ALL') {
+      const statuses = orderStatus.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) where.orderStatus = statuses[0];
+      else if (statuses.length > 1) where.orderStatus = { in: statuses };
+    }
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
