@@ -4,6 +4,7 @@ import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { track, trackFirst } from '../utils/analytics';
@@ -42,6 +43,7 @@ const ORDERS_COLUMNS = [
 ];
 
 const Orders = ({ detailId, setDetailId }) => {
+  const confirm = useConfirm();
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
@@ -118,10 +120,18 @@ const Orders = ({ detailId, setDetailId }) => {
   });
 
   const handleCancelOrder = async (order) => {
-    if (!window.confirm(`Cancel order ${order.orderNumber}?`)) return;
+    if (!await confirm({
+      title: `Cancel ${order.orderNumber}?`,
+      message: 'The customer will be notified of the cancellation. This action can be reversed by re-creating the order.',
+      confirmText: 'Cancel order',
+      variant: 'danger',
+    })) return;
     try {
       await API.post(`/orders/${order.id}/cancel`);
-      toast.success(`Order ${order.orderNumber} cancelled`);
+      toast.success(`Order ${order.orderNumber} cancelled`, {
+        duration: 6000,
+        onUndo: () => toast.info('To restore a cancelled order, please recreate it manually.'),
+      });
       fetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to cancel');
@@ -129,7 +139,21 @@ const Orders = ({ detailId, setDetailId }) => {
   };
 
   const handleMarkDelivered = async (order) => {
-    if (!window.confirm(`Mark order ${order.orderNumber} as delivered?`)) return;
+    if (!order.awbNumber) {
+      if (!await confirm({
+        title: 'Mark delivered without AWB?',
+        message: `Order ${order.orderNumber} has no AWB number assigned. Are you sure you want to mark it as delivered? This is unusual and may indicate a data entry issue.`,
+        confirmText: 'Mark delivered anyway',
+        variant: 'warning',
+      })) return;
+    } else {
+      if (!await confirm({
+        title: `Mark ${order.orderNumber} as delivered?`,
+        message: `This will mark the order as DELIVERED for AWB ${order.awbNumber}.`,
+        confirmText: 'Mark delivered',
+        variant: 'info',
+      })) return;
+    }
     try {
       await API.patch(`/delivery/orders/${order.id}/deliver`);
       toast.success(`Order ${order.orderNumber} marked delivered`);
@@ -144,7 +168,12 @@ const Orders = ({ detailId, setDetailId }) => {
 
   const handleHoldUnhold = async (order) => {
     const isHeld = order.orderStatus === 'ON_HOLD';
-    if (!window.confirm(`${isHeld ? 'Unhold' : 'Hold'} order ${order.orderNumber}?`)) return;
+    if (!await confirm({
+      title: `${isHeld ? 'Unhold' : 'Hold'} ${order.orderNumber}?`,
+      message: isHeld ? 'This will resume order processing.' : 'This will pause the order. The customer will not be charged and the order will not be picked/packed until unheld.',
+      confirmText: isHeld ? 'Unhold order' : 'Hold order',
+      variant: isHeld ? 'info' : 'warning',
+    })) return;
     try {
       await API.patch(`/orders/${order.id}/status`, { status: isHeld ? 'PENDING' : 'ON_HOLD' });
       toast.success(`Order ${order.orderNumber} ${isHeld ? 'unheld' : 'held'}`);
@@ -176,12 +205,23 @@ const Orders = ({ detailId, setDetailId }) => {
 
   const handleBulkCancel = async (selected) => {
     const count = selected.size;
-    if (!window.confirm(`Cancel ${count} order(s)?`)) return;
+    if (!await confirm({
+      title: `Cancel ${count} order(s)?`,
+      message: `This will cancel ${count} selected orders. Customers will be notified. This action affects multiple orders.`,
+      confirmText: `Cancel ${count} order(s)`,
+      variant: 'danger',
+      requireText: count >= 5 ? 'CANCEL ALL' : null,
+    })) return;
     let cancelled = 0;
+    let failed = 0;
     for (const id of selected) {
-      try { await API.post(`/orders/${id}/cancel`); cancelled++; } catch {}
+      try { await API.post(`/orders/${id}/cancel`); cancelled++; } catch { failed++; }
     }
-    toast.success(`${cancelled} of ${count} orders cancelled`);
+    if (failed === 0) {
+      toast.success(`${cancelled} of ${count} orders cancelled`);
+    } else {
+      toast.warning(`Cancelled ${cancelled}, ${failed} failed`);
+    }
     setSelectedOrders(new Set());
     fetchOrders();
   };

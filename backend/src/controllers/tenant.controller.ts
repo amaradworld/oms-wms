@@ -71,6 +71,32 @@ export const updateTenant = async (req: AuthRequest, res: Response) => {
   res.json(tenant);
 };
 
+const SELF_UPDATABLE_FIELDS = ['name', 'email', 'phone', 'address', 'city', 'state', 'pincode', 'gstin', 'logoUrl'];
+
+export const updateMyTenant = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user?.tenant_id;
+  if (!tenantId) return res.status(403).json({ message: 'Only tenant users can update company info' });
+
+  const existing = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!existing) return res.status(404).json({ message: 'Tenant not found' });
+
+  const data = {};
+  for (const f of SELF_UPDATABLE_FIELDS) {
+    if (req.body[f] !== undefined) data[f] = req.body[f];
+  }
+
+  const tenant = await prisma.tenant.update({ where: { id: tenantId }, data });
+  res.json(tenant);
+};
+
+export const getMyTenant = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user?.tenant_id;
+  if (!tenantId) return res.status(404).json({ message: 'No tenant context' });
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+  res.json(tenant);
+};
+
 export const deleteTenant = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
 

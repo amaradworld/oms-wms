@@ -26,6 +26,18 @@ const OnboardingWizard = ({ onComplete, getToken }) => {
   const save = async () => {
     setLoading(true);
     try {
+      if (company.name || company.email || company.phone) {
+        try {
+          await axios.put(`${API}/api/tenants/me`, {
+            name: company.name || undefined,
+            email: company.email || undefined,
+            phone: company.phone || undefined,
+          }, headers());
+          track('company_info_saved', { source: 'onboarding_wizard' });
+        } catch (e) {
+          console.error('Failed to save company info', e);
+        }
+      }
       if (warehouse.name) {
         const { data: wh } = await axios.post(`${API}/api/warehouses`, warehouse, headers());
         trackFirst('warehouse', 'warehouse_created', { source: 'onboarding_wizard', city: warehouse.city });

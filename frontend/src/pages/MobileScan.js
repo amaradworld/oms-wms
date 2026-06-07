@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Barcode, CheckCircle2, AlertCircle, Loader2, ScanLine, Package, MapPin, ShoppingCart, ClipboardCheck, History, RotateCcw } from 'lucide-react';
+import { Barcode, CheckCircle2, AlertCircle, Loader2, ScanLine, Package, MapPin, ShoppingCart, ClipboardCheck, History, RotateCcw, Camera, Volume2, VolumeX } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import CameraScanner from '../components/CameraScanner';
 
 const SCAN_MODES = [
   { id: 'sku', label: 'SKU', icon: Package, desc: 'Verify SKU code' },
@@ -18,14 +19,17 @@ const MobileScan = () => {
   const [result, setResult] = useState(null);
   const [logs, setLogs] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
   const inputRef = useRef(null);
   const scanTimerRef = useRef(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, [mode]);
+    if (!showCamera) inputRef.current?.focus();
+  }, [mode, showCamera]);
 
   const playBeep = (type) => {
+    if (!soundOn) return;
     try {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -38,11 +42,12 @@ const MobileScan = () => {
       osc.start();
       setTimeout(() => { osc.stop(); ctx.close(); }, 150);
     } catch {}
+    if (navigator.vibrate) navigator.vibrate(type === 'success' ? 50 : [50, 50, 50]);
   };
 
-  const handleScan = async (e) => {
-    e.preventDefault();
-    const val = scanValue.trim();
+  const handleScan = async (e, overrideValue) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const val = (overrideValue || scanValue).trim();
     if (!val) return;
 
     setLoading(true);
@@ -102,6 +107,12 @@ const MobileScan = () => {
     }
   };
 
+  const handleCameraScan = (code) => {
+    setShowCamera(false);
+    setScanValue(code);
+    handleScan(null, code);
+  };
+
   useEffect(() => {
     return () => { if (scanTimerRef.current) clearTimeout(scanTimerRef.current); };
   }, []);
@@ -143,11 +154,19 @@ const MobileScan = () => {
           <form onSubmit={handleScan} className="flex flex-col gap-3">
             <input ref={inputRef} autoFocus autoComplete="off"
               className="w-full px-4 py-4 border-2 rounded-xl text-lg font-mono text-center outline-none focus:ring-4 focus:ring-indigo-200 focus:border-indigo-400"
-              placeholder="Tap to scan..." value={scanValue} onChange={e => setScanValue(e.target.value)}
+              placeholder="Tap to scan or type..." value={scanValue} onChange={e => setScanValue(e.target.value)}
+              aria-label="Scan input"
             />
-            <button disabled={loading || !scanValue.trim()} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold text-base hover:bg-indigo-700 disabled:opacity-40 active:scale-[0.98] transition-all">
-              {loading ? 'Verifying...' : 'Verify'}
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setShowCamera(true)}
+                className="flex-1 py-4 bg-slate-700 text-white rounded-xl font-bold text-base hover:bg-slate-800 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                aria-label="Use camera to scan">
+                <Camera size={20} /> Camera
+              </button>
+              <button disabled={loading || !scanValue.trim()} className="flex-1 py-4 bg-indigo-600 text-white rounded-xl font-bold text-base hover:bg-indigo-700 disabled:opacity-40 active:scale-[0.98] transition-all">
+                {loading ? 'Verifying...' : 'Verify'}
+              </button>
+            </div>
           </form>
         </div>
 
@@ -183,9 +202,14 @@ const MobileScan = () => {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
             <div className="p-3 border-b flex items-center justify-between">
               <span className="font-bold text-sm flex items-center gap-1.5"><History size={15} /> Scan History</span>
-              <button onClick={() => setLogs([])} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500">
-                <RotateCcw size={12} /> Clear
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSoundOn(!soundOn)} className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700" aria-label={soundOn ? 'Mute' : 'Unmute'}>
+                  {soundOn ? <Volume2 size={12} /> : <VolumeX size={12} />}
+                </button>
+                <button onClick={() => setLogs([])} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-500">
+                  <RotateCcw size={12} /> Clear
+                </button>
+              </div>
             </div>
             <div className="divide-y max-h-64 overflow-y-auto">
               {logs.map(log => (
@@ -202,6 +226,14 @@ const MobileScan = () => {
           </div>
         )}
       </div>
+
+      {showCamera && (
+        <CameraScanner
+          onScan={handleCameraScan}
+          onClose={() => setShowCamera(false)}
+          label={`Scanning ${SCAN_MODES.find(m => m.id === mode)?.label || 'barcode'}`}
+        />
+      )}
     </div>
   );
 };

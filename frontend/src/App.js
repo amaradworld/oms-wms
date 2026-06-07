@@ -1,52 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { Menu, Search } from 'lucide-react';
 import axios from 'axios';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { trackPageView } from './utils/analytics';
 import { toast } from './components/Toast';
-import ToastContainer from './components/Toast';
 import Sidebar from './components/Sidebar';
 import FacilitySelector from './components/FacilitySelector';
-import Dashboard from './pages/Dashboard';
-import Orders from './pages/Orders';
-import Inventory from './pages/Inventory';
-import ScanningScreen from './pages/ScanningScreen';
-import Picklist from './pages/Picklist';
-import PackingScreen from './pages/PackingScreen';
-import Returns from './pages/Returns';
-import Warehouse from './pages/Warehouse';
-import CycleCount from './pages/CycleCount';
-import Analytics from './pages/Analytics';
-import MarketplaceSettings from './pages/MarketplaceSettings';
-import Manifests from './pages/Manifests';
-import PurchaseOrders from './pages/PurchaseOrders';
-import StockTransfer from './pages/StockTransfer';
-import WavePicking from './pages/WavePicking';
-import NdrDashboard from './pages/NdrDashboard';
-import CourierRouting from './pages/CourierRouting';
-import InventoryAlerts from './pages/InventoryAlerts';
-import Gatepasses from './pages/Gatepasses';
-import GatepassOrder from './pages/GatepassOrder';
-import Integrations from './pages/Integrations';
-import TrackingPage from './pages/TrackingPage';
-import Settings from './pages/Settings';
-import Grn from './pages/Grn';
-import Putaway from './pages/Putaway';
-import BinManager from './pages/BinManager';
-import SkuHistory from './pages/SkuHistory';
-import Parties from './pages/Parties';
-import Companies from './pages/Companies';
-import AuditLogs from './pages/AuditLogs';
-import StockExpiry from './pages/StockExpiry';
-import Replenishment from './pages/Replenishment';
-import BatchTrace from './pages/BatchTrace';
-import MobileScan from './pages/MobileScan';
-import AsnPage from './pages/AsnPage';
-import Productivity from './pages/Productivity';
-import AssistantBot from './components/AssistantBot';
-import LoginPage from './pages/LoginPage';
+import GlobalSearch from './components/GlobalSearch';
 import OnboardingWizard from './components/OnboardingWizard';
+import AssistantBot from './components/AssistantBot';
 import { useAuth } from './context/AuthContext';
+
+const Dashboard = lazy(() => import(/* webpackChunkName: "page-dashboard" */ './pages/Dashboard'));
+const Orders = lazy(() => import(/* webpackChunkName: "page-orders" */ './pages/Orders'));
+const Inventory = lazy(() => import(/* webpackChunkName: "page-inventory" */ './pages/Inventory'));
+const ScanningScreen = lazy(() => import(/* webpackChunkName: "page-scanning" */ './pages/ScanningScreen'));
+const Picklist = lazy(() => import(/* webpackChunkName: "page-picklist" */ './pages/Picklist'));
+const PackingScreen = lazy(() => import(/* webpackChunkName: "page-packing" */ './pages/PackingScreen'));
+const Returns = lazy(() => import(/* webpackChunkName: "page-returns" */ './pages/Returns'));
+const Warehouse = lazy(() => import(/* webpackChunkName: "page-warehouse" */ './pages/Warehouse'));
+const CycleCount = lazy(() => import(/* webpackChunkName: "page-cyclecount" */ './pages/CycleCount'));
+const Analytics = lazy(() => import(/* webpackChunkName: "page-analytics" */ './pages/Analytics'));
+const MarketplaceSettings = lazy(() => import(/* webpackChunkName: "page-marketplace" */ './pages/MarketplaceSettings'));
+const Manifests = lazy(() => import(/* webpackChunkName: "page-manifests" */ './pages/Manifests'));
+const PurchaseOrders = lazy(() => import(/* webpackChunkName: "page-purchaseorders" */ './pages/PurchaseOrders'));
+const StockTransfer = lazy(() => import(/* webpackChunkName: "page-stocktransfer" */ './pages/StockTransfer'));
+const WavePicking = lazy(() => import(/* webpackChunkName: "page-wavepicking" */ './pages/WavePicking'));
+const NdrDashboard = lazy(() => import(/* webpackChunkName: "page-ndr" */ './pages/NdrDashboard'));
+const CourierRouting = lazy(() => import(/* webpackChunkName: "page-courier" */ './pages/CourierRouting'));
+const InventoryAlerts = lazy(() => import(/* webpackChunkName: "page-inventoryalerts" */ './pages/InventoryAlerts'));
+const Gatepasses = lazy(() => import(/* webpackChunkName: "page-gatepasses" */ './pages/Gatepasses'));
+const GatepassOrder = lazy(() => import(/* webpackChunkName: "page-gatepassorder" */ './pages/GatepassOrder'));
+const Integrations = lazy(() => import(/* webpackChunkName: "page-integrations" */ './pages/Integrations'));
+const TrackingPage = lazy(() => import(/* webpackChunkName: "page-tracking" */ './pages/TrackingPage'));
+const Settings = lazy(() => import(/* webpackChunkName: "page-settings" */ './pages/Settings'));
+const Grn = lazy(() => import(/* webpackChunkName: "page-grn" */ './pages/Grn'));
+const Putaway = lazy(() => import(/* webpackChunkName: "page-putaway" */ './pages/Putaway'));
+const BinManager = lazy(() => import(/* webpackChunkName: "page-binmanager" */ './pages/BinManager'));
+const SkuHistory = lazy(() => import(/* webpackChunkName: "page-skuhistory" */ './pages/SkuHistory'));
+const Parties = lazy(() => import(/* webpackChunkName: "page-parties" */ './pages/Parties'));
+const Companies = lazy(() => import(/* webpackChunkName: "page-companies" */ './pages/Companies'));
+const AuditLogs = lazy(() => import(/* webpackChunkName: "page-auditlogs" */ './pages/AuditLogs'));
+const StockExpiry = lazy(() => import(/* webpackChunkName: "page-stockexpiry" */ './pages/StockExpiry'));
+const Replenishment = lazy(() => import(/* webpackChunkName: "page-replenishment" */ './pages/Replenishment'));
+const BatchTrace = lazy(() => import(/* webpackChunkName: "page-batchtrace" */ './pages/BatchTrace'));
+const MobileScan = lazy(() => import(/* webpackChunkName: "page-mobilescan" */ './pages/MobileScan'));
+const AsnPage = lazy(() => import(/* webpackChunkName: "page-asn" */ './pages/AsnPage'));
+const Productivity = lazy(() => import(/* webpackChunkName: "page-productivity" */ './pages/Productivity'));
+const LoginPage = lazy(() => import(/* webpackChunkName: "page-login" */ './pages/LoginPage'));
 
 const FallbackPage = () => (
   <div className="p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
@@ -107,7 +108,7 @@ const buildAppUrl = (tabPath, id) => {
 };
 
 const App = () => {
-  const { user, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
+  const { user, company, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
   const role = user?.role || '';
   const initial = parsePath();
   const [activeTab, setActiveTabState] = useState(initial.tab);
@@ -252,17 +253,42 @@ const App = () => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50">
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg">
+          <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg" aria-label="Open menu">
             <Menu size={22} />
           </button>
-          <h1 className="text-base font-bold tracking-tight text-slate-900 mr-auto md:mr-0">SupplyHub</h1>
-          <div className="flex-1 md:flex-initial" />
+          <h1 className="text-base font-bold tracking-tight text-slate-900">SupplyHub</h1>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-lg transition"
+            aria-label="Open search"
+          >
+            <Search size={14} />
+            <span>Search…</span>
+            <kbd className="ml-2 px-1.5 py-0.5 text-[10px] font-mono bg-white text-slate-400 rounded border border-slate-200">Ctrl K</kbd>
+          </button>
+          {company?.name && (
+            <span className="hidden lg:inline-block px-2 py-0.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-md" title={company.name}>
+              {company.name}
+            </span>
+          )}
+          <div className="flex-1" />
+          <div className="hidden md:flex items-center gap-2 mr-2 text-xs text-slate-600" title={user?.email || ''}>
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-semibold">
+              {(user?.name || user?.email || '?').slice(0, 1).toUpperCase()}
+            </div>
+            <div className="hidden xl:block">
+              <div className="font-medium text-slate-800 leading-tight">{user?.name || user?.email}</div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wide">{user?.role}</div>
+            </div>
+          </div>
           <FacilitySelector />
         </header>
-        {renderContent()}
+        <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading…</div>}>
+          {renderContent()}
+        </Suspense>
       </main>
       <VercelAnalytics />
-      <ToastContainer />
+      <GlobalSearch onNavigate={setActiveTab} />
       <AssistantBot onNavigate={setActiveTab} />
     </div>
   );

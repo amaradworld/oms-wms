@@ -10,6 +10,8 @@ import orderRoutes from './routes/order.routes';
 import scanRoutes from './routes/scan.routes';
 import marketplaceRoutes from './routes/marketplace.routes';
 import skuRoutes from './routes/sku.routes';
+import { globalSearch } from './controllers/search.controller';
+import { authenticate } from './middlewares/auth.middleware';
 import inventoryRoutes from './routes/inventory.routes';
 import picklistRoutes from './routes/picklist.routes';
 import warehouseRoutes from './routes/warehouse.routes';
@@ -113,6 +115,13 @@ app.use('/api/productivity', productivityRoutes);
 app.use('/api/asn', asnRoutes);
 app.use('/api/batch', batchRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+app.get('/api/search', authenticate, globalSearch);
+
+app.post('/api/client-errors', (req, res) => {
+  console.error('[client-error]', JSON.stringify(req.body).slice(0, 2000));
+  res.status(204).end();
+});
 
 app.get('/health', async (req, res) => {
   let db = 'unknown';

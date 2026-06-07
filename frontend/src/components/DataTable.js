@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, MoreVertical, ChevronLeft, ChevronRight, Loader2, CheckSquare, Square, ChevronUp, ChevronDown } from 'lucide-react';
 import { TableSkeleton } from './Skeleton';
 import EmptyState from './EmptyState';
+import { useDebounce } from '../hooks/useDebounce';
 
 const DataTable = ({
   columns = [],
@@ -29,7 +30,19 @@ const DataTable = ({
   className = '',
 }) => {
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [localSearch, setLocalSearch] = useState(searchValue || '');
+  const debouncedSearch = useDebounce(localSearch, 250);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (onSearch && debouncedSearch !== searchValue) {
+      onSearch(debouncedSearch);
+    }
+  }, [debouncedSearch, onSearch, searchValue]);
+
+  useEffect(() => {
+    setLocalSearch(searchValue || '');
+  }, [searchValue]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -71,11 +84,30 @@ const DataTable = ({
 
   if (!data || data.length === 0) {
     return (
-      <EmptyState
-        icon={emptyState?.icon || 'search'}
-        title={emptyState?.title || 'No data found'}
-        description={emptyState?.description || 'There are no items to display.'}
-      />
+      <div>
+        {searchable && (
+          <div className="mb-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder={searchPlaceholder}
+                className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                aria-label="Search"
+              />
+            </div>
+          </div>
+        )}
+        <EmptyState
+          icon={emptyState?.icon || 'search'}
+          title={emptyState?.title || (localSearch ? 'No results' : 'No data found')}
+          description={emptyState?.description || (localSearch ? `No matches for "${localSearch}". Try a different search.` : 'There are no items to display.')}
+          primaryAction={emptyState?.primaryAction}
+          secondaryAction={emptyState?.secondaryAction}
+        />
+      </div>
     );
   }
 
@@ -89,8 +121,9 @@ const DataTable = ({
               type="text"
               placeholder={searchPlaceholder}
               className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
-              value={searchValue}
-              onChange={(e) => onSearch(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              aria-label="Search"
             />
           </div>
         </div>

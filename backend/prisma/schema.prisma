@@ -11,6 +11,14 @@ model Tenant {
   id        String     @id
   name      String
   slug      String     @unique
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  pincode   String?
+  gstin     String?
+  logoUrl   String?
   isActive  Boolean    @default(true)
   notificationPrefs Json?
   createdAt DateTime   @default(now())
