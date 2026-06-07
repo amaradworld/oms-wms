@@ -6,6 +6,8 @@
     { "source": "/about", "destination": "/about/index.html" },
     { "source": "/contact", "destination": "/contact/index.html" },
     { "source": "/blog", "destination": "/blog/index.html" },
+    { "source": "/blog/spreadsheets-to-wms", "destination": "/blog/spreadsheets-to-wms/index.html" },
+    { "source": "/blog/warehouse-monday-numbers", "destination": "/blog/warehouse-monday-numbers/index.html" },
     { "source": "/changelog", "destination": "/landing/index.html" },
     { "source": "/", "destination": "/landing/index.html" },
     { "source": "/(.*)", "destination": "/app/index.html" }
@@ -33,37 +35,37 @@
     {
       "source": "/landing/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     },
     {
       "source": "/pricing/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     },
     {
       "source": "/features/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     },
     {
       "source": "/about/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     },
     {
       "source": "/contact/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     },
     {
       "source": "/blog/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
       ]
     }
   ]
