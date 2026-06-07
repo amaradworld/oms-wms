@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Features — SupplyHub OMS & WMS for Indian Ecommerce</title>
+  <title>Features — GlobalSupply Technologies OMS & WMS for Indian Ecommerce</title>
   <meta name="description" content="Order management, warehouse operations, barcode scanning, marketplace integrations, and analytics. All the features an Indian D2C brand or 3PL needs in one platform." />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="GlobalSupply Technologies" />
 
-  <meta property="og:title" content="Features — SupplyHub" />
+  <meta property="og:title" content="Features — GlobalSupply Technologies" />
   <meta property="og:description" content="Orders, inventory, picking, packing, integrations, analytics — built for Indian ecommerce." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://globalsupply.in/features" />
   <meta property="og:image" content="https://globalsupply.in/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Features — SupplyHub" />
+  <meta name="twitter:title" content="Features — GlobalSupply Technologies" />
   <meta name="twitter:image" content="https://globalsupply.in/og-image.png" />
 
   <meta name="theme-color" content="#0F172A" />
@@ -36,7 +36,7 @@
       <a href="/" class="lh-logo">
         <div class="lh-logo-mark">SH</div>
         <div>
-          <div class="lh-logo-name">SupplyHub</div>
+          <div class="lh-logo-name">GlobalSupply Technologies</div>
           <div class="lh-logo-tag">by GlobalSupply</div>
         </div>
       </a>
@@ -49,7 +49,7 @@
       </nav>
       <div class="lh-header-cta">
         <a href="/app" class="lh-btn lh-btn-ghost">Sign in</a>
-        <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+          <a href="/#contact" class="lh-btn lh-btn-primary" data-lead-source="features_bottom">Talk to sales</a>
       </div>
     </div>
   </header>
@@ -59,9 +59,9 @@
       <div class="lh-container">
         <span class="eyebrow">Features</span>
         <h1>Everything you need to run an Indian warehouse</h1>
-        <p>From receiving stock to dispatching the last mile — SupplyHub gives your team the tools they actually use, every day, on the floor.</p>
+        <p>From receiving stock to dispatching the last mile — GlobalSupply Technologies gives your team the tools they actually use, every day, on the floor.</p>
         <div class="ft-cta-row">
-          <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start 14-day free trial</a>
+          <a href="/#contact" class="lh-btn lh-btn-primary" data-lead-source="features_cta">Talk to sales</a>
           <a href="/pricing" class="lh-btn lh-btn-secondary">See pricing</a>
         </div>
       </div>
@@ -359,7 +359,7 @@
           <p class="pp-cta-sub">Spin up a tenant in 60 seconds. No credit card. No sales call first.</p>
         </div>
         <div class="pp-cta-actions">
-          <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+        <a href="/#contact" class="lh-btn lh-btn-primary" data-lead-source="features_header">Talk to sales</a>
           <a href="/contact?topic=demo" class="lh-btn lh-btn-secondary lh-btn-on-dark">Book a demo</a>
         </div>
       </div>
@@ -407,8 +407,8 @@
       if (!a) return;
       var href = a.getAttribute('href') || '';
       var text = (a.textContent || '').trim().slice(0, 60);
-      if (href.indexOf('signup=true') !== -1) {
-        gtag('event', 'free_trial_clicked', { cta_text: text, cta_location: '/features' });
+      if (href.indexOf('signup=true') !== -1 || a.getAttribute('data-lead-source')) {
+        gtag('event', 'lead_cta_clicked', { cta_text: text, lead_source: a.getAttribute('data-lead-source') || 'unknown' });
       } else if (href.indexOf('topic=demo') !== -1) {
         gtag('event', 'demo_requested', { cta_text: text, source: '/features' });
       } else if (href.indexOf('/pricing') === 0) {

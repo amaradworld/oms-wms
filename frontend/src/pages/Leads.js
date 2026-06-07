@@ -19,8 +19,8 @@ const STATUS_OPTIONS = [
 ];
 
 const PLAN_LABELS = {
-  starter: 'Starter (₹2,999/mo)',
-  pro: 'Pro (₹9,999/mo)',
+  starter: 'Starter (₹8,999/mo)',
+  pro: 'Pro (₹17,999/mo)',
   enterprise: 'Enterprise',
 };
 
@@ -178,8 +178,8 @@ const Leads = () => {
       const wonThisWeek = all.filter(l => l.status === 'WON' && new Date(l.createdAt).getTime() > since).length;
 
       const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      const planLabel = (p) => p ? ({ starter: 'Starter (₹2,999/mo)', pro: 'Pro (₹9,999/mo)', enterprise: 'Enterprise' })[p] || p : '—';
-      const subject = `SupplyHub leads digest — ${recent.length} new in last 7 days`;
+      const planLabel = (p) => p ? ({ starter: 'Starter (₹8,999/mo)', pro: 'Pro (₹17,999/mo)', enterprise: 'Enterprise' })[p] || p : '—';
+      const subject = `GlobalSupply leads digest — ${recent.length} new in last 7 days`;
       const rowsHtml = recent.length === 0
         ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#94A3B8;">No new leads in this period.</td></tr>'
         : recent.map(l => `
@@ -230,7 +230,7 @@ const Leads = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           access_key: 'f1c4903f-5c5d-4c8d-9dab-9a5badf3064e',
-          from_name: 'SupplyHub Leads',
+          from_name: 'GlobalSupply Leads',
           subject,
           html,
           'New (7d)': String(recent.length),
@@ -473,7 +473,7 @@ const Leads = () => {
 
               <div className="border-t border-slate-100 pt-4 flex flex-wrap gap-2">
                 <a
-                  href={`mailto:${selected.email}?subject=Re: Your SupplyHub enquiry&body=Hi ${encodeURIComponent(selected.name?.split(' ')[0] || '')},%0D%0A%0D%0AThanks for your interest in SupplyHub!`}
+                  href={`mailto:${selected.email}?subject=Re: Your GlobalSupply enquiry&body=Hi ${encodeURIComponent(selected.name?.split(' ')[0] || '')},%0D%0A%0D%0AThanks for your interest in GlobalSupply Technologies!`}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors"
                 >
                   <Mail size={12} /> Email lead

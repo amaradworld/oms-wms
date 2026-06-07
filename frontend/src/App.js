@@ -273,7 +273,7 @@ const App = () => {
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg" aria-label="Open menu">
             <Menu size={22} />
           </button>
-          <h1 className="text-base font-bold tracking-tight text-slate-900">SupplyHub</h1>
+          <h1 className="text-base font-bold tracking-tight text-slate-900">GlobalSupply</h1>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
             className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-lg transition"

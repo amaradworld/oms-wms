@@ -9,7 +9,7 @@ const SITE_URL = process.env.SITE_URL || 'https://globalsupply.in';
 const APP_URL = process.env.APP_URL || 'https://globalsupply.in/app';
 
 const formatVolume = (v?: string | null) => v ? ({ '<500': '<500/mo', '500-1k': '500-1k/mo', '1k-5k': '1k-5k/mo', '5k-25k': '5k-25k/mo', '25k+': '25k+/mo' } as any)[v] || v : '—';
-const formatPlan = (p?: string | null) => p ? ({ starter: 'Starter (₹2,999/mo)', pro: 'Pro (₹9,999/mo)', enterprise: 'Enterprise' } as any)[p] || p : 'Not sure yet';
+const formatPlan = (p?: string | null) => p ? ({ starter: 'Starter (₹8,999/mo)', pro: 'Pro (₹17,999/mo)', enterprise: 'Enterprise' } as any)[p] || p : 'Not sure yet';
 
 export const sendNewLeadEmail = async (lead: any) => {
   const subject = `New lead: ${lead.name} — ${lead.company || lead.email}`;
@@ -57,7 +57,7 @@ export const sendNewLeadEmail = async (lead: any) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         access_key: WEB3FORMS_KEY,
-        from_name: 'SupplyHub Leads',
+        from_name: 'GlobalSupply Leads',
         replyto: lead.email,
         subject,
         html,
@@ -87,7 +87,7 @@ export const sendDailyDigest = async (req: AuthRequest, res: Response) => {
   });
   const totalLeads = await prisma.lead.count();
 
-  const subject = `SupplyHub leads digest — ${newLeads.length} new in last ${hours}h`;
+  const subject = `GlobalSupply leads digest — ${newLeads.length} new in last ${hours}h`;
   const rowsHtml = newLeads.length === 0
     ? '<tr><td colspan="4" style="padding:24px;text-align:center;color:#94A3B8;font-size:14px;">No new leads in this period.</td></tr>'
     : newLeads.map(l => `
@@ -145,7 +145,7 @@ export const sendDailyDigest = async (req: AuthRequest, res: Response) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         access_key: WEB3FORMS_KEY,
-        from_name: 'SupplyHub Leads',
+        from_name: 'GlobalSupply Leads',
         subject,
         html,
         'New in period': String(newLeads.length),

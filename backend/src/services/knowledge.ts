@@ -374,7 +374,7 @@ const knowledgeBase: KnowledgeEntry[] = [
   },
   {
     keywords: ['help', 'guide', 'how to', 'what is', 'process', 'workflow', 'tutorial'],
-    title: 'SupplyHub Assistant',
+    title: 'GlobalSupply Assistant',
     summary: 'I can help you with any process in the system. Ask me about creating orders, GRN, putaway, gatepass, inventory, or any other workflow.',
     steps: [
       'Type a question like "How do I create a putaway?" or "What is GRN?"',

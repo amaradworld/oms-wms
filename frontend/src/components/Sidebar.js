@@ -161,7 +161,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
           <img src="/logo.png" alt="Logo" className="h-7 w-auto flex-shrink-0" onError={(e) => { e.target.style.display = 'none'; }} />
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-base font-bold tracking-tight">SupplyHub</div>
+              <div className="text-base font-bold tracking-tight">GlobalSupply</div>
               {company && (
                 <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-500">
                   <Building2 size={10} />

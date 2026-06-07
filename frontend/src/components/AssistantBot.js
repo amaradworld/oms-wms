@@ -5,7 +5,7 @@ import API from '../utils/api';
 const AssistantBot = ({ onNavigate }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', text: 'Hi! I\'m your SupplyHub assistant. Ask me about any process — putaway, GRN, orders, gatepass, inventory, and more.' },
+    { role: 'assistant', text: 'Hi! I\'m your GlobalSupply assistant. Ask me about any process — putaway, GRN, orders, gatepass, inventory, and more.' },
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,7 @@ const AssistantBot = ({ onNavigate }) => {
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white shrink-0">
             <Sparkles size={18} />
-            <span className="font-semibold text-sm">SupplyHub Assistant</span>
+            <span className="font-semibold text-sm">GlobalSupply Assistant</span>
             <button onClick={() => setOpen(false)} className="ml-auto p-0.5 hover:bg-blue-500 rounded">
               <X size={16} />
             </button>

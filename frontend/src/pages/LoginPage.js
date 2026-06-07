@@ -175,7 +175,7 @@ const LoginPage = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src="/logo.png" alt="Global Supply" className="h-12 mx-auto mb-4" onError={(e) => { e.target.style.display = 'none'; }} />
-          <h1 className="text-4xl font-bold text-white tracking-tight">SupplyHub</h1>
+          <h1 className="text-4xl font-bold text-white tracking-tight">GlobalSupply Technologies</h1>
           <p className="text-slate-400 mt-2">Warehouse Management System</p>
         </div>
 

@@ -5,7 +5,7 @@ import qrcode from 'qrcode';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
-const APP_NAME = 'SupplyHub';
+const APP_NAME = 'GlobalSupply Technologies';
 
 export const mfaSetup = async (req: AuthRequest, res: Response) => {
   try {
