@@ -4,6 +4,8 @@ import type PDFKit from 'pdfkit';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { generateBarcode, formatINR, extractCity, extractPincode, aggregateContents, totalWeightInGm } from '../utils/pdf-utils';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
+import { applyOrderStatus } from '../services/orderStage.service';
 
 function drawBox(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number) {
   doc.lineWidth(0.5).rect(x, y, w, h).stroke();
@@ -112,16 +114,30 @@ export const closeManifest = async (req: AuthRequest, res: Response) => {
   if (!manifest) return res.status(404).json({ message: 'Manifest not found' });
   if (manifest.status !== 'OPEN') return res.status(400).json({ message: 'Manifest already closed' });
 
+  const now = new Date();
+  const orderIds = manifest.shipments.map(s => s.orderId);
   await prisma.$transaction([
     prisma.manifest.update({
       where: { id },
-      data: { status: 'CLOSED', closedAt: new Date() },
+      data: { status: 'CLOSED', closedAt: now },
     }),
     prisma.order.updateMany({
-      where: { id: { in: manifest.shipments.map(s => s.orderId) } },
-      data: { orderStatus: 'DISPATCHED' },
+      where: { id: { in: orderIds } },
+      data: { orderStatus: 'DISPATCHED', dispatchedAt: now },
     }),
   ]);
+  for (const oid of orderIds) {
+    await applyOrderStatus(oid, 'DISPATCHED', 'SHIPPED').catch(() => {});
+  }
+  await logProductivity({
+    tenantId: req.user!.tenant_id,
+    userId: req.user!.id,
+    activity: 'MANIFEST',
+    entityType: 'Manifest',
+    entityId: id,
+    quantity: orderIds.length,
+    durationMin: durationMinutes(manifest.createdAt, now),
+  });
 
   res.json({ message: 'Manifest closed, orders dispatched' });
 };

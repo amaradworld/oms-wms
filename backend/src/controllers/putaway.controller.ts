@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import { logAudit } from '../services/audit.service';
+import { logAudit, logUpdateAudit, captureSnapshot } from '../services/audit.service';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
 
 const SOURCE_BIN_MAP: Record<string, string> = {
   PUTAWAY_GRN_ITEM: 'GRN-RECEIVED',
@@ -330,6 +331,7 @@ export const getPutawayTasks = async (req: AuthRequest, res: Response) => {
 
 export const assignBinToTask = async (req: AuthRequest, res: Response) => {
   const { binId } = req.body;
+  const before = await captureSnapshot('PutawayTask', req.params.id as string);
   const task = await prisma.putawayTask.findFirst({
     where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
   });
@@ -340,16 +342,34 @@ export const assignBinToTask = async (req: AuthRequest, res: Response) => {
   });
   if (!bin) return res.status(400).json({ message: 'Bin not found in this warehouse' });
 
-  await prisma.putawayTask.update({
+  const now = new Date();
+  const updated = await prisma.putawayTask.update({
     where: { id: task.id },
-    data: { binId, status: 'IN_PROGRESS' },
+    data: {
+      binId,
+      status: 'IN_PROGRESS',
+      assignedTo: req.user!.id,
+      assignedAt: now,
+      startedAt: task.startedAt || now,
+    },
   });
 
-  res.json({ message: 'Bin assigned to putaway task' });
-  logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'ASSIGN_BIN', entityType: 'PutawayTask', entityId: task.id, newValue: { binId } });
+  res.json({ message: 'Bin assigned to putaway task', task: updated });
+  if (before) {
+    await logUpdateAudit({
+      tenantId: req.user!.tenant_id,
+      userId: req.user!.id,
+      action: 'ASSIGN_BIN',
+      entityType: 'PutawayTask',
+      entityId: task.id,
+      before,
+      after: { ...before, ...updated } as any,
+    });
+  }
 };
 
 export const completePutaway = async (req: AuthRequest, res: Response) => {
+  const before = await captureSnapshot('PutawayTask', req.params.id as string);
   const task = await prisma.putawayTask.findFirst({
     where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
     include: { bin: true },
@@ -361,24 +381,30 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
     const skuId = task.skuId;
     const warehouseId = task.warehouseId;
     const acceptedQty = task.expectedQty - task.completedQty;
+    const now = new Date();
 
     if (acceptedQty <= 0) {
-      await prisma.putawayTask.update({
+      const updated = await prisma.putawayTask.update({
         where: { id: task.id },
-        data: { completedAt: new Date(), status: 'COMPLETED' },
+        data: { completedAt: now, status: 'COMPLETED' },
       });
+      if (before) {
+        await logUpdateAudit({
+          tenantId: req.user!.tenant_id, userId: req.user!.id,
+          action: 'COMPLETE', entityType: 'PutawayTask', entityId: task.id,
+          before, after: { ...before, ...updated } as any,
+        });
+      }
       return res.json({ message: 'Putaway already completed' });
     }
 
     if (task.source === 'PUTAWAY_SHELF_TRANSFER') {
-      // For shelf transfers, we only add to target bin (source already decremented)
       await prisma.inventory.upsert({
         where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
         update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
         create: { warehouseId, skuId, binLocation: task.bin!.code, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
       });
     } else {
-      // All other types: move from source bin to target bin
       const sourceBin = SOURCE_BIN_MAP[task.source];
       if (sourceBin) {
         await prisma.inventory.update({
@@ -386,7 +412,6 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
           data: { quantityOnHand: { decrement: acceptedQty }, quantityAvailable: { decrement: acceptedQty } },
         });
       }
-
       await prisma.inventory.upsert({
         where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
         update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
@@ -394,13 +419,35 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    await prisma.putawayTask.update({
+    const updated = await prisma.putawayTask.update({
       where: { id: task.id },
-      data: { completedQty: { increment: acceptedQty }, completedAt: new Date(), status: 'COMPLETED' },
+      data: {
+        completedQty: { increment: acceptedQty },
+        completedAt: now,
+        status: 'COMPLETED',
+        startedAt: task.startedAt || now,
+      },
+    });
+
+    await logProductivity({
+      tenantId: req.user!.tenant_id,
+      warehouseId: task.warehouseId,
+      userId: req.user!.id,
+      activity: 'PUTAWAY',
+      entityType: 'PutawayTask',
+      entityId: task.id,
+      quantity: acceptedQty,
+      durationMin: durationMinutes(task.startedAt || task.assignedAt || task.createdAt, now),
     });
 
     res.json({ message: 'Putaway completed. Inventory moved to bin.' });
-    logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'COMPLETE', entityType: 'PutawayTask', entityId: task.id, newValue: { binCode: task.bin?.code, qty: acceptedQty } });
+    if (before) {
+      await logUpdateAudit({
+        tenantId: req.user!.tenant_id, userId: req.user!.id,
+        action: 'COMPLETE', entityType: 'PutawayTask', entityId: task.id,
+        before, after: { ...before, ...updated } as any,
+      });
+    }
   } catch (error: any) {
     console.error('Complete putaway error:', error);
     res.status(500).json({ message: error?.message || 'Internal server error' });

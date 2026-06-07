@@ -1,4 +1,6 @@
 import prisma from './prisma';
+import { applyOrderStatus } from './orderStage.service';
+import { logProductivity } from './productivityLogger.service';
 
 const COURIER_API_KEYS: Record<string, string> = {
   SHIPROCKET: process.env.SHIPROCKET_TOKEN || '',
@@ -81,10 +83,15 @@ export async function checkAllShipments(): Promise<{ updated: number; total: num
     try {
       const status = await checkCourierStatus(order.tracking);
       if (status === 'DELIVERED') {
+        const now = new Date();
         await prisma.$transaction([
-          prisma.order.update({ where: { id: order.id }, data: { orderStatus: 'DELIVERED' } }),
-          prisma.courierTracking.update({ where: { orderId: order.id }, data: { shipmentStatus: 'DELIVERED' } }),
+          prisma.order.update({
+            where: { id: order.id },
+            data: { orderStatus: 'DELIVERED', deliveredAt: now },
+          }),
+          prisma.courierTracking.update({ where: { orderId: order.id }, data: { shipmentStatus: 'DELIVERED', deliveredAt: now } }),
         ]);
+        await applyOrderStatus(order.id, 'DELIVERED', 'SHIPPED').catch(() => {});
         updated++;
       }
     } catch (e) {
@@ -103,12 +110,24 @@ export async function deliverOrder(orderId: string) {
   if (!order) throw new Error('Order not found');
   if (order.orderStatus === 'DELIVERED') throw new Error('Order already delivered');
 
+  const now = new Date();
   await prisma.$transaction([
-    prisma.order.update({ where: { id: orderId }, data: { orderStatus: 'DELIVERED' } }),
+    prisma.order.update({ where: { id: orderId }, data: { orderStatus: 'DELIVERED', deliveredAt: now } }),
     ...(order.tracking
-      ? [prisma.courierTracking.update({ where: { orderId }, data: { shipmentStatus: 'DELIVERED' } })]
+      ? [prisma.courierTracking.update({ where: { orderId }, data: { shipmentStatus: 'DELIVERED', deliveredAt: now } })]
       : []),
   ]);
+  await applyOrderStatus(orderId, 'DELIVERED', 'SHIPPED').catch(() => {});
+  await logProductivity({
+    tenantId: order.tenantId,
+    warehouseId: order.warehouseId,
+    userId: null,
+    activity: 'MANIFEST',
+    entityType: 'Order',
+    entityId: orderId,
+    quantity: 1,
+    durationMin: null,
+  });
 
-  return { id: orderId, orderNumber: order.orderNumber, orderStatus: 'DELIVERED' };
+  return { id: orderId, orderNumber: order.orderNumber, orderStatus: 'DELIVERED', deliveredAt: now };
 }

@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit, logUpdateAudit, captureSnapshot } from '../services/audit.service';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
 
 export const getReplenishmentTasks = async (req: AuthRequest, res: Response) => {
   const { tenant_id } = req.user!;
@@ -26,24 +28,76 @@ export const createReplenishmentTask = async (req: AuthRequest, res: Response) =
     include: { sku: true },
   });
   res.status(201).json(task);
+  logAudit({ tenantId: tenant_id, userId: req.user!.id, action: 'CREATE', entityType: 'ReplenishmentTask', entityId: task.id, newValue: { skuId, quantity, priority } });
 };
 
-export const completeReplenishmentTask = async (req: AuthRequest, res: Response) => {
+export const assignReplenishmentTask = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
+  const { assignedTo } = req.body;
+  const before = await captureSnapshot('ReplenishmentTask', id);
   const task = await prisma.replenishmentTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ message: 'Task not found' });
   if (task.tenantId !== req.user!.tenant_id) return res.status(403).json({ message: 'Not authorized' });
 
+  const now = new Date();
   const updated = await prisma.replenishmentTask.update({
     where: { id },
-    data: { status: 'COMPLETED', completedAt: new Date(), completedBy: req.user!.id },
+    data: {
+      assignedTo: assignedTo || req.user!.id,
+      assignedAt: now,
+      startedAt: task.startedAt || now,
+      status: task.status === 'PENDING' ? 'IN_PROGRESS' : task.status,
+    },
     include: { sku: true },
   });
   res.json(updated);
+  if (before) {
+    await logUpdateAudit({
+      tenantId: req.user!.tenant_id, userId: req.user!.id,
+      action: 'ASSIGN', entityType: 'ReplenishmentTask', entityId: id,
+      before, after: { ...before, ...updated } as any,
+    });
+  }
+};
+
+export const completeReplenishmentTask = async (req: AuthRequest, res: Response) => {
+  const id = req.params.id as string;
+  const before = await captureSnapshot('ReplenishmentTask', id);
+  const task = await prisma.replenishmentTask.findUnique({ where: { id } });
+  if (!task) return res.status(404).json({ message: 'Task not found' });
+  if (task.tenantId !== req.user!.tenant_id) return res.status(403).json({ message: 'Not authorized' });
+
+  const now = new Date();
+  const updated = await prisma.replenishmentTask.update({
+    where: { id },
+    data: { status: 'COMPLETED', completedAt: now, completedBy: req.user!.id, startedAt: task.startedAt || now },
+    include: { sku: true },
+  });
+
+  await logProductivity({
+    tenantId: req.user!.tenant_id,
+    warehouseId: task.warehouseId,
+    userId: req.user!.id,
+    activity: 'PUTAWAY',
+    entityType: 'ReplenishmentTask',
+    entityId: task.id,
+    quantity: task.quantity,
+    durationMin: durationMinutes(task.startedAt || task.assignedAt || task.createdAt, now),
+  });
+
+  res.json(updated);
+  if (before) {
+    await logUpdateAudit({
+      tenantId: req.user!.tenant_id, userId: req.user!.id,
+      action: 'COMPLETE', entityType: 'ReplenishmentTask', entityId: id,
+      before, after: { ...before, ...updated } as any,
+    });
+  }
 };
 
 export const cancelReplenishmentTask = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
+  const before = await captureSnapshot('ReplenishmentTask', id);
   const task = await prisma.replenishmentTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ message: 'Task not found' });
   if (task.tenantId !== req.user!.tenant_id) return res.status(403).json({ message: 'Not authorized' });
@@ -53,6 +107,13 @@ export const cancelReplenishmentTask = async (req: AuthRequest, res: Response) =
     data: { status: 'CANCELLED' },
   });
   res.json(updated);
+  if (before) {
+    await logUpdateAudit({
+      tenantId: req.user!.tenant_id, userId: req.user!.id,
+      action: 'CANCEL', entityType: 'ReplenishmentTask', entityId: id,
+      before, after: { ...before, ...updated } as any,
+    });
+  }
 };
 
 export const generateFromAlerts = async (req: AuthRequest, res: Response) => {

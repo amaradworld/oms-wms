@@ -2,6 +2,7 @@ import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logAudit } from '../services/audit.service';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
 
 export const getGrns = async (req: AuthRequest, res: Response) => {
   const where: any = { tenantId: req.user!.tenant_id };
@@ -97,6 +98,8 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
   });
   if (!grn) return res.status(404).json({ message: 'GRN not found' });
 
+  const now = new Date();
+  const isFirstQc = !grn.qcStartedAt;
   for (const item of items) {
     await prisma.grnItem.update({
       where: { id: item.grnItemId },
@@ -105,6 +108,7 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
         qcNotes: item.qcNotes || null,
         acceptedQty: item.acceptedQty ?? 0,
         rejectedQty: item.rejectedQty ?? 0,
+        qcAt: now,
       },
     });
   }
@@ -116,14 +120,28 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
   const totalAccepted = updatedItems.reduce((s, i) => s + i.acceptedQty, 0);
   const totalRejected = updatedItems.reduce((s, i) => s + i.rejectedQty, 0);
 
-  await prisma.grn.update({
-    where: { id },
-    data: {
-      status: allQcDone ? (anyFailed ? 'QC_FAILED' : 'QC_PENDING') : 'RECEIVING',
-      acceptedQty: totalAccepted,
-      rejectedQty: totalRejected,
-    },
-  });
+  const grnUpdate: any = {
+    status: allQcDone ? (anyFailed ? 'QC_FAILED' : 'QC_PENDING') : 'RECEIVING',
+    acceptedQty: totalAccepted,
+    rejectedQty: totalRejected,
+  };
+  if (isFirstQc) grnUpdate.qcStartedAt = now;
+  if (allQcDone && !grn.qcCompletedAt) grnUpdate.qcCompletedAt = now;
+
+  await prisma.grn.update({ where: { id }, data: grnUpdate });
+
+  if (allQcDone) {
+    await logProductivity({
+      tenantId: req.user!.tenant_id,
+      warehouseId: grn.warehouseId,
+      userId: req.user!.id,
+      activity: 'GRN',
+      entityType: 'GRN',
+      entityId: id,
+      quantity: updatedItems.length,
+      durationMin: durationMinutes(grn.qcStartedAt || grn.createdAt, now),
+    });
+  }
 
   res.json({ message: 'QC updated' });
   logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'QC', entityType: 'GRN', entityId: id, newValue: { qcResults: items } });
@@ -188,7 +206,7 @@ export const approveGrn = async (req: AuthRequest, res: Response) => {
     await prisma.putawayTask.createMany({ data: tasks });
   }
 
-  await prisma.grn.update({ where: { id: grn.id }, data: { status: 'APPROVED' } });
+  await prisma.grn.update({ where: { id: grn.id }, data: { status: 'APPROVED', approvedAt: new Date() } });
 
   res.json({ message: 'GRN approved. Inventory updated. Putaway tasks created.', tasksCreated: tasks.length });
   logAudit({ tenantId, userId: req.user!.id, action: 'APPROVE', entityType: 'GRN', entityId: grn.id, newValue: { status: 'APPROVED', tasksCreated: tasks.length } });
@@ -225,6 +243,7 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
   if (grnItem.receivedQty >= grnItem.expectedQty) return res.status(400).json({ message: `Already fully received for ${grnItem.sku.skuCode}` });
 
   const isPass = qcStatus === 'PASSED';
+  const now = new Date();
   await prisma.grnItem.update({
     where: { id: grnItem.id },
     data: {
@@ -232,6 +251,8 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
       qcStatus: isPass ? 'PASSED' : 'FAILED',
       acceptedQty: isPass ? { increment: 1 } : undefined,
       rejectedQty: isPass ? undefined : { increment: 1 },
+      receivedAt: now,
+      qcAt: now,
     },
   });
 
@@ -243,15 +264,16 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
   const allQcDone = updatedItems.every(i => i.qcStatus === 'PASSED' || i.qcStatus === 'FAILED');
   const anyFailed = updatedItems.some(i => i.qcStatus === 'FAILED');
 
-  await prisma.grn.update({
-    where: { id: grnId },
-    data: {
-      totalQty: totalReceived,
-      acceptedQty: totalAccepted,
-      rejectedQty: totalRejected,
-      status: allQcDone ? (anyFailed ? 'QC_FAILED' : 'QC_PENDING') : allReceived ? 'QC_PENDING' : 'RECEIVING',
-    },
-  });
+  const grnUpdate: any = {
+    totalQty: totalReceived,
+    acceptedQty: totalAccepted,
+    rejectedQty: totalRejected,
+    status: allQcDone ? (anyFailed ? 'QC_FAILED' : 'QC_PENDING') : allReceived ? 'QC_PENDING' : 'RECEIVING',
+  };
+  if (!grn.receivedAt) grnUpdate.receivedAt = now;
+  if (isFirstQcScan(grn) && grnUpdate.status !== 'RECEIVING') grnUpdate.qcStartedAt = now;
+
+  await prisma.grn.update({ where: { id: grnId }, data: grnUpdate });
 
   res.json({
     message: `Scanned ${grnItem.sku.skuCode} — marked as ${qcStatus}`,
@@ -259,5 +281,9 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
   });
   logAudit({ tenantId: req.user!.tenant_id, userId: req.user!.id, action: 'SCAN_RECEIVE', entityType: 'GRN', entityId: grnId, newValue: { skuCode: grnItem.sku.skuCode, qcStatus } });
 };
+
+function isFirstQcScan(grn: any): boolean {
+  return !grn.qcStartedAt;
+}
 
 

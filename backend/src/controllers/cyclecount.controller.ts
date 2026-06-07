@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
 
 export const listCycleCounts = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
@@ -89,6 +90,17 @@ export const updateCountItem = async (req: AuthRequest, res: Response) => {
     where: { cycleCountId_skuId: { cycleCountId, skuId } },
     data: { countedQty, variance, status: 'COUNTED' },
     include: { sku: { select: { skuCode: true, name: true } } },
+  });
+
+  await logProductivity({
+    tenantId,
+    warehouseId: count.warehouseId,
+    userId: req.user!.id,
+    activity: 'CYCLE_COUNT',
+    entityType: 'CycleCountItem',
+    entityId: updated.id,
+    quantity: 1,
+    durationMin: durationMinutes(count.startedAt, new Date()),
   });
 
   res.json(updated);

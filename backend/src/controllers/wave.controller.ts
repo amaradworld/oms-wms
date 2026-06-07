@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
+import { applyOrderStatus } from '../services/orderStage.service';
 
 export const getWaves = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
@@ -79,8 +81,17 @@ export const startWave = async (req: AuthRequest, res: Response) => {
   if (!wave) return res.status(404).json({ message: 'Wave not found' });
   if (wave.status !== 'PENDING') return res.status(400).json({ message: 'Wave already started' });
 
+  const now = new Date();
   await prisma.$transaction([
-    prisma.pickWave.update({ where: { id }, data: { status: 'IN_PROGRESS' } }),
+    prisma.pickWave.update({
+      where: { id },
+      data: {
+        status: 'IN_PROGRESS',
+        startedAt: now,
+        assignedTo: req.user!.id,
+        assignedAt: now,
+      },
+    }),
     prisma.order.updateMany({
       where: { id: { in: wave.orders.map(o => o.orderId) } },
       data: { orderStatus: 'PICKING' },
@@ -122,6 +133,16 @@ export const scanWaveItem = async (req: AuthRequest, res: Response) => {
       where: { id: orderItem.id },
       data: { status: 'PICKED' },
     });
+    await logProductivity({
+      tenantId,
+      warehouseId: wave.warehouseId,
+      userId: req.user!.id,
+      activity: 'PICKING',
+      entityType: 'OrderItem',
+      entityId: orderItem.id,
+      quantity: 1,
+      durationMin: durationMinutes(wave.startedAt || wave.createdAt, new Date()),
+    });
   }
 
   // Check if all items in the order are picked
@@ -133,10 +154,7 @@ export const scanWaveItem = async (req: AuthRequest, res: Response) => {
       where: { id: pickOrder.id },
       data: { status: 'COMPLETED' },
     });
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { orderStatus: 'PACKING' },
-    });
+    await applyOrderStatus(orderId, 'PACKING', 'PICKING');
   } else {
     await prisma.pickWaveOrder.update({
       where: { id: pickOrder.id },
@@ -181,6 +199,7 @@ export const confirmWaveOrder = async (req: AuthRequest, res: Response) => {
     where: { id: orderId },
     data: { orderStatus: 'PACKING' },
   });
+  await applyOrderStatus(orderId, 'PACKING', 'PICKING');
 
   res.json({ message: 'Order confirmed with short pick ✓' });
 };
@@ -193,12 +212,24 @@ export const completeWave = async (req: AuthRequest, res: Response) => {
   });
   if (!wave) return res.status(404).json({ message: 'Wave not found' });
 
+  const now = new Date();
+  const duration = durationMinutes(wave.startedAt || wave.createdAt, now);
   await prisma.$transaction([
-    prisma.pickWave.update({ where: { id }, data: { status: 'COMPLETED', completedAt: new Date() } }),
+    prisma.pickWave.update({ where: { id }, data: { status: 'COMPLETED', completedAt: now } }),
     prisma.order.updateMany({
       where: { id: { in: wave.orders.map(o => o.orderId) } },
       data: { orderStatus: 'PACKING' },
     }),
   ]);
+  await logProductivity({
+    tenantId: wave.tenantId,
+    warehouseId: wave.warehouseId,
+    userId: req.user!.id,
+    activity: 'WAVE',
+    entityType: 'PickWave',
+    entityId: wave.id,
+    quantity: wave.orders.length,
+    durationMin: duration,
+  });
   res.json({ message: 'Wave completed' });
 };

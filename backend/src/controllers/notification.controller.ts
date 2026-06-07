@@ -2,6 +2,8 @@ import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { sendResetCode } from '../services/email.service';
+import { logAudit } from '../services/audit.service';
+import { runSlaCron } from '../services/slaCron.service';
 
 const DEFAULT_PREFS = {
   stockExpiry: true,
@@ -49,7 +51,12 @@ export async function checkAndSendAlerts(tenantId: string) {
 
   if (prefs.slaBreach) {
     const breached = await prisma.order.findMany({
-      where: { tenantId, slaDeadline: { lt: now }, orderStatus: { notIn: ['DELIVERED', 'DISPATCHED', 'CANCELLED', 'RETURNED'] } },
+      where: {
+        tenantId,
+        slaDeadline: { lt: now },
+        orderStatus: { notIn: ['DELIVERED', 'DISPATCHED', 'CANCELLED', 'RETURNED'] },
+        OR: [{ slaBreachedAt: null }, { slaStatus: { not: 'BREACHED' } }],
+      },
       take: 10,
     });
 
@@ -60,6 +67,19 @@ export async function checkAndSendAlerts(tenantId: string) {
           await sendResetCode(admin.email, '', `[Alert] ${breached.length} orders have breached SLA deadline`);
         } catch {}
       }
+      if (admins.length > 0) {
+        await logAudit({
+          tenantId,
+          userId: admins[0].id,
+          action: 'SLA_BREACH',
+          entityType: 'Order',
+          newValue: { count: breached.length, orderIds: breached.map(b => b.id), sentAt: now.toISOString() } as any,
+        });
+      }
+      await prisma.order.updateMany({
+        where: { id: { in: breached.map(b => b.id) } },
+        data: { slaStatus: 'BREACHED', slaBreachedAt: now },
+      });
     }
   }
 
@@ -95,6 +115,15 @@ export const triggerAlerts = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const triggerSlaCron = async (_req: AuthRequest, res: Response) => {
+  try {
+    const result = await runSlaCron();
+    res.json({ message: 'SLA cron completed', ...result });
+  } catch (error) {
+    res.status(500).json({ message: 'SLA cron failed', error: String(error) });
+  }
+};
+
 export const getNotificationLog = async (req: AuthRequest, res: Response) => {
   const { tenant_id } = req.user!;
   const thirtyDays = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -104,7 +133,7 @@ export const getNotificationLog = async (req: AuthRequest, res: Response) => {
 
   for (const label of slaLabels) {
     const count = await prisma.auditLog.count({
-      where: { tenantId: tenant_id, action: label, createdAt: { gte: thirtyDays } },
+      where: { tenantId: tenant_id, action: label, timestamp: { gte: thirtyDays } },
     });
     notifications.push({ type: label, count, last30Days: count });
   }

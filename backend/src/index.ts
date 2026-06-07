@@ -53,6 +53,7 @@ import leadRoutes from './routes/lead.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
+import { startSlaCron } from './services/slaCron.service';
 
 dotenv.config();
 
@@ -156,4 +157,5 @@ ensureDefaults().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  startSlaCron();
 });

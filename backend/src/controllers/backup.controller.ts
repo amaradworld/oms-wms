@@ -223,7 +223,7 @@ export const listBackups = async (req: AuthRequest, res: Response) => {
 
 export const deleteBackup = async (req: AuthRequest, res: Response) => {
   if (!checkRestoreAuth(req, res)) return;
-  const key = req.params.key;
+  const key = String(req.params.key || '');
   if (!key || !key.startsWith(`backups/${BACKUP_PREFIX}/`)) {
     return res.status(400).json({ message: 'Invalid backup key' });
   }
@@ -239,7 +239,7 @@ export const deleteBackup = async (req: AuthRequest, res: Response) => {
 
 export const downloadBackup = async (req: AuthRequest, res: Response) => {
   if (!checkRestoreAuth(req, res)) return;
-  const key = req.params.key;
+  const key = String(req.params.key || '');
   if (!key || !key.startsWith(`backups/${BACKUP_PREFIX}/`)) {
     return res.status(400).json({ message: 'Invalid backup key' });
   }

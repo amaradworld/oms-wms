@@ -27,7 +27,10 @@ export const generateAWB = async (req: AuthRequest, res: Response) => {
       create: { orderId, awbNumber: awb, courierName: courier, shipmentStatus: 'SHIPPED', shippedAt: new Date() },
     });
 
-    await prisma.order.update({ where: { id: orderId }, data: { orderStatus: 'SHIPPED' } });
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { orderStatus: 'SHIPPED', manifestedAt: new Date() },
+    });
 
     const connector = order.source ? getConnector(order.source) : null;
     if (connector?.pushTracking) {

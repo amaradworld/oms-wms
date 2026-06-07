@@ -8,55 +8,55 @@ datasource db {
 }
 
 model Tenant {
-  id        String     @id
-  name      String
-  slug      String     @unique
-  email     String?
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  pincode   String?
-  gstin     String?
-  logoUrl   String?
-  isActive  Boolean    @default(true)
+  id                String   @id
+  name              String
+  slug              String   @unique
+  email             String?
+  phone             String?
+  address           String?
+  city              String?
+  state             String?
+  pincode           String?
+  gstin             String?
+  logoUrl           String?
+  isActive          Boolean  @default(true)
   notificationPrefs Json?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("tenants")
 }
 
 model User {
-  id            String   @id @default(uuid())
-  tenantId      String?
-  email         String   @unique
-  passwordHash  String
-  fullName      String?
-  role          String   // PLATFORM_ADMIN, SUPER_ADMIN, WAREHOUSE_MGR, PICKER, PACKER
-  warehouseId   String?
-  warehouse     Warehouse? @relation(fields: [warehouseId], references: [id])
-  mfaSecret     String?
-  mfaEnabled    Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  auditLogs     AuditLog[]
-  gatepasses    Gatepass[]
+  id           String     @id @default(uuid())
+  tenantId     String?
+  email        String     @unique
+  passwordHash String
+  fullName     String?
+  role         String // PLATFORM_ADMIN, SUPER_ADMIN, WAREHOUSE_MGR, PICKER, PACKER
+  warehouseId  String?
+  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id])
+  mfaSecret    String?
+  mfaEnabled   Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditLogs    AuditLog[]
+  gatepasses   Gatepass[]
 
   @@map("users")
 }
 
 model Warehouse {
-  id        String   @id @default(uuid())
+  id        String      @id @default(uuid())
   tenantId  String
   name      String
   location  String?
   address   String?
-  isActive  Boolean  @default(true)
+  isActive  Boolean     @default(true)
   parentId  String?
   parent    Warehouse?  @relation("FacilityHierarchy", fields: [parentId], references: [id])
   children  Warehouse[] @relation("FacilityHierarchy")
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
 
   // General Details
   code                   String?
@@ -111,26 +111,26 @@ model Warehouse {
   shippingAddress2      String?
   shippingCity          String?
   shippingPinCode       String?
-  shippingCountry       String? @default("India")
+  shippingCountry       String?  @default("India")
   shippingState         String?
   shippingPhone         String?
   shippingLatitude      String?
   shippingLongitude     String?
 
-  inventory  Inventory[]
-  picklists  Picklist[]
-  orders          Order[]
-  cycleCounts     CycleCount[]
-  purchaseOrders  PurchaseOrder[]
-  transfersFrom   StockTransfer[] @relation("TransferFrom")
-  transfersTo     StockTransfer[] @relation("TransferTo")
-  pickWaves       PickWave[]
-  users           User[]
-  binLocations    BinLocation[]
-  grns            Grn[]
-  putawayTasks    PutawayTask[]
-  sequences       FacilitySequence[]
-  activityLogs    FacilityActivityLog[]
+  inventory      Inventory[]
+  picklists      Picklist[]
+  orders         Order[]
+  cycleCounts    CycleCount[]
+  purchaseOrders PurchaseOrder[]
+  transfersFrom  StockTransfer[]       @relation("TransferFrom")
+  transfersTo    StockTransfer[]       @relation("TransferTo")
+  pickWaves      PickWave[]
+  users          User[]
+  binLocations   BinLocation[]
+  grns           Grn[]
+  putawayTasks   PutawayTask[]
+  sequences      FacilitySequence[]
+  activityLogs   FacilityActivityLog[]
 
   @@map("warehouses")
 }
@@ -155,17 +155,17 @@ model FacilitySequence {
 }
 
 model FacilityActivityLog {
-  id           String   @id @default(uuid())
-  tenantId     String
-  warehouseId  String
-  userId       String?
-  userEmail    String?
-  action       String   // FIELD_CHANGE, SEQUENCE_CHANGE, SETTINGS_CHANGE
-  field        String?
-  oldValue     String?
-  newValue     String?
-  description  String?
-  timestamp    DateTime @default(now())
+  id          String   @id @default(uuid())
+  tenantId    String
+  warehouseId String
+  userId      String?
+  userEmail   String?
+  action      String // FIELD_CHANGE, SEQUENCE_CHANGE, SETTINGS_CHANGE
+  field       String?
+  oldValue    String?
+  newValue    String?
+  description String?
+  timestamp   DateTime @default(now())
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
 
@@ -174,29 +174,29 @@ model FacilityActivityLog {
 }
 
 model SkuMaster {
-  id          String   @id @default(uuid())
-  tenantId    String
-  skuCode     String   @unique
-  epcCode     String?  @unique
-  name        String
-  styleName   String?
-  size        String?
-  color       String?
-  brand       String?
-  category    String?
-  material    String?
-  gender      String?
-  unitType    String?
-  mrp         Decimal?
-  description String?
-  hsnCode     String?
-  weight      Decimal?
-  dimensions  String?
-  createdAt   DateTime @default(now())
-  inventory      Inventory[]
-  orderItems     OrderItem[]
-  returns           Return[]
-  cycleCountItems   CycleCountItem[]
+  id                 String              @id @default(uuid())
+  tenantId           String
+  skuCode            String              @unique
+  epcCode            String?             @unique
+  name               String
+  styleName          String?
+  size               String?
+  color              String?
+  brand              String?
+  category           String?
+  material           String?
+  gender             String?
+  unitType           String?
+  mrp                Decimal?
+  description        String?
+  hsnCode            String?
+  weight             Decimal?
+  dimensions         String?
+  createdAt          DateTime            @default(now())
+  inventory          Inventory[]
+  orderItems         OrderItem[]
+  returns            Return[]
+  cycleCountItems    CycleCountItem[]
   purchaseOrderItems PurchaseOrderItem[]
   stockTransferItems StockTransferItem[]
   gatepassItems      GatepassItem[]
@@ -209,27 +209,27 @@ model SkuMaster {
 }
 
 model Inventory {
-  id                  String   @id @default(uuid())
+  id                  String    @id @default(uuid())
   warehouseId         String
   skuId               String
   binLocation         String
-  reorderPoint        Int      @default(0)
-  quantityOnHand      Int      @default(0)
-  quantityReserved    Int      @default(0)
-  quantityAvailable   Int      @default(0)
-  virtualInventory    Int      @default(0)
-  notFound            Int      @default(0)
-  type                String   @default("Good")
+  reorderPoint        Int       @default(0)
+  quantityOnHand      Int       @default(0)
+  quantityReserved    Int       @default(0)
+  quantityAvailable   Int       @default(0)
+  virtualInventory    Int       @default(0)
+  notFound            Int       @default(0)
+  type                String    @default("Good")
   batch               String?
   batchStatus         String?
   expiryDate          DateTime?
-  expiryAlertSent     Boolean  @default(false)
-  status              String   @default("ACTIVE")
-  inventoryAllocation Boolean  @default(true)
-  inventorySync       Boolean  @default(true)
-  skuMixing           Boolean  @default(true)
-  shelfOnHold         Boolean  @default(false)
-  lastUpdated         DateTime @updatedAt
+  expiryAlertSent     Boolean   @default(false)
+  status              String    @default("ACTIVE")
+  inventoryAllocation Boolean   @default(true)
+  inventorySync       Boolean   @default(true)
+  skuMixing           Boolean   @default(true)
+  shelfOnHold         Boolean   @default(false)
+  lastUpdated         DateTime  @updatedAt
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
   sku       SkuMaster @relation(fields: [skuId], references: [id])
@@ -239,88 +239,101 @@ model Inventory {
 }
 
 model Order {
-  id                  String    @id @default(uuid())
-  tenantId            String
-  warehouseId         String?
-  orderNumber         String    @unique
-  displayOrderCode    String?
-  source              String?
-  customerCode        String?
-  customerName        String
-  customerGstin       String?
-  notificationEmail   String?
-  notificationMobile  String?
-  currency            String?   @default("INR")
-  shippingAddress     String
-  orderStatus         String    @default("PENDING")
-  paymentStatus       String?
-  paymentMode         String?
-  slaDeadline         DateTime?
+  id                    String    @id @default(uuid())
+  tenantId              String
+  warehouseId           String?
+  orderNumber           String    @unique
+  displayOrderCode      String?
+  source                String?
+  customerCode          String?
+  customerName          String
+  customerGstin         String?
+  notificationEmail     String?
+  notificationMobile    String?
+  currency              String?   @default("INR")
+  shippingAddress       String
+  orderStatus           String    @default("PENDING")
+  paymentStatus         String?
+  paymentMode           String?
+  slaDeadline           DateTime?
+  slaStatus             String?   @default("ON_TRACK") // ON_TRACK, AT_RISK, BREACHED, MET
+  slaBreachedAt         DateTime?
   channelProcessingTime DateTime?
-  deliverMode         String?
-  pdfAttachment       String?
-  priority            String?
-  orderAmount         Decimal?
-  discountAmount      Decimal?  @default(0)
-  giftWrapCharges     Decimal?  @default(0)
-  shippingCharges     Decimal?  @default(0)
-  ewayBillNumber      String?
-  irn                 String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  deliverMode           String?
+  pdfAttachment         String?
+  priority              String?
+  orderAmount           Decimal?
+  discountAmount        Decimal?  @default(0)
+  giftWrapCharges       Decimal?  @default(0)
+  shippingCharges       Decimal?  @default(0)
+  ewayBillNumber        String?
+  irn                   String?
+  // Per-stage event timestamps (auto-populated on status change)
+  firstResponseAt       DateTime?
+  pickedAt              DateTime?
+  packedAt              DateTime?
+  manifestedAt          DateTime?
+  dispatchedAt          DateTime?
+  deliveredAt           DateTime?
+  cancelledAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   // Billing Address
-  billingName         String?
-  billingAddress1     String?
-  billingAddress2     String?
-  billingCountry      String?   @default("India")
-  billingState        String?
-  billingCity         String?
-  billingDistrict     String?
-  billingPinCode      String?
-  billingPhone        String?
-  billingLatitude     String?
-  billingLongitude    String?
-  billingEmail        String?
+  billingName      String?
+  billingAddress1  String?
+  billingAddress2  String?
+  billingCountry   String? @default("India")
+  billingState     String?
+  billingCity      String?
+  billingDistrict  String?
+  billingPinCode   String?
+  billingPhone     String?
+  billingLatitude  String?
+  billingLongitude String?
+  billingEmail     String?
 
-  items               OrderItem[]
-  tracking            CourierTracking?
-  returns             Return[]
-  rto                 Rto?
+  items    OrderItem[]
+  tracking CourierTracking?
+  returns  Return[]
+  rto      Rto?
 
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
-  pickWaveOrders PickWaveOrder[]
+  warehouse         Warehouse?         @relation(fields: [warehouseId], references: [id])
+  pickWaveOrders    PickWaveOrder[]
   manifestShipments ManifestShipment[]
-  ndrCases NdrCase[]
+  ndrCases          NdrCase[]
 
+  @@index([tenantId, orderStatus, slaDeadline])
+  @@index([tenantId, source, deliveredAt])
+  @@index([tenantId, slaStatus])
   @@map("orders")
 }
 
 model OrderItem {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   orderId        String
   skuId          String
   quantity       Int
   unitPrice      Decimal
-  mrp            Decimal? @default(0)
-  discountAmount Decimal? @default(0)
+  mrp            Decimal?  @default(0)
+  discountAmount Decimal?  @default(0)
   totalAmount    Decimal
-  status         String   @default("PENDING")
-  scannedQty     Int      @default(0)
+  status         String    @default("PENDING")
+  scannedQty     Int       @default(0)
   batchNo        String?
   expiryDate     DateTime?
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order     @relation(fields: [orderId], references: [id])
   sku   SkuMaster @relation(fields: [skuId], references: [id])
 
   @@map("order_items")
 }
 
 model CourierTracking {
-  id                  String   @id @default(uuid())
-  orderId             String   @unique
+  id                  String    @id @default(uuid())
+  orderId             String    @unique
   courierName         String
-  awbNumber           String   @unique
+  awbNumber           String    @unique
   shipmentStatus      String
   courierStatus       String?
   shippedAt           DateTime?
@@ -332,7 +345,7 @@ model CourierTracking {
   invoiceNumber       String?
   rtoFacility         String?
   shippingMethod      String?
-  noOfBoxes           Int      @default(1)
+  noOfBoxes           Int       @default(1)
   shippingPackageType String?
   shippingPackageCode String?
   packageDimensions   String?
@@ -348,26 +361,26 @@ model CourierTracking {
 }
 
 model Return {
-  id        String   @id @default(uuid())
-  orderId   String
-  skuId     String
-  quantity  Int
-  reason    String?
-  status    String   // REQUESTED, RECEIVED, QC_FAILED, QC_PASSED
+  id         String    @id @default(uuid())
+  orderId    String
+  skuId      String
+  quantity   Int
+  reason     String?
+  status     String // REQUESTED, RECEIVED, QC_FAILED, QC_PASSED
   receivedAt DateTime?
 
-  order Order @relation(fields: [orderId], references: [id])
+  order Order     @relation(fields: [orderId], references: [id])
   sku   SkuMaster @relation(fields: [skuId], references: [id])
 
   @@map("returns")
 }
 
 model Rto {
-  id          String   @id @default(uuid())
-  orderId     String   @unique
-  rtoReason   String?
+  id           String   @id @default(uuid())
+  orderId      String   @unique
+  rtoReason    String?
   receivedDate DateTime @default(now())
-  status      String   @default("PENDING_QC")
+  status       String   @default("PENDING_QC")
 
   order Order @relation(fields: [orderId], references: [id])
 
@@ -383,12 +396,16 @@ model NdrCase {
   failureReason   String?
   status          String    @default("OPEN") // OPEN, REATTEMPT_SCHEDULED, RESOLVED, CLOSED
   reattemptDate   DateTime?
+  firstResponseAt DateTime?
+  resolvedAt      DateTime?
   notes           String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   order Order @relation(fields: [orderId], references: [id])
 
+  @@index([tenantId, status])
+  @@index([tenantId, firstResponseAt])
   @@map("ndr_cases")
 }
 
@@ -405,84 +422,91 @@ model AuditLog {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([tenantId, timestamp])
+  @@index([entityType, entityId, timestamp])
+  @@index([tenantId, action, timestamp])
   @@map("audit_logs")
 }
 
 model Picklist {
-  id         String   @id @default(uuid())
+  id          String    @id @default(uuid())
   warehouseId String
-  status     String   @default("PENDING")
-  pickerId   String?
-  createdAt  DateTime @default(now())
+  status      String    @default("PENDING")
+  pickerId    String?
+  assignedAt  DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
 
+  @@index([warehouseId, status])
   @@map("picklists")
 }
 
 model MarketplaceConfig {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
-  marketplace String   // NYKAA, MYNTRA, TATACLIQ
+  marketplace String // NYKAA, MYNTRA, TATACLIQ
   apiKey      String?
   apiSecret   String?
   sellerId    String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   lastSyncAt  DateTime?
-  syncStatus  String   @default("idle") // idle, syncing, error
+  syncStatus  String    @default("idle") // idle, syncing, error
   syncMessage String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@unique([tenantId, marketplace])
   @@map("marketplace_configs")
 }
 
 model CourierConfig {
-  id             String   @id @default(uuid())
-  tenantId       String
-  courierName    String
-  isActive       Boolean  @default(true)
-  priority       Int      @default(10)
+  id              String   @id @default(uuid())
+  tenantId        String
+  courierName     String
+  isActive        Boolean  @default(true)
+  priority        Int      @default(10)
   pincodePrefixes String? // comma-separated, e.g. "10,11,12" or "*" for all
-  minWeight      Decimal?
-  maxWeight      Decimal?
-  minOrderValue  Decimal?
-  maxOrderValue  Decimal?
-  speedTier      String   @default("standard") // express, standard, economy
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  minWeight       Decimal?
+  maxWeight       Decimal?
+  minOrderValue   Decimal?
+  maxOrderValue   Decimal?
+  speedTier       String   @default("standard") // express, standard, economy
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([tenantId, courierName])
   @@map("courier_configs")
 }
 
 model CycleCount {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
   warehouseId String
-  status      String   @default("DRAFT") // DRAFT, IN_PROGRESS, COMPLETED, CANCELLED
+  status      String    @default("DRAFT") // DRAFT, IN_PROGRESS, COMPLETED, CANCELLED
   startedBy   String?
   startedAt   DateTime?
   completedAt DateTime?
   notes       String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
-  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouse Warehouse        @relation(fields: [warehouseId], references: [id])
   items     CycleCountItem[]
 
   @@map("cycle_counts")
 }
 
 model CycleCountItem {
-  id            String  @id @default(uuid())
-  cycleCountId  String
-  skuId         String
-  binLocation   String?
-  expectedQty   Int     @default(0)
-  countedQty    Int?
-  variance      Int?
-  status        String  @default("PENDING") // PENDING, COUNTED, VERIFIED
+  id           String  @id @default(uuid())
+  cycleCountId String
+  skuId        String
+  binLocation  String?
+  expectedQty  Int     @default(0)
+  countedQty   Int?
+  variance     Int?
+  status       String  @default("PENDING") // PENDING, COUNTED, VERIFIED
 
   cycleCount CycleCount @relation(fields: [cycleCountId], references: [id])
   sku        SkuMaster  @relation(fields: [skuId], references: [id])
@@ -492,7 +516,7 @@ model CycleCountItem {
 }
 
 model Supplier {
-  id             String   @id @default(uuid())
+  id             String          @id @default(uuid())
   tenantId       String
   code           String?
   name           String
@@ -501,8 +525,8 @@ model Supplier {
   phone          String?
   address        String?
   gstin          String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
   purchaseOrders PurchaseOrder[]
 
   @@unique([tenantId, code])
@@ -510,19 +534,19 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id          String   @id @default(uuid())
-  tenantId    String
-  poNumber    String   @unique
-  supplierId  String
-  warehouseId String
-  status      String   @default("DRAFT")
-  orderDate   DateTime @default(now())
+  id           String    @id @default(uuid())
+  tenantId     String
+  poNumber     String    @unique
+  supplierId   String
+  warehouseId  String
+  status       String    @default("DRAFT")
+  orderDate    DateTime  @default(now())
   expectedDate DateTime?
-  notes       String?
-  createdAt   DateTime @default(now())
+  notes        String?
+  createdAt    DateTime  @default(now())
 
-  supplier  Supplier           @relation(fields: [supplierId], references: [id])
-  warehouse Warehouse          @relation(fields: [warehouseId], references: [id])
+  supplier  Supplier            @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse           @relation(fields: [warehouseId], references: [id])
   items     PurchaseOrderItem[]
   grns      Grn[]
 
@@ -541,7 +565,7 @@ model BinLocation {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  warehouse    Warehouse     @relation(fields: [warehouseId], references: [id])
   putawayTasks PutawayTask[]
 
   @@unique([warehouseId, code])
@@ -549,21 +573,25 @@ model BinLocation {
 }
 
 model Grn {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   tenantId        String
   poId            String
   asnId           String?
   warehouseId     String
-  grnNumber       String   @unique
+  grnNumber       String    @unique
   vendorInvoiceNo String?
-  status          String   @default("RECEIVING") // RECEIVING, QC_PENDING, QC_FAILED, APPROVED, REJECTED
-  totalQty        Int      @default(0)
-  acceptedQty     Int      @default(0)
-  rejectedQty     Int      @default(0)
+  status          String    @default("RECEIVING") // RECEIVING, QC_PENDING, QC_FAILED, APPROVED, REJECTED
+  totalQty        Int       @default(0)
+  acceptedQty     Int       @default(0)
+  rejectedQty     Int       @default(0)
   notes           String?
   createdById     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  receivedAt      DateTime?
+  qcStartedAt     DateTime?
+  qcCompletedAt   DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
   asn           Asn?          @relation(fields: [asnId], references: [id])
@@ -575,49 +603,56 @@ model Grn {
 }
 
 model GrnItem {
-  id                 String    @id @default(uuid())
-  grnId              String
-  poItemId           String
-  skuId              String
-  expectedQty        Int       @default(0)
-  receivedQty        Int       @default(0)
-  acceptedQty        Int       @default(0)
-  rejectedQty        Int       @default(0)
-  qcStatus           String    @default("PENDING") // PENDING, PASSED, FAILED
-  qcNotes            String?
-  batchNo            String?
-  expiryDate         DateTime?
-  manufacturingDate  DateTime?
-  mrp                Decimal?  @default(0)
+  id                String    @id @default(uuid())
+  grnId             String
+  poItemId          String
+  skuId             String
+  expectedQty       Int       @default(0)
+  receivedQty       Int       @default(0)
+  acceptedQty       Int       @default(0)
+  rejectedQty       Int       @default(0)
+  qcStatus          String    @default("PENDING") // PENDING, PASSED, FAILED
+  qcNotes           String?
+  batchNo           String?
+  expiryDate        DateTime?
+  manufacturingDate DateTime?
+  receivedAt        DateTime?
+  qcAt              DateTime?
+  mrp               Decimal?  @default(0)
 
-  grn    Grn              @relation(fields: [grnId], references: [id])
+  grn    Grn               @relation(fields: [grnId], references: [id])
   poItem PurchaseOrderItem @relation(fields: [poItemId], references: [id])
-  sku    SkuMaster        @relation(fields: [skuId], references: [id])
+  sku    SkuMaster         @relation(fields: [skuId], references: [id])
 
   @@map("grn_items")
 }
 
 model PutawayTask {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   tenantId     String
   warehouseId  String
-  source       String   // PUTAWAY_GRN_ITEM, PUTAWAY_CANCELLED_ITEM, PUTAWAY_GATEPASS_ITEM, PUTAWAY_SHELF_TRANSFER, PUTAWAY_PICKLIST_ITEM, PUTAWAY_RECEIVED_RETURNS
-  sourceId     String?  // ID of the source record (grnId, gatepassId, orderId, etc.)
+  source       String // PUTAWAY_GRN_ITEM, PUTAWAY_CANCELLED_ITEM, PUTAWAY_GATEPASS_ITEM, PUTAWAY_SHELF_TRANSFER, PUTAWAY_PICKLIST_ITEM, PUTAWAY_RECEIVED_RETURNS
+  sourceId     String? // ID of the source record (grnId, gatepassId, orderId, etc.)
   grnId        String?
   skuId        String
-  expectedQty  Int      @default(0)
-  completedQty Int      @default(0)
-  status       String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  expectedQty  Int       @default(0)
+  completedQty Int       @default(0)
+  status       String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
   binId        String?
   createdById  String?
+  assignedTo   String?
+  assignedAt   DateTime?
+  startedAt    DateTime?
   completedAt  DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
-  warehouse Warehouse  @relation(fields: [warehouseId], references: [id])
-  grn       Grn?       @relation(fields: [grnId], references: [id])
-  sku       SkuMaster  @relation(fields: [skuId], references: [id])
+  warehouse Warehouse    @relation(fields: [warehouseId], references: [id])
+  grn       Grn?         @relation(fields: [grnId], references: [id])
+  sku       SkuMaster    @relation(fields: [skuId], references: [id])
   bin       BinLocation? @relation(fields: [binId], references: [id])
 
+  @@index([tenantId, status, createdAt])
+  @@index([warehouseId, status])
   @@map("putaway_tasks")
 }
 
@@ -630,27 +665,27 @@ model PurchaseOrderItem {
   receivedQty Int     @default(0)
   status      String  @default("PENDING")
 
-  po  PurchaseOrder @relation(fields: [poId], references: [id])
-  sku SkuMaster     @relation(fields: [skuId], references: [id])
-  grnItems          GrnItem[]
+  po       PurchaseOrder @relation(fields: [poId], references: [id])
+  sku      SkuMaster     @relation(fields: [skuId], references: [id])
+  grnItems GrnItem[]
 
   @@map("purchase_order_items")
 }
 
 model StockTransfer {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   tenantId        String
   fromWarehouseId String
   toWarehouseId   String
-  status          String   @default("DRAFT")
+  status          String    @default("DRAFT")
   notes           String?
   createdBy       String?
   receivedBy      String?
   receivedAt      DateTime?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
-  fromWarehouse Warehouse @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
-  toWarehouse   Warehouse @relation("TransferTo", fields: [toWarehouseId], references: [id])
+  fromWarehouse Warehouse           @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse           @relation("TransferTo", fields: [toWarehouseId], references: [id])
   items         StockTransferItem[]
   gatepasses    Gatepass[]
 
@@ -672,25 +707,30 @@ model StockTransferItem {
 }
 
 model PickWave {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
   warehouseId String
   name        String
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
+  status      String    @default("PENDING")
+  assignedTo  String?
+  assignedAt  DateTime?
+  startedAt   DateTime?
+  createdAt   DateTime  @default(now())
   completedAt DateTime?
 
-  warehouse Warehouse     @relation(fields: [warehouseId], references: [id])
+  warehouse Warehouse       @relation(fields: [warehouseId], references: [id])
   orders    PickWaveOrder[]
 
+  @@index([tenantId, status])
+  @@index([warehouseId, status])
   @@map("pick_waves")
 }
 
 model PickWaveOrder {
-  id        String @id @default(uuid())
-  waveId    String
-  orderId   String
-  status    String @default("PENDING")
+  id      String @id @default(uuid())
+  waveId  String
+  orderId String
+  status  String @default("PENDING")
 
   wave  PickWave @relation(fields: [waveId], references: [id])
   order Order    @relation(fields: [orderId], references: [id])
@@ -700,14 +740,14 @@ model PickWaveOrder {
 }
 
 model Manifest {
-  id              String             @id @default(uuid())
-  tenantId        String
-  manifestNumber  String             @unique
-  courierName     String
-  status          String             @default("OPEN") // OPEN, CLOSED
-  totalShipments  Int                @default(0)
-  closedAt        DateTime?
-  createdAt       DateTime           @default(now())
+  id             String    @id @default(uuid())
+  tenantId       String
+  manifestNumber String    @unique
+  courierName    String
+  status         String    @default("OPEN") // OPEN, CLOSED
+  totalShipments Int       @default(0)
+  closedAt       DateTime?
+  createdAt      DateTime  @default(now())
 
   shipments ManifestShipment[]
 
@@ -715,7 +755,7 @@ model Manifest {
 }
 
 model ManifestShipment {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   manifestId  String
   orderId     String
   awbNumber   String
@@ -729,31 +769,31 @@ model ManifestShipment {
 }
 
 model MarketplaceOrderMapping {
-  id              String   @id @default(uuid())
-  tenantId        String
-  marketplace     String   // NYKAA, MYNTRA, TATACLIQ
-  marketplaceOrderId String @unique
-  localOrderId    String   @unique
-  orderData       Json?
-  syncedAt        DateTime @default(now())
+  id                 String   @id @default(uuid())
+  tenantId           String
+  marketplace        String // NYKAA, MYNTRA, TATACLIQ
+  marketplaceOrderId String   @unique
+  localOrderId       String   @unique
+  orderData          Json?
+  syncedAt           DateTime @default(now())
 
   @@map("marketplace_order_mappings")
 }
 
 model Gatepass {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   tenantId        String
-  code            String   @unique
-  type            String   // STOCK_TRANSFER, INCOMING, RETURN, MANUAL
-  status          String   @default("PENDING") // PENDING, APPROVED, DISPATCHED, RECEIVED, CANCELLED
-  quantity        Int      @default(0)
+  code            String    @unique
+  type            String // STOCK_TRANSFER, INCOMING, RETURN, MANUAL
+  status          String    @default("PENDING") // PENDING, APPROVED, DISPATCHED, RECEIVED, CANCELLED
+  quantity        Int       @default(0)
   toParty         String?
   expectedDate    DateTime?
   notes           String?
   stockTransferId String?
   createdById     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   stockTransfer StockTransfer? @relation(fields: [stockTransferId], references: [id])
   createdBy     User?          @relation(fields: [createdById], references: [id])
@@ -783,80 +823,84 @@ model GatepassItem {
 }
 
 model PlatformIntegration {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   tenantId      String
-  name          String   // e.g. "Shopify", "Amazon", "Custom"
-  platform      String   // shopify, amazon, custom, flipkart, etc.
+  name          String // e.g. "Shopify", "Amazon", "Custom"
+  platform      String // shopify, amazon, custom, flipkart, etc.
   apiBaseUrl    String?
   apiKey        String?
   apiSecret     String?
   accessToken   String?
   webhookUrl    String?
-  syncInventory Boolean? @default(false)
-  syncOrders    Boolean? @default(false)
-  syncProducts  Boolean? @default(false)
-  isActive      Boolean  @default(true)
+  syncInventory Boolean?  @default(false)
+  syncOrders    Boolean?  @default(false)
+  syncProducts  Boolean?  @default(false)
+  isActive      Boolean   @default(true)
   lastSyncAt    DateTime?
-  config        Json?    // custom key-value pairs for flexible integrations
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  config        Json? // custom key-value pairs for flexible integrations
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([tenantId, name])
   @@map("platform_integrations")
 }
 
 model ReplenishmentTask {
-  id              String   @id @default(uuid())
-  tenantId        String
-  warehouseId     String?
-  skuId           String
-  fromBin         String?
-  toBin           String
-  quantity        Int
-  priority        String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
-  status          String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
-  assignedTo      String?
-  notes           String?
-  completedAt     DateTime?
-  completedBy     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String    @id @default(uuid())
+  tenantId    String
+  warehouseId String?
+  skuId       String
+  fromBin     String?
+  toBin       String
+  quantity    Int
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status      String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  assignedTo  String?
+  assignedAt  DateTime?
+  startedAt   DateTime?
+  notes       String?
+  completedAt DateTime?
+  completedBy String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   sku SkuMaster @relation(fields: [skuId], references: [id])
 
+  @@index([tenantId, status, createdAt])
+  @@index([assignedTo, status])
   @@map("replenishment_tasks")
 }
 
 model Asn {
-  id              String   @id @default(uuid())
-  tenantId        String
-  warehouseId     String?
-  asnNumber       String   @unique
-  supplierId      String?
-  supplierName    String?
-  expectedDate    DateTime?
-  status          String   @default("PENDING") // PENDING, PARTIAL, RECEIVED, CANCELLED
-  notes           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String    @id @default(uuid())
+  tenantId     String
+  warehouseId  String?
+  asnNumber    String    @unique
+  supplierId   String?
+  supplierName String?
+  expectedDate DateTime?
+  status       String    @default("PENDING") // PENDING, PARTIAL, RECEIVED, CANCELLED
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  items  AsnItem[]
-  grns   Grn[]
+  items AsnItem[]
+  grns  Grn[]
 
   @@map("asns")
 }
 
 model AsnItem {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   asnId       String
   skuId       String
-  expectedQty Int      @default(0)
-  receivedQty Int      @default(0)
+  expectedQty Int       @default(0)
+  receivedQty Int       @default(0)
   batchNo     String?
   expiryDate  DateTime?
 
   asn Asn       @relation(fields: [asnId], references: [id])
-  sku  SkuMaster @relation(fields: [skuId], references: [id])
+  sku SkuMaster @relation(fields: [skuId], references: [id])
 
   @@map("asn_items")
 }
@@ -866,13 +910,16 @@ model ProductivityLog {
   tenantId    String
   warehouseId String?
   userId      String?
-  activity    String   // PICKING, PACKING, PUTAWAY, GRN, CYCLE_COUNT
+  activity    String // PICKING, PACKING, PUTAWAY, GRN, CYCLE_COUNT
   entityType  String?
   entityId    String?
   quantity    Int      @default(0)
-  durationMin Int?     // time spent in minutes
+  durationMin Int? // time spent in minutes
   recordedAt  DateTime @default(now())
 
+  @@index([tenantId, recordedAt])
+  @@index([userId, activity, recordedAt])
+  @@index([warehouseId, activity, recordedAt])
   @@map("productivity_logs")
 }
 
@@ -882,10 +929,10 @@ model Lead {
   email         String
   company       String?
   phone         String?
-  monthlyOrders String?  // "<500", "500-1k", "1k-5k", "5k-25k", "25k+"
-  plan          String?  // starter | pro | enterprise
+  monthlyOrders String? // "<500", "500-1k", "1k-5k", "5k-25k", "25k+"
+  plan          String? // starter | pro | enterprise
   message       String?
-  source        String?  // marketing_site, demo_cta, plan_starter, etc.
+  source        String? // marketing_site, demo_cta, plan_starter, etc.
   referrer      String?
   status        String   @default("NEW") // NEW | CONTACTED | QUALIFIED | WON | LOST
   notes         String?
