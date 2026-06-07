@@ -169,12 +169,80 @@ const Leads = () => {
     if (digestSending) return;
     setDigestSending(true);
     try {
-      const res = await API.post('/leads/digest?hours=24');
-      const d = res.data?.sent;
-      if (res.data?.ok && d) {
-        toast.success(`Digest sent to sales@globalsupply.in — ${d.newCount} new, ${d.allOpen} open`);
+      // Fetch all leads (last 7d) for the digest body
+      const res = await API.get('/leads');
+      const all = Array.isArray(res.data) ? res.data : [];
+      const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const recent = all.filter(l => new Date(l.createdAt).getTime() > since);
+      const allOpen = all.filter(l => ['NEW', 'CONTACTED', 'QUALIFIED'].includes(l.status)).length;
+      const wonThisWeek = all.filter(l => l.status === 'WON' && new Date(l.createdAt).getTime() > since).length;
+
+      const escapeHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const planLabel = (p) => p ? ({ starter: 'Starter (₹2,999/mo)', pro: 'Pro (₹9,999/mo)', enterprise: 'Enterprise' })[p] || p : '—';
+      const subject = `SupplyHub leads digest — ${recent.length} new in last 7 days`;
+      const rowsHtml = recent.length === 0
+        ? '<tr><td colspan="4" style="padding:20px;text-align:center;color:#94A3B8;">No new leads in this period.</td></tr>'
+        : recent.map(l => `
+          <tr>
+            <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:600;color:#0F172A;">${escapeHtml(l.name)}</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;"><a href="mailto:${escapeHtml(l.email)}" style="color:#0D9488;">${escapeHtml(l.email)}</a></td>
+            <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#475569;">${escapeHtml(l.company || '—')}</td>
+            <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#475569;">${escapeHtml(planLabel(l.plan))}</td>
+          </tr>
+        `).join('');
+      const html = `
+        <div style="font-family:system-ui,-apple-system,sans-serif;max-width:640px;margin:0 auto;">
+          <div style="background:#0F172A;color:#fff;padding:20px 24px;border-radius:12px 12px 0 0;">
+            <div style="font-size:12px;opacity:0.7;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;margin-bottom:4px;">Weekly leads digest</div>
+            <div style="font-size:22px;font-weight:700;">${recent.length} new in last 7 days</div>
+            <div style="font-size:11px;opacity:0.7;margin-top:4px;">${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</div>
+          </div>
+          <div style="background:#fff;border:1px solid #E2E8F0;border-top:none;padding:0;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #E2E8F0;">
+              <div style="padding:16px;text-align:center;border-right:1px solid #E2E8F0;">
+                <div style="font-size:22px;font-weight:700;">${recent.length}</div>
+                <div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:600;margin-top:2px;">New (7d)</div>
+              </div>
+              <div style="padding:16px;text-align:center;border-right:1px solid #E2E8F0;">
+                <div style="font-size:22px;font-weight:700;color:#6366F1;">${allOpen}</div>
+                <div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:600;margin-top:2px;">Open pipeline</div>
+              </div>
+              <div style="padding:16px;text-align:center;">
+                <div style="font-size:22px;font-weight:700;color:#10B981;">${wonThisWeek}</div>
+                <div style="font-size:10px;color:#64748B;text-transform:uppercase;font-weight:600;margin-top:2px;">Won (7d)</div>
+              </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;">
+              <thead><tr style="background:#F8FAFC;">
+                <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;">Name</th>
+                <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;">Email</th>
+                <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;">Company</th>
+                <th style="text-align:left;padding:10px 12px;font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;">Plan</th>
+              </tr></thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      const w3fRes = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: 'f1c4903f-5c5d-4c8d-9dab-9a5badf3064e',
+          from_name: 'SupplyHub Leads',
+          subject,
+          html,
+          'New (7d)': String(recent.length),
+          'Open pipeline': String(allOpen),
+          'Won (7d)': String(wonThisWeek),
+        }),
+      });
+      const w3fJson = await w3fRes.json().catch(() => ({}));
+      if (w3fJson.success) {
+        toast.success(`Digest sent — ${recent.length} new, ${allOpen} open`);
       } else {
-        toast.error(res.data?.web3forms?.message || 'Digest failed to send');
+        toast.error(w3fJson.message || 'Digest failed');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Digest failed');

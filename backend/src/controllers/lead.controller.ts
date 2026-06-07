@@ -65,10 +65,9 @@ export const createLead = async (req: Request, res: Response) => {
     newValue: { name: name.trim(), email: email.toLowerCase(), company, plan, source },
   });
 
-  // Fire-and-forget email to sales; don't block the response
-  sendNewLeadEmail({ ...lead, name: name.trim(), email: email.toLowerCase(), company, plan, message, source, referrer: (req.headers.referer || req.headers.referrer || '').toString().slice(0, 500) || null, monthlyOrders, phone }).catch((e: any) => {
-    console.error('[lead] background email failed:', e?.message);
-  });
+  // Note: Email notifications are sent client-side from the landing form to Web3Forms
+  // (the free tier blocks server-side submissions). For server-side, set RESEND_API_KEY.
+  // See backend/src/services/leadEmail.service.ts for the ready-to-use Resend integration.
 
   res.status(201).json({ id: lead.id, message: 'Thanks! Our team will reach out within 24 hours.' });
 };
