@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   UserPlus, Search, Filter, Mail, Phone, Building2, MessageSquare,
   Clock, Tag, Loader2, X, Check, ChevronRight, TrendingUp, Users,
-  Calendar, ExternalLink, Copy, Inbox
+  Calendar, ExternalLink, Copy, Inbox, Send
 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -72,6 +72,7 @@ const Leads = () => {
   const [selected, setSelected] = useState(null);
   const [saving, setSaving] = useState(false);
   const [notes, setNotes] = useState('');
+  const [digestSending, setDigestSending] = useState(false);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -164,6 +165,22 @@ const Leads = () => {
     toast.success(`${filtered.length} leads exported`);
   };
 
+  const handleSendDigest = async () => {
+    if (digestSending) return;
+    setDigestSending(true);
+    try {
+      const res = await API.post('/leads/digest?hours=24');
+      const d = res.data?.sent;
+      if (res.data?.ok && d) {
+        toast.success(`Digest sent to sales@globalsupply.in — ${d.newCount} new, ${d.allOpen} open`);
+      } else {
+        toast.error(res.data?.web3forms?.message || 'Digest failed to send');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Digest failed');
+    } finally { setDigestSending(false); }
+  };
+
   if (!isPlatform) {
     return (
       <div className="p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
@@ -185,6 +202,10 @@ const Leads = () => {
           </h1>
           <p className="text-sm text-slate-500">Marketing site signups and demo requests</p>
         </div>
+        <button onClick={handleSendDigest} disabled={digestSending} className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+          {digestSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+          Send digest to sales
+        </button>
         <button onClick={handleExport} disabled={filtered.length === 0} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           <ExternalLink size={16} /> Export CSV
         </button>

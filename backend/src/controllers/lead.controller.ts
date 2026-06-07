@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import { logAudit } from '../services/audit.service';
+import { sendNewLeadEmail } from '../services/leadEmail.service';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VALID_VOLUMES = ['<500', '500-1k', '1k-5k', '5k-25k', '25k+'];
@@ -62,6 +63,11 @@ export const createLead = async (req: Request, res: Response) => {
     entityType: 'Lead',
     entityId: lead.id,
     newValue: { name: name.trim(), email: email.toLowerCase(), company, plan, source },
+  });
+
+  // Fire-and-forget email to sales; don't block the response
+  sendNewLeadEmail({ ...lead, name: name.trim(), email: email.toLowerCase(), company, plan, message, source, referrer: (req.headers.referer || req.headers.referrer || '').toString().slice(0, 500) || null, monthlyOrders, phone }).catch((e: any) => {
+    console.error('[lead] background email failed:', e?.message);
   });
 
   res.status(201).json({ id: lead.id, message: 'Thanks! Our team will reach out within 24 hours.' });
