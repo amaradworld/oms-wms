@@ -10,6 +10,8 @@ import GlobalSearch from './components/GlobalSearch';
 import OnboardingWizard from './components/OnboardingWizard';
 import Welcome from './components/Welcome';
 import AssistantBot from './components/AssistantBot';
+import HelpButton from './components/HelpButton';
+import { useGPrefix } from './hooks/useKeyboardShortcuts';
 import { useAuth } from './context/AuthContext';
 
 const Dashboard = lazy(() => import(/* webpackChunkName: "page-dashboard" */ './pages/Dashboard'));
@@ -116,6 +118,17 @@ const App = () => {
   const [detailId, setDetailIdState] = useState(initial.detailId);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useGPrefix({
+    d: () => setActiveTab('dashboard'),
+    o: () => setActiveTab('orders'),
+    i: () => setActiveTab('inventory'),
+    s: () => setActiveTab('scanning'),
+    p: () => setActiveTab('packing'),
+    w: () => setActiveTab('waves'),
+    r: () => setActiveTab('returns'),
+    ',': () => setActiveTab('settings'),
+  });
 
   const setActiveTab = (tab, entityId) => {
     setActiveTabState(tab);
@@ -283,6 +296,7 @@ const App = () => {
             </div>
           </div>
           <FacilitySelector />
+          <HelpButton onNavigate={setActiveTab} />
         </header>
         <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading…</div>}>
           {renderContent()}
