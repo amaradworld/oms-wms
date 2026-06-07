@@ -95,7 +95,6 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
           id: 'master-data', label: 'Master Data', icon: Package, group: true,
           children: [
             { id: 'sku-master', label: 'SKU Master', icon: Package },
-            { id: 'master-sku', label: 'Master SKU', icon: Package },
           ],
         },
         { id: 'integrations', label: 'Integrations', icon: Globe },
