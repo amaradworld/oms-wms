@@ -11,6 +11,7 @@ import OnboardingWizard from './components/OnboardingWizard';
 import Welcome from './components/Welcome';
 import AssistantBot from './components/AssistantBot';
 import HelpButton from './components/HelpButton';
+import BottomNav from './components/BottomNav';
 import { useGPrefix } from './hooks/useKeyboardShortcuts';
 import { useAuth } from './context/AuthContext';
 
@@ -265,7 +266,7 @@ const App = () => {
   return (
     <div className="flex min-h-screen">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-slate-50 pb-16 md:pb-0">
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center gap-3">
           <button onClick={() => setSidebarOpen(true)} className="md:hidden p-1.5 hover:bg-slate-100 rounded-lg" aria-label="Open menu">
             <Menu size={22} />
@@ -306,6 +307,7 @@ const App = () => {
       <GlobalSearch onNavigate={setActiveTab} />
       <AssistantBot onNavigate={setActiveTab} />
       <Welcome onNavigate={setActiveTab} />
+      <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 };
