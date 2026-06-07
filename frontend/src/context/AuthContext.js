@@ -6,8 +6,6 @@ const API = process.env.REACT_APP_API_URL;
 
 const FALLBACK_COMPANIES = [
   { id: 'tenant-1', name: 'InfiStyles', slug: 'infi' },
-  { id: 'tenant-2', name: 'Aria Fashion', slug: 'aria' },
-  { id: 'tenant-3', name: 'ZenCart', slug: 'zencart' },
   { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear' },
   { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
   { id: 'leosales-corporation', name: 'Leosales', slug: 'leosales' },
