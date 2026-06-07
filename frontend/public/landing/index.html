@@ -30,7 +30,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/landing/styles.css?v=2" />
+  <link rel="stylesheet" href="/landing/styles.css?v=3" />
 
   <script type="application/ld+json">
   {
@@ -169,12 +169,11 @@
       <nav class="nav">
         <a href="#features">Features</a>
         <a href="#how">How it works</a>
-        <a href="/pricing">Pricing</a>
-        <a href="/contact">Contact</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#contact">Contact</a>
       </nav>
       <div class="cta-group">
-        <a href="/app" class="btn btn-ghost">Sign in</a>
-        <a href="/app?signup=true" class="btn btn-primary">Start free</a>
+        <a href="#contact" class="btn btn-primary" data-lead-source="navbar" data-lead-plan="">Get started</a>
       </div>
     </div>
   </header>
@@ -187,11 +186,11 @@
         <h1>From order to doorstep, <span class="accent">one platform.</span></h1>
         <p class="lead">SupplyHub is a multi-tenant OMS + WMS that unifies your orders, inventory, picking, packing, and shipping across Nykaa, Myntra, TataCliq, Shopify, Amazon, and Flipkart — so your team can stop tab-switching and start scaling.</p>
         <div class="hero-cta">
-          <a href="/app?signup=true" class="btn btn-primary btn-lg">
-            Start 14-day free trial
+          <a href="#contact" class="btn btn-primary btn-lg" data-lead-source="cta_section" data-lead-plan="">
+            Get a walkthrough
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
           </a>
-          <a href="/contact?topic=demo" class="btn btn-secondary btn-lg">Book a demo</a>
+          <a href="mailto:sales@globalsupply.in" class="btn btn-secondary btn-lg">Email sales</a>
         </div>
         <div class="hero-trust">
           <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> No credit card required</span>
@@ -371,7 +370,7 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> 5 user seats</li>
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Email support</li>
           </ul>
-          <a href="/app?signup=true&plan=starter" class="btn btn-secondary">Start free trial</a>
+          <a href="#contact" class="btn btn-secondary" data-lead-source="plan_starter" data-lead-plan="starter">Talk to sales</a>
         </div>
         <div class="plan featured">
           <span class="plan-badge">Most popular</span>
@@ -387,7 +386,7 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Custom reports & API access</li>
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> WhatsApp notifications</li>
           </ul>
-          <a href="/app?signup=true&plan=pro" class="btn btn-primary">Start free trial</a>
+          <a href="#contact" class="btn btn-primary" data-lead-source="plan_pro" data-lead-plan="pro">Get a walkthrough</a>
         </div>
         <div class="plan">
           <h3>Enterprise</h3>
@@ -401,23 +400,88 @@
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> 99.9% SLA, 24/7 phone support</li>
             <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Custom integrations & on-prem option</li>
           </ul>
-          <a href="/contact?topic=enterprise" class="btn btn-secondary">Talk to sales</a>
+          <a href="#contact" class="btn btn-secondary" data-lead-source="plan_enterprise" data-lead-plan="enterprise">Talk to sales</a>
         </div>
       </div>
       <div class="pricing-cta-row">
-        <a href="/pricing" class="btn btn-ghost pricing-detail-link">See full comparison & FAQ →</a>
+        <a href="#contact" class="btn btn-ghost pricing-detail-link" data-lead-source="pricing_detail">See full comparison & FAQ →</a>
       </div>
     </div>
   </section>
 
-  <!-- CTA -->
-  <section class="cta">
+  <!-- CONTACT / LEAD FORM -->
+  <section class="contact" id="contact">
     <div class="container">
-      <h2>Ready to take control of your ops?</h2>
-      <p>Start your 14-day free trial. No credit card, no setup fees. Move your first order in under 30 minutes.</p>
-      <div class="hero-cta" style="justify-content: center;">
-        <a href="/app?signup=true" class="btn btn-primary btn-lg">Start free trial</a>
-        <a href="/contact?topic=demo" class="btn btn-secondary btn-lg">Book a demo</a>
+      <div class="contact-grid">
+        <div class="contact-left">
+          <div class="section-eyebrow">Talk to our team</div>
+          <h2>Ready to take control of your ops?</h2>
+          <p>Share a few details and our team will reach out within 24 hours to walk you through SupplyHub and tailor a setup for your warehouse.</p>
+          <ul class="contact-bullets">
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Live in under 30 minutes, with our help</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Personalised demo on your real SKUs and channels</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> No credit card. Move at your pace.</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg> Data stays in India (ap-south-1)</li>
+          </ul>
+        </div>
+        <div class="contact-right">
+          <form class="lead-form" id="lead-form" novalidate>
+            <div class="lf-row">
+              <label class="lf-field">
+                <span>Full name <em>*</em></span>
+                <input type="text" name="name" required maxlength="200" autocomplete="name" placeholder="Anita Sharma" />
+              </label>
+              <label class="lf-field">
+                <span>Work email <em>*</em></span>
+                <input type="email" name="email" required maxlength="200" autocomplete="email" placeholder="anita@yourbrand.in" />
+              </label>
+            </div>
+            <div class="lf-row">
+              <label class="lf-field">
+                <span>Company</span>
+                <input type="text" name="company" maxlength="200" autocomplete="organization" placeholder="Your Brand Pvt Ltd" />
+              </label>
+              <label class="lf-field">
+                <span>Phone (with country code)</span>
+                <input type="tel" name="phone" maxlength="50" autocomplete="tel" placeholder="+91 98765 43210" />
+              </label>
+            </div>
+            <div class="lf-row">
+              <label class="lf-field">
+                <span>Monthly orders</span>
+                <select name="monthlyOrders">
+                  <option value="">Select volume</option>
+                  <option value="<500">Less than 500</option>
+                  <option value="500-1k">500 - 1,000</option>
+                  <option value="1k-5k">1,000 - 5,000</option>
+                  <option value="5k-25k">5,000 - 25,000</option>
+                  <option value="25k+">25,000+</option>
+                </select>
+              </label>
+              <label class="lf-field">
+                <span>Plan of interest</span>
+                <select name="plan">
+                  <option value="">Not sure yet</option>
+                  <option value="starter">Starter (₹2,999/mo)</option>
+                  <option value="pro">Pro (₹9,999/mo)</option>
+                  <option value="enterprise">Enterprise (Custom)</option>
+                </select>
+              </label>
+            </div>
+            <label class="lf-field">
+              <span>What are you trying to solve? <em>(optional)</em></span>
+              <textarea name="message" maxlength="2000" rows="3" placeholder="Tell us a bit about your warehouse, channels, or pain points"></textarea>
+            </label>
+            <div class="lf-foot">
+              <button type="submit" class="btn btn-primary btn-lg" id="lead-submit">
+                <span class="lf-submit-text">Talk to our team</span>
+                <span class="lf-spinner" aria-hidden="true"></span>
+              </button>
+              <p class="lf-fine">By submitting, you agree to be contacted by GlobalSupply Technologies. We respect your inbox.</p>
+            </div>
+            <div class="lf-status" id="lead-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -438,7 +502,7 @@
           <ul>
             <li><a href="#features">Features</a></li>
             <li><a href="#pricing">Pricing</a></li>
-            <li><a href="/contact?topic=demo">Book demo</a></li>
+            <li><a href="#contact">Book demo</a></li>
             <li><a href="/changelog">Changelog</a></li>
           </ul>
         </div>
@@ -455,7 +519,7 @@
           <h4>Company</h4>
           <ul>
             <li><a href="/about">About</a></li>
-            <li><a href="/contact">Contact</a></li>
+            <li><a href="#contact">Contact</a></li>
             <li><a href="mailto:support@globalsupply.in">support@globalsupply.in</a></li>
             <li><a href="mailto:sales@globalsupply.in">sales@globalsupply.in</a></li>
           </ul>
@@ -464,6 +528,7 @@
       <div class="footer-bottom">
         <span>© 2026 GlobalSupply Technologies Pvt Ltd · Made in India 🇮🇳</span>
         <div class="legal">
+          <a href="/app">Customer login</a>
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
           <a href="/dpa">DPA</a>
@@ -486,10 +551,9 @@
       if (!a) return;
       var href = a.getAttribute('href') || '';
       var text = (a.textContent || '').trim().slice(0, 60);
-      if (href.indexOf('/app?signup') !== -1 || href.indexOf('signup=true') !== -1) {
-        gtag('event', 'free_trial_clicked', { cta_text: text, cta_location: 'marketing_' + window.location.pathname });
-      } else if (href.indexOf('topic=demo') !== -1) {
-        gtag('event', 'demo_requested', { cta_text: text, cta_location: 'marketing_' + window.location.pathname });
+      var leadSource = a.getAttribute('data-lead-source') || '';
+      if (leadSource) {
+        gtag('event', 'lead_cta_clicked', { cta_text: text, lead_source: leadSource, lead_plan: a.getAttribute('data-lead-plan') || '' });
       } else if (href.indexOf('/app') === 0) {
         gtag('event', 'signin_clicked', { cta_text: text, cta_location: 'marketing_' + window.location.pathname });
       } else if (href.indexOf('/pricing') === 0) {
@@ -497,6 +561,96 @@
       }
     });
   </script>
+
+  <!-- Lead form: open / prefill / submit -->
+  <script>
+    (function() {
+      var form = document.getElementById('lead-form');
+      var status = document.getElementById('lead-status');
+      var submitBtn = document.getElementById('lead-submit');
+      var sourceInput = null;
+      if (!form) return;
+      // Hidden source field is the plan-source we attach to the form so the controller can record it
+      var ensureSourceField = function() {
+        if (sourceInput) return sourceInput;
+        sourceInput = document.createElement('input');
+        sourceInput.type = 'hidden';
+        sourceInput.name = 'source';
+        form.appendChild(sourceInput);
+        return sourceInput;
+      };
+
+      var scrollToForm = function() {
+        var el = document.getElementById('contact');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
+      document.addEventListener('click', function(e) {
+        var a = e.target.closest('a[data-lead-source]');
+        if (!a) return;
+        e.preventDefault();
+        var src = a.getAttribute('data-lead-source') || 'marketing_site';
+        var plan = a.getAttribute('data-lead-plan') || '';
+        ensureSourceField().value = src;
+        var planSel = form.querySelector('select[name="plan"]');
+        if (planSel && plan) planSel.value = plan;
+        scrollToForm();
+        var nameField = form.querySelector('input[name="name"]');
+        if (nameField) setTimeout(function() { nameField.focus(); }, 600);
+        if (window.gtag) {
+          gtag('event', 'lead_form_opened', { lead_source: src, lead_plan: plan });
+        }
+      });
+
+      var setStatus = function(text, ok) {
+        status.textContent = text;
+        status.className = 'lf-status ' + (ok ? 'lf-ok' : 'lf-err');
+      };
+
+      var setLoading = function(loading) {
+        submitBtn.disabled = loading;
+        submitBtn.classList.toggle('is-loading', loading);
+      };
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (submitBtn.disabled) return;
+        var fd = new FormData(form);
+        var payload = {};
+        fd.forEach(function(v, k) { if (v !== '') payload[k] = v; });
+        if (!sourceInput) ensureSourceField();
+        if (!payload.source) payload.source = 'marketing_site';
+
+        setLoading(true);
+        setStatus('', null);
+        var API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? 'http://localhost:4000/api/leads'
+          : 'https://oms-wms.onrender.com/api/leads';
+
+        fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload),
+        }).then(function(r) {
+          return r.json().then(function(j) { return { ok: r.ok, j: j }; });
+        }).then(function(res) {
+          setLoading(false);
+          if (res.ok) {
+            setStatus('Thanks! Our team will reach out within 24 hours.', true);
+            form.reset();
+            if (window.gtag) gtag('event', 'lead_submitted', { lead_source: payload.source, lead_plan: payload.plan || '' });
+          } else {
+            setStatus(res.j.message || 'Something went wrong. Please try again or email sales@globalsupply.in.', false);
+            if (window.gtag) gtag('event', 'lead_submit_failed', { lead_source: payload.source, error: res.j.message || 'unknown' });
+          }
+        }).catch(function() {
+          setLoading(false);
+          setStatus('Network error. Please try again or email sales@globalsupply.in.', false);
+          if (window.gtag) gtag('event', 'lead_submit_failed', { lead_source: payload.source, error: 'network' });
+        });
+      });
+    })();
+  </script>
 </body>
 </html>
-<!-- build: 2026-06-07T00:48:48Z -->
+<!-- build: 2026-06-07T14:51:15Z -->
