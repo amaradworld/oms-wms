@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing — SupplyHub OMS & WMS for Indian Ecommerce</title>
+  <meta name="description" content="Transparent pricing for SupplyHub. Start free, grow into Pro, scale to Enterprise. Built for Indian D2C brands, marketplaces, and 3PLs." />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="GlobalSupply Technologies" />
+
+  <meta property="og:title" content="Pricing — SupplyHub" />
+  <meta property="og:description" content="Plans that scale with your order volume. From ₹2,999/month. No hidden fees, GST included." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://globalsupply.in/pricing" />
+  <meta property="og:site_name" content="SupplyHub by GlobalSupply" />
+  <meta property="og:image" content="https://globalsupply.in/og-image.png" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pricing — SupplyHub" />
+  <meta name="twitter:description" content="Plans that scale with your order volume. From ₹2,999/month. No hidden fees, GST included." />
+  <meta name="twitter:image" content="https://globalsupply.in/og-image.png" />
+
+  <meta name="theme-color" content="#0F172A" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="canonical" href="https://globalsupply.in/pricing" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/landing/styles.css" />
+  <link rel="stylesheet" href="/pricing/styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "SupplyHub",
+    "description": "Multi-tenant Order Management and Warehouse Management System for Indian ecommerce",
+    "brand": { "@type": "Brand", "name": "SupplyHub" },
+    "offers": [
+      { "@type": "Offer", "name": "Starter", "price": "2999", "priceCurrency": "INR", "category": "subscription", "availability": "https://schema.org/InStock" },
+      { "@type": "Offer", "name": "Pro", "price": "9999", "priceCurrency": "INR", "category": "subscription", "availability": "https://schema.org/InStock" },
+      { "@type": "Offer", "name": "Enterprise", "price": "0", "priceCurrency": "INR", "category": "subscription", "availability": "https://schema.org/InStock", "description": "Custom pricing" }
+    ]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "Is GST included in the price?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. All prices are exclusive of 18% GST, which is added at checkout. A GSTIN-backed tax invoice is issued." } },
+      { "@type": "Question", "name": "Can I switch plans later?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. You can upgrade or downgrade at any time. Upgrades are pro-rated; downgrades take effect at the end of the billing cycle." } },
+      { "@type": "Question", "name": "What happens if I exceed my order limit?", "acceptedAnswer": { "@type": "Answer", "text": "We do not block orders. We will notify you and recommend an upgrade. Excess usage is billed at the end of the cycle at the next-tier rate." } },
+      { "@type": "Question", "name": "Is there a free trial?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. The Starter plan is free for the first 14 days. No credit card required. You can downgrade to a free read-only tier after the trial." } },
+      { "@type": "Question", "name": "Where is my data stored?", "acceptedAnswer": { "@type": "Answer", "text": "All customer data is stored in AWS ap-south-1 (Mumbai). Backups are taken daily and retained for 30 days. Enterprise customers can opt for a dedicated VPC." } },
+      { "@type": "Question", "name": "Do you offer annual discounts?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. Annual billing gives you 2 months free (roughly 17% off). Enterprise contracts are custom." } }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <header class="lh-header">
+    <div class="lh-container lh-header-inner">
+      <a href="/" class="lh-logo">
+        <div class="lh-logo-mark">SH</div>
+        <div>
+          <div class="lh-logo-name">SupplyHub</div>
+          <div class="lh-logo-tag">by GlobalSupply</div>
+        </div>
+      </a>
+      <nav class="lh-nav">
+        <a href="/features">Features</a>
+        <a href="/pricing" class="active">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/blog">Blog</a>
+      </nav>
+      <div class="lh-header-cta">
+        <a href="/app" class="lh-btn lh-btn-ghost">Sign in</a>
+        <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="pp-hero">
+      <div class="lh-container">
+        <span class="pp-eyebrow">Pricing</span>
+        <h1 class="pp-h1">Pay for what you ship.<br/>Not for seats you'll never fill.</h1>
+        <p class="pp-sub">All plans include unlimited SKUs, barcode scanning, and GST-compliant invoicing. No setup fees. No hidden costs. Cancel anytime.</p>
+        <div class="pp-billing-toggle">
+          <button type="button" class="pp-toggle-btn active" data-billing="monthly">Monthly</button>
+          <button type="button" class="pp-toggle-btn" data-billing="annual">Annual <span class="pp-save-badge">Save 17%</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-tiers">
+      <div class="lh-container pp-tiers-grid">
+        <article class="pp-tier">
+          <header class="pp-tier-head">
+            <h2 class="pp-tier-name">Starter</h2>
+            <p class="pp-tier-tag">For brands just starting out</p>
+            <div class="pp-tier-price">
+              <span class="pp-currency">₹</span>
+              <span class="pp-amount" data-monthly="2999" data-annual="2499">2,999</span>
+              <span class="pp-period">/month</span>
+            </div>
+            <p class="pp-tier-billed" data-monthly="Billed monthly" data-annual="Billed annually, plus GST">Billed monthly, plus GST</p>
+            <a href="/app?signup=true&plan=starter" class="lh-btn lh-btn-secondary pp-tier-cta">Start 14-day free trial</a>
+          </header>
+          <ul class="pp-features">
+            <li><span class="pp-tick">✓</span> 1 warehouse</li>
+            <li><span class="pp-tick">✓</span> 1,000 orders/month</li>
+            <li><span class="pp-tick">✓</span> 3 marketplace integrations</li>
+            <li><span class="pp-tick">✓</span> 5 user seats</li>
+            <li><span class="pp-tick">✓</span> Barcode scanning & EPC tracking</li>
+            <li><span class="pp-tick">✓</span> GST-compliant invoicing</li>
+            <li><span class="pp-tick">✓</span> Email support (24h)</li>
+            <li class="pp-missing"><span class="pp-cross">×</span> No API access</li>
+            <li class="pp-missing"><span class="pp-cross">×</span> No SLA</li>
+          </ul>
+        </article>
+
+        <article class="pp-tier pp-tier-featured">
+          <div class="pp-tier-flag">Most popular</div>
+          <header class="pp-tier-head">
+            <h2 class="pp-tier-name">Pro</h2>
+            <p class="pp-tier-tag">For growing D2C & marketplaces</p>
+            <div class="pp-tier-price">
+              <span class="pp-currency">₹</span>
+              <span class="pp-amount" data-monthly="9999" data-annual="8333">9,999</span>
+              <span class="pp-period">/month</span>
+            </div>
+            <p class="pp-tier-billed" data-monthly="Billed monthly" data-annual="Billed annually, plus GST">Billed monthly, plus GST</p>
+            <a href="/app?signup=true&plan=pro" class="lh-btn lh-btn-primary pp-tier-cta">Start 14-day free trial</a>
+          </header>
+          <ul class="pp-features">
+            <li><span class="pp-tick">✓</span> Up to 5 warehouses</li>
+            <li><span class="pp-tick">✓</span> 10,000 orders/month</li>
+            <li><span class="pp-tick">✓</span> Unlimited marketplace integrations</li>
+            <li><span class="pp-tick">✓</span> 25 user seats</li>
+            <li><span class="pp-tick">✓</span> Barcode scanning & EPC tracking</li>
+            <li><span class="pp-tick">✓</span> GST-compliant invoicing & e-invoicing</li>
+            <li><span class="pp-tick">✓</span> Wave-based picking & packing</li>
+            <li><span class="pp-tick">✓</span> Full REST API access</li>
+            <li><span class="pp-tick">✓</span> Priority support (4h, business hours)</li>
+          </ul>
+        </article>
+
+        <article class="pp-tier">
+          <header class="pp-tier-head">
+            <h2 class="pp-tier-name">Enterprise</h2>
+            <p class="pp-tier-tag">For 3PLs & large ops</p>
+            <div class="pp-tier-price">
+              <span class="pp-amount pp-amount-custom">Custom</span>
+            </div>
+            <p class="pp-tier-billed">Volume-based, billed annually</p>
+            <a href="/contact?topic=demo" class="lh-btn lh-btn-secondary pp-tier-cta">Book a demo</a>
+          </header>
+          <ul class="pp-features">
+            <li><span class="pp-tick">✓</span> Unlimited warehouses & tenants</li>
+            <li><span class="pp-tick">✓</span> Unlimited orders</li>
+            <li><span class="pp-tick">✓</span> All marketplace & 3PL integrations</li>
+            <li><span class="pp-tick">✓</span> Unlimited seats</li>
+            <li><span class="pp-tick">✓</span> Dedicated VPC, ap-south-1</li>
+            <li><span class="pp-tick">✓</span> 99.9% uptime SLA</li>
+            <li><span class="pp-tick">✓</span> SSO, SCIM, audit logs</li>
+            <li><span class="pp-tick">✓</span> 24×7 phone & WhatsApp support</li>
+            <li><span class="pp-tick">✓</span> Named CSM & onboarding</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="pp-compare">
+      <div class="lh-container">
+        <h2 class="pp-h2">Compare plans in detail</h2>
+        <div class="pp-compare-wrap">
+          <table class="pp-table">
+            <thead>
+              <tr>
+                <th class="pp-th-feature">Feature</th>
+                <th>Starter</th>
+                <th class="pp-th-featured">Pro</th>
+                <th>Enterprise</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="pp-section"><td colspan="4">Core</td></tr>
+              <tr><td>Warehouses</td><td>1</td><td>5</td><td>Unlimited</td></tr>
+              <tr><td>Orders / month</td><td>1,000</td><td>10,000</td><td>Unlimited</td></tr>
+              <tr><td>User seats</td><td>5</td><td>25</td><td>Unlimited</td></tr>
+              <tr><td>SKUs</td><td>Unlimited</td><td>Unlimited</td><td>Unlimited</td></tr>
+              <tr><td>Bin-level inventory</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+
+              <tr class="pp-section"><td colspan="4">Operations</td></tr>
+              <tr><td>Barcode & EPC scanning</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Wave-based picking</td><td class="pp-no">—</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Packing station & labels</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>GRN & QC workflow</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Returns / RTO processing</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Multi-tenant (3PL mode)</td><td class="pp-no">—</td><td class="pp-no">—</td><td class="pp-yes">✓</td></tr>
+
+              <tr class="pp-section"><td colspan="4">Integrations</td></tr>
+              <tr><td>Marketplaces (Nykaa, Myntra, etc.)</td><td>3</td><td>Unlimited</td><td>Unlimited</td></tr>
+              <tr><td>Couriers (Delhivery, BlueDart, etc.)</td><td>2</td><td>All</td><td>All</td></tr>
+              <tr><td>Shopify, WooCommerce, custom</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>REST API access</td><td class="pp-no">—</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Webhooks</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+
+              <tr class="pp-section"><td colspan="4">Compliance & security</td></tr>
+              <tr><td>GST-compliant invoicing</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>E-invoicing (IRP)</td><td class="pp-no">—</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Audit logs</td><td class="pp-no">—</td><td class="pp-yes">✓</td><td class="pp-yes">✓</td></tr>
+              <tr><td>SSO (SAML / OIDC)</td><td class="pp-no">—</td><td class="pp-no">—</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Dedicated VPC</td><td class="pp-no">—</td><td class="pp-no">—</td><td class="pp-yes">✓</td></tr>
+
+              <tr class="pp-section"><td colspan="4">Support</td></tr>
+              <tr><td>Email</td><td>24h</td><td>4h, business hours</td><td>1h, 24×7</td></tr>
+              <tr><td>Phone & WhatsApp</td><td class="pp-no">—</td><td class="pp-no">—</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Named CSM</td><td class="pp-no">—</td><td class="pp-no">—</td><td class="pp-yes">✓</td></tr>
+              <tr><td>Uptime SLA</td><td class="pp-no">—</td><td>99.5%</td><td>99.9%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-faq">
+      <div class="lh-container pp-faq-inner">
+        <h2 class="pp-h2">Frequently asked questions</h2>
+        <div class="pp-faq-list">
+          <details class="pp-faq-item" open>
+            <summary>Is GST included in the price?</summary>
+            <p>All listed prices are exclusive of 18% GST, which is added at checkout. A GSTIN-backed tax invoice is issued. Enterprise customers can opt for reverse charge.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>Can I switch plans later?</summary>
+            <p>Yes. You can upgrade or downgrade at any time. Upgrades are pro-rated to the day; downgrades take effect at the end of the current billing cycle.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>What happens if I exceed my order limit?</summary>
+            <p>We do not block orders. We will notify you when you cross 80% of your monthly quota and recommend an upgrade. Excess usage is billed at the next-tier rate at the end of the cycle.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>Is there a free trial?</summary>
+            <p>Yes. The Starter plan is free for the first 14 days. No credit card required. After the trial, your data is preserved and you can choose to upgrade or move to a free read-only tier.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>Where is my data stored?</summary>
+            <p>All customer data is stored in AWS ap-south-1 (Mumbai region). Daily backups are taken and retained for 30 days. Enterprise customers can opt for a dedicated VPC within the same region.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>Do you offer annual discounts?</summary>
+            <p>Yes. Annual billing gives you 2 months free (roughly 17% off). Enterprise contracts are custom and typically run for 1-3 years.</p>
+          </details>
+          <details class="pp-faq-item">
+            <summary>What integrations are included?</summary>
+            <p>All plans include Shopify, WooCommerce, and our REST API. Pro and Enterprise add marketplaces (Nykaa, Myntra, TataCliq, Amazon, Flipkart) and couriers (Delhivery, BlueDart, DTDC, Ecom Express). Custom integrations are available on Enterprise.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="pp-cta">
+      <div class="lh-container pp-cta-inner">
+        <div>
+          <h2 class="pp-cta-h2">Still on spreadsheets?</h2>
+          <p class="pp-cta-sub">Migrate from Excel in under a day. Most teams are running their first wave pick within a week of signing up.</p>
+        </div>
+        <div class="pp-cta-actions">
+          <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+          <a href="/contact?topic=demo" class="lh-btn lh-btn-secondary lh-btn-on-dark">Book a demo</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lh-footer">
+    <div class="lh-container lh-footer-inner">
+      <div class="lh-footer-brand">
+        <div class="lh-logo-mark">SH</div>
+        <p>© 2026 GlobalSupply Technologies Pvt. Ltd. All rights reserved.</p>
+      </div>
+      <div class="lh-footer-cols">
+        <div>
+          <h4>Product</h4>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/changelog">Changelog</a>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/blog">Blog</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/security">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.pp-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const billing = btn.dataset.billing;
+        document.querySelectorAll('.pp-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.pp-amount').forEach(el => {
+          if (el.classList.contains('pp-amount-custom')) return;
+          el.textContent = Number(el.dataset[billing]).toLocaleString('en-IN');
+        });
+        document.querySelectorAll('.pp-tier-billed').forEach(el => {
+          el.textContent = el.dataset[billing];
+        });
+      });
+    });
+  </script>
+</body>
+</html>

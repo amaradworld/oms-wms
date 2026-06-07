@@ -2,7 +2,7 @@
   "rewrites": [
     { "source": "/landing", "destination": "/landing/index.html" },
     { "source": "/features", "destination": "/landing/index.html" },
-    { "source": "/pricing", "destination": "/landing/index.html" },
+    { "source": "/pricing", "destination": "/pricing/index.html" },
     { "source": "/about", "destination": "/landing/index.html" },
     { "source": "/contact", "destination": "/landing/index.html" },
     { "source": "/blog", "destination": "/landing/index.html" },
@@ -15,7 +15,13 @@
       "source": "/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "private, no-cache, no-store, must-revalidate" },
-        { "key": "CDN-Cache-Control", "value": "no-cache" }
+        { "key": "CDN-Cache-Control", "value": "no-cache" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=(), payment=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://oms-wms.onrender.com https://api.globalsupply.in; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" }
       ]
     },
     {
@@ -26,6 +32,12 @@
     },
     {
       "source": "/landing/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/pricing/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]

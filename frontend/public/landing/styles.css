@@ -228,6 +228,8 @@ h2 {
 /* ===== PRICING ===== */
 .pricing { background: var(--bg); }
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.pricing-cta-row { text-align: center; margin-top: 32px; }
+.pricing-detail-link { display: inline-block; }
 .plan {
   padding: 36px 32px; border: 1px solid var(--border); border-radius: var(--radius-lg);
   background: white; position: relative;

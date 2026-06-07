@@ -6,6 +6,7 @@ import { toast } from '../components/Toast';
 
 const LoginPage = () => {
   const { login, companies } = useAuth();
+  const showPlatformLogin = process.env.REACT_APP_SHOW_PLATFORM_LOGIN === 'true';
   const [step, setStep] = useState('company');
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [email, setEmail] = useState('');
@@ -217,7 +218,7 @@ const LoginPage = () => {
                   </button>
                 ))}
               </nav>
-              {!platformMode && (
+              {!platformMode && showPlatformLogin && (
                 <button onClick={() => { setPlatformMode(true); setStep('credentials'); setEmail(''); setPassword(''); }} className="w-full mt-4 pt-4 border-t border-slate-100 text-xs text-slate-400 hover:text-violet-600 text-center">
                   Platform Owner Login
                 </button>
