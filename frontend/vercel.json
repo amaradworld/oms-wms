@@ -13,7 +13,50 @@
     { "source": "/track/:trackingNumber", "destination": "/app/index.html" },
     { "source": "/track", "destination": "/app/index.html" },
     { "source": "/app", "destination": "/app/index.html" },
-    { "source": "/app/(.*)", "destination": "/app/index.html" }
+    { "source": "/app/login", "destination": "/app/index.html" },
+    { "source": "/app/dashboard", "destination": "/app/index.html" },
+    { "source": "/app/orders", "destination": "/app/index.html" },
+    { "source": "/app/orders/:id", "destination": "/app/index.html" },
+    { "source": "/app/inventory", "destination": "/app/index.html" },
+    { "source": "/app/scanning", "destination": "/app/index.html" },
+    { "source": "/app/picklist", "destination": "/app/index.html" },
+    { "source": "/app/packing", "destination": "/app/index.html" },
+    { "source": "/app/packing/:id", "destination": "/app/index.html" },
+    { "source": "/app/returns", "destination": "/app/index.html" },
+    { "source": "/app/warehouse", "destination": "/app/index.html" },
+    { "source": "/app/cycle-count", "destination": "/app/index.html" },
+    { "source": "/app/analytics", "destination": "/app/index.html" },
+    { "source": "/app/marketplace", "destination": "/app/index.html" },
+    { "source": "/app/purchase-orders", "destination": "/app/index.html" },
+    { "source": "/app/stock-transfer", "destination": "/app/index.html" },
+    { "source": "/app/wave-picking", "destination": "/app/index.html" },
+    { "source": "/app/wave-picking/:id", "destination": "/app/index.html" },
+    { "source": "/app/manifests", "destination": "/app/index.html" },
+    { "source": "/app/manifests/:id", "destination": "/app/index.html" },
+    { "source": "/app/ndr", "destination": "/app/index.html" },
+    { "source": "/app/courier-routing", "destination": "/app/index.html" },
+    { "source": "/app/inventory-alerts", "destination": "/app/index.html" },
+    { "source": "/app/gatepass", "destination": "/app/index.html" },
+    { "source": "/app/gatepass-order", "destination": "/app/index.html" },
+    { "source": "/app/integrations", "destination": "/app/index.html" },
+    { "source": "/app/grn", "destination": "/app/index.html" },
+    { "source": "/app/grn/:id", "destination": "/app/index.html" },
+    { "source": "/app/putaway", "destination": "/app/index.html" },
+    { "source": "/app/bin-locations", "destination": "/app/index.html" },
+    { "source": "/app/sku-history", "destination": "/app/index.html" },
+    { "source": "/app/sku-history/:id", "destination": "/app/index.html" },
+    { "source": "/app/parties", "destination": "/app/index.html" },
+    { "source": "/app/companies", "destination": "/app/index.html" },
+    { "source": "/app/settings", "destination": "/app/index.html" },
+    { "source": "/app/stock-expiry", "destination": "/app/index.html" },
+    { "source": "/app/replenishment", "destination": "/app/index.html" },
+    { "source": "/app/asn", "destination": "/app/index.html" },
+    { "source": "/app/productivity", "destination": "/app/index.html" },
+    { "source": "/app/batch-trace", "destination": "/app/index.html" },
+    { "source": "/app/mobile-scan", "destination": "/app/index.html" },
+    { "source": "/app/audit-logs", "destination": "/app/index.html" },
+    { "source": "/app/track/:trackingNumber", "destination": "/app/index.html" },
+    { "source": "/app/track", "destination": "/app/index.html" }
   ],
   "headers": [
     {
@@ -26,7 +69,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=(), payment=()" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://oms-wms.onrender.com https://api.globalsupply.in https://api.web3forms.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://api.web3forms.com;" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://oms-wms.onrender.com https://api.web3forms.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://api.web3forms.com;" }
       ]
     },
     {
@@ -38,37 +81,37 @@
     {
       "source": "/landing/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/pricing/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/features/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/about/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/contact/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     },
     {
       "source": "/blog/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     }
   ]

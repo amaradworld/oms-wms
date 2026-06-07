@@ -10,6 +10,8 @@ const FALLBACK_COMPANIES = [
   { id: 'tenant-3', name: 'ZenCart', slug: 'zencart' },
   { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear' },
   { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
+  { id: 'leosales-corporation', name: 'Leosales', slug: 'leosales' },
+  { id: 'coyu2', name: 'Listkart', slug: 'coyu2lyst' },
 ];
 
 export const COMPANIES = FALLBACK_COMPANIES;
