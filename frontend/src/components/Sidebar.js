@@ -91,6 +91,13 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
     {
       id: 'administration', label: 'Administration', icon: Settings, group: true,
       children: [
+        {
+          id: 'master-data', label: 'Master Data', icon: Package, group: true,
+          children: [
+            { id: 'sku-master', label: 'SKU Master', icon: Package },
+            { id: 'master-sku', label: 'Master SKU', icon: Package },
+          ],
+        },
         { id: 'integrations', label: 'Integrations', icon: Globe },
         { id: 'parties', label: 'Parties', icon: Building2 },
         { id: 'companies', label: 'Companies', icon: Globe },
