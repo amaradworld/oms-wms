@@ -10,7 +10,10 @@
     { "source": "/blog/warehouse-monday-numbers", "destination": "/blog/warehouse-monday-numbers/index.html" },
     { "source": "/changelog", "destination": "/landing/index.html" },
     { "source": "/", "destination": "/landing/index.html" },
-    { "source": "/(.*)", "destination": "/app/index.html" }
+    { "source": "/track/:trackingNumber", "destination": "/app/index.html" },
+    { "source": "/track", "destination": "/app/index.html" },
+    { "source": "/app", "destination": "/app/index.html" },
+    { "source": "/app/(.*)", "destination": "/app/index.html" }
   ],
   "headers": [
     {
@@ -23,7 +26,7 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=(), payment=()" },
         { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://oms-wms.onrender.com https://api.globalsupply.in https://api.web3forms.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://api.web3forms.com;" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://oms-wms.onrender.com https://api.globalsupply.in https://api.web3forms.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://api.web3forms.com;" }
       ]
     },
     {

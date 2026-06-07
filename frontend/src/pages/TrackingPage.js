@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Package, MapPin, Calendar, Truck } from 'lucide-react';
 import axios from 'axios';
 
@@ -10,17 +10,31 @@ const TrackingPage = () => {
 
   const API = process.env.REACT_APP_API_URL;
 
-  const track = async (e) => {
-    e.preventDefault();
-    if (!awb.trim()) return;
+  useEffect(() => {
+    const path = window.location.pathname;
+    const match = path.match(/^\/(?:app\/)?track\/([^/?#]+)/);
+    if (match) {
+      const awbFromUrl = decodeURIComponent(match[1]);
+      setAwb(awbFromUrl);
+      autoLookup(awbFromUrl);
+    }
+  }, []);
+
+  const autoLookup = async (awbToTrack) => {
     setLoading(true); setError(''); setData(null);
     try {
-      const { data: result } = await axios.get(`${API}/api/tracking/${awb.trim()}`);
+      const { data: result } = await axios.get(`${API}/api/tracking/${awbToTrack.trim()}`);
       setData(result);
     } catch {
       setError('No shipment found with this AWB number. Please check and try again.');
     }
     setLoading(false);
+  };
+
+  const track = async (e) => {
+    e.preventDefault();
+    if (!awb.trim()) return;
+    autoLookup(awb);
   };
 
   return (

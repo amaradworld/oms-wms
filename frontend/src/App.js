@@ -76,7 +76,7 @@ const roleAccess = {
   PACKER: ['dashboard','packing','scanning'],
 };
 
-const TAB_TO_HASH = {
+const TAB_TO_PATH = {
   dashboard:'dashboard', orders:'orders', inventory:'inventory', scanning:'scanning', 'audit-logs':'audit-logs',
   picklist:'picklist', packing:'packing', returns:'returns', warehouse:'warehouse',
   cyclecount:'cycle-count', analytics:'analytics', marketplace:'marketplace',
@@ -88,19 +88,28 @@ const TAB_TO_HASH = {
   'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan',
 };
 
-const HASH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_HASH).map(([k, v]) => [v, k]));
+const PATH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_PATH).map(([k, v]) => [v, k]));
 
-const parseHash = () => {
-  const raw = window.location.hash.replace(/^#\//, '');
-  const [tabPath, ...rest] = raw.split('?');
+const APP_PREFIX = '/app';
+
+const parsePath = () => {
+  const full = window.location.pathname || '/';
+  const stripped = full.startsWith(APP_PREFIX) ? full.slice(APP_PREFIX.length) : full;
+  const clean = stripped.replace(/^\/+/, '');
+  const [tabPath, ...rest] = clean.split('?');
   const params = new URLSearchParams(rest.join('?'));
-  return { tab: HASH_TO_TAB[tabPath] || 'dashboard', detailId: params.get('id') || '' };
+  return { tab: PATH_TO_TAB[tabPath] || 'dashboard', detailId: params.get('id') || '' };
+};
+
+const buildAppUrl = (tabPath, id) => {
+  const base = `${APP_PREFIX}/${tabPath}`;
+  return id ? `${base}?id=${encodeURIComponent(id)}` : base;
 };
 
 const App = () => {
   const { user, isAuthenticated, loading, getToken, selectedFacility, clearSelectedFacility } = useAuth();
   const role = user?.role || '';
-  const initial = parseHash();
+  const initial = parsePath();
   const [activeTab, setActiveTabState] = useState(initial.tab);
   const [detailId, setDetailIdState] = useState(initial.detailId);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -109,14 +118,24 @@ const App = () => {
   const setActiveTab = (tab, entityId) => {
     setActiveTabState(tab);
     setDetailIdState(entityId || '');
-    const hash = TAB_TO_HASH[tab];
-    if (hash) window.location.hash = entityId ? `#/${hash}?id=${entityId}` : `#/${hash}`;
+    const path = TAB_TO_PATH[tab];
+    if (path) {
+      const url = buildAppUrl(path, entityId);
+      if (window.location.pathname + window.location.search !== url) {
+        window.history.pushState({}, '', url);
+      }
+    }
   };
 
   const setDetailId = (id) => {
     setDetailIdState(id || '');
-    const hash = TAB_TO_HASH[activeTab];
-    if (hash) window.location.hash = id ? `#/${hash}?id=${id}` : `#/${hash}`;
+    const path = TAB_TO_PATH[activeTab];
+    if (path) {
+      const url = buildAppUrl(path, id);
+      if (window.location.pathname + window.location.search !== url) {
+        window.history.replaceState({}, '', url);
+      }
+    }
   };
 
   useEffect(() => {
@@ -125,17 +144,17 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    const onHashChange = () => {
-      const { tab, detailId: id } = parseHash();
+    const onPopState = () => {
+      const { tab, detailId: id } = parsePath();
       if (tab) { setActiveTabState(tab); setDetailIdState(id); }
-      trackPageView(window.location.hash || '#/dashboard', tab);
+      trackPageView(window.location.pathname || '/app/dashboard', tab);
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   useEffect(() => {
-    trackPageView(window.location.hash || '#/dashboard', activeTab);
+    trackPageView(window.location.pathname || '/app/dashboard', activeTab);
   }, [activeTab]);
 
   useEffect(() => {
@@ -169,9 +188,14 @@ const App = () => {
   }
 
   if (!isAuthenticated) {
-    const hashTab = HASH_TO_TAB[window.location.hash.replace('#/', '')];
-    if (hashTab) setActiveTab(hashTab);
+    if (window.location.pathname.startsWith('/track/') || window.location.pathname === '/track') {
+      return <TrackingPage />;
+    }
     return <LoginPage />;
+  }
+
+  if (window.location.pathname.startsWith('/track/') || window.location.pathname === '/track') {
+    return <TrackingPage />;
   }
 
   if (showOnboarding) {
