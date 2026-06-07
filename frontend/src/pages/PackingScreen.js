@@ -4,6 +4,7 @@ import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { track, trackFirst } from '../utils/analytics';
 
 const COURIERS = ['Delhivery', 'Shiprocket', 'BlueDart', 'XpressBees', 'FedEx'];
 
@@ -147,6 +148,7 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     setPrintingLabel(order.id);
     try {
       const res = await API.post('/labels/generate-shipping', { orderId: order.id }, { responseType: 'blob' });
+      track('shipping_label_printed', { order_id: order.id, is_reprint: true });
       const url = URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       a.href = url;
@@ -164,6 +166,7 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     setGeneratingAWB(true);
     try {
       const res = await API.post('/courier/generate-awb', { orderId: selectedOrder.id, courier: selectedCourier });
+      trackFirst('pack', 'awb_generated', { order_id: selectedOrder.id, courier: selectedCourier });
       setGeneratedAWB(res.data.awb);
       toast.success(`AWB ${res.data.awb} generated`);
     } catch (err) {
@@ -176,6 +179,7 @@ const PackingScreen = ({ detailId, setDetailId }) => {
     setPrintingLabel(selectedOrder.id);
     try {
       const res = await API.post('/labels/generate-shipping', { orderId: selectedOrder.id }, { responseType: 'blob' });
+      trackFirst('pack', 'shipping_label_printed', { order_id: selectedOrder.id });
       const url = URL.createObjectURL(new Blob([res.data]));
       const a = document.createElement('a');
       a.href = url;

@@ -4,6 +4,7 @@ import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import Skeleton from '../components/Skeleton';
+import { track, trackFirst } from '../utils/analytics';
 
 const STATUS_BADGE = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -63,6 +64,7 @@ const WavePicking = () => {
         name,
         orderIds: selectedOrders,
       });
+      trackFirst('wave', 'wave_created', { order_count: selectedOrders.length });
       toast.success(`Wave "${name || `Wave-${Date.now()}`}" created`);
       setShowCreate(false); setName(''); setSelectedOrders([]);
       loadWaves();
@@ -111,6 +113,7 @@ const WavePicking = () => {
         skuCode: scanInput.trim(),
         orderId: scanOrderId,
       });
+      trackFirst('wave', 'wave_item_scanned', { wave_id: expanded, order_id: scanOrderId });
       toast.success(data.message);
       const refreshed = await API.get(`/waves/${expanded}/orders`);
       setWaveOrders(refreshed.data);
@@ -128,6 +131,7 @@ const WavePicking = () => {
   const handleConfirmShortPick = async (orderId) => {
     try {
       await API.post(`/waves/${expanded}/confirm-order`, { orderId });
+      track('wave_short_pick_confirmed', { wave_id: expanded, order_id: orderId });
       toast.success('Short pick confirmed — order moved to PACKING');
       const refreshed = await API.get(`/waves/${expanded}/orders`);
       setWaveOrders(refreshed.data);

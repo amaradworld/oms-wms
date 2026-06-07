@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, Package, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
+import { track, trackFirst } from '../utils/analytics';
 
 const STEPS = ['Company', 'Warehouse', 'Products', 'Done'];
 
@@ -27,13 +28,19 @@ const OnboardingWizard = ({ onComplete, getToken }) => {
     try {
       if (warehouse.name) {
         const { data: wh } = await axios.post(`${API}/api/warehouses`, warehouse, headers());
-          for (const p of products) {
-            if (!p.skuCode) continue;
-            const payload = { skuCode: p.skuCode, name: p.name };
-            if (p.epcCode) payload.epcCode = p.epcCode;
-            const { data: sku } = await axios.post(`${API}/api/skus`, payload, headers());
+        trackFirst('warehouse', 'warehouse_created', { source: 'onboarding_wizard', city: warehouse.city });
+        for (const p of products) {
+          if (!p.skuCode) continue;
+          const payload = { skuCode: p.skuCode, name: p.name };
+          if (p.epcCode) payload.epcCode = p.epcCode;
+          const { data: sku } = await axios.post(`${API}/api/skus`, payload, headers());
+          trackFirst('sku', 'sku_created', { source: 'onboarding_wizard' });
           await axios.post(`${API}/api/inventory`, { skuId: sku.id, warehouseId: wh.id, quantityAvailable: Number(p.qty) }, headers());
         }
+        track('onboarding_completed', {
+          warehouse_count: 1,
+          sku_count: products.filter(p => p.skuCode).length,
+        });
       }
       onComplete();
     } catch (e) { console.error(e); }

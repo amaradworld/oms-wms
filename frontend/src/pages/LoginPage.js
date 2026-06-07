@@ -3,6 +3,7 @@ import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield } from 'l
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import { track, setUserProperties } from '../utils/analytics';
 
 const LoginPage = () => {
   const { login, companies } = useAuth();
@@ -65,13 +66,18 @@ const LoginPage = () => {
         return;
       }
 
+      const companyData = platformMode
+        ? { id: '__platform__', name: 'Platform', slug: 'platform' }
+        : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug };
       login(
-        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
-        platformMode ? { id: '__platform__', name: 'Platform', slug: 'platform' } : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
+        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId, id: res.data.userId },
+        companyData,
         res.data.token
       );
+      track('login_completed', { method: 'credentials', mfa: false, role: res.data.role });
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials');
+      track('login_failed', { error_message: err.response?.data?.message || 'invalid_credentials' });
     } finally { setSubmitting(false); }
   };
 
@@ -86,13 +92,18 @@ const LoginPage = () => {
         token: totpCode,
       });
 
+      const companyData = platformMode
+        ? { id: '__platform__', name: 'Platform', slug: 'platform' }
+        : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug };
       login(
-        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId },
-        platformMode ? { id: '__platform__', name: 'Platform', slug: 'platform' } : { id: selectedCompany.id, name: selectedCompany.name, slug: selectedCompany.slug },
+        { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId, id: res.data.userId },
+        companyData,
         res.data.token
       );
+      track('login_completed', { method: 'credentials', mfa: true, role: res.data.role });
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid code');
+      track('login_failed', { stage: 'mfa', error_message: err.response?.data?.message || 'invalid_mfa' });
     } finally { setSubmitting(false); }
   };
 
@@ -105,6 +116,7 @@ const LoginPage = () => {
       const res = await API.post('/auth/forgot-password', { email });
       setResetSent(true);
       toast.success('Reset code sent to your email');
+      track('password_reset_requested');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send reset code');
     } finally { setSubmitting(false); }
@@ -120,6 +132,7 @@ const LoginPage = () => {
     try {
       await API.post('/auth/reset-password', { email, code: resetCode, newPassword: resetNewPassword });
       toast.success('Password reset successfully. Sign in with your new password.');
+      track('password_reset_completed');
       setStep('credentials');
       setResetCode('');
       setResetNewPassword('');

@@ -23,6 +23,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DNG7EHNNFX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DNG7EHNNFX', { send_page_view: false });
+    gtag('event', 'page_view', { page_title: document.title, page_location: window.location.href, page_path: window.location.pathname });
+  </script>
   <link rel="stylesheet" href="/landing/styles.css" />
   <link rel="stylesheet" href="/landing/pages.css" />
   <link rel="stylesheet" href="/contact/styles.css" />
@@ -180,10 +189,12 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const formData = new FormData(form);
+      const topic = formData.get('topic') || 'other';
       const submit = form.querySelector('.ct-submit');
       const orig = submit.textContent;
       submit.disabled = true;
       submit.textContent = 'Sending…';
+      if (typeof gtag === 'function') gtag('event', 'contact_form_submit_attempted', { topic: topic });
       try {
         const res = await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
@@ -191,14 +202,21 @@
         });
         const data = await res.json();
         if (data.success) {
+          if (typeof gtag === 'function') {
+            gtag('event', 'contact_form_submitted', { topic: topic });
+            if (topic === 'demo') gtag('event', 'demo_requested', { source: 'contact_form' });
+            if (topic === 'pricing') gtag('event', 'pricing_inquiry', { source: 'contact_form' });
+          }
           result.className = 'ct-result ct-result-success';
           result.textContent = 'Thanks! Your message is on its way. We\'ll be in touch within 4 business hours.';
           form.reset();
         } else {
+          if (typeof gtag === 'function') gtag('event', 'contact_form_failed', { topic: topic, reason: data.message || 'unknown' });
           result.className = 'ct-result ct-result-error';
           result.textContent = 'Something went wrong: ' + (data.message || 'Please email us directly.');
         }
       } catch (err) {
+        if (typeof gtag === 'function') gtag('event', 'contact_form_failed', { topic: topic, reason: 'network_error' });
         result.className = 'ct-result ct-result-error';
         result.textContent = 'Network error. Please email us at sales@globalsupply.in directly.';
       } finally {

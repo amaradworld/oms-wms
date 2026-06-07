@@ -311,9 +311,16 @@
   </footer>
 
   <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DNG7EHNNFX', { send_page_view: false });
+    gtag('event', 'page_view', { page_title: document.title, page_location: window.location.href, page_path: window.location.pathname });
+
     document.querySelectorAll('.pp-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const billing = btn.dataset.billing;
+        gtag('event', 'pricing_billing_toggle', { billing_cycle: billing });
         document.querySelectorAll('.pp-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
         document.querySelectorAll('.pp-amount').forEach(el => {
           if (el.classList.contains('pp-amount-custom')) return;
@@ -323,6 +330,29 @@
           el.textContent = el.dataset[billing];
         });
       });
+    });
+
+    document.querySelectorAll('.pp-faq-item').forEach(item => {
+      item.addEventListener('toggle', () => {
+        if (item.open) {
+          const q = (item.querySelector('summary')?.textContent || '').trim();
+          gtag('event', 'faq_open', { question: q.slice(0, 80) });
+        }
+      });
+    });
+
+    document.addEventListener('click', function(e) {
+      var a = e.target.closest('a');
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      var text = (a.textContent || '').trim().slice(0, 60);
+      if (href.indexOf('signup=true&plan=') !== -1) {
+        gtag('event', 'free_trial_clicked', { cta_text: text, plan: (href.match(/plan=([^&]+)/) || [])[1] || 'unknown' });
+      } else if (href.indexOf('topic=demo') !== -1) {
+        gtag('event', 'demo_requested', { cta_text: text, source: '/pricing' });
+      } else if (href.indexOf('/app') === 0) {
+        gtag('event', 'signin_clicked', { cta_text: text, source: '/pricing' });
+      }
     });
   </script>
 </body>

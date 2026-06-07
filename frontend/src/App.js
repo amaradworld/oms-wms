@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import axios from 'axios';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
+import { trackPageView } from './utils/analytics';
 import { toast } from './components/Toast';
 import ToastContainer from './components/Toast';
 import Sidebar from './components/Sidebar';
@@ -127,10 +128,15 @@ const App = () => {
     const onHashChange = () => {
       const { tab, detailId: id } = parseHash();
       if (tab) { setActiveTabState(tab); setDetailIdState(id); }
+      trackPageView(window.location.hash || '#/dashboard', tab);
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
+
+  useEffect(() => {
+    trackPageView(window.location.hash || '#/dashboard', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     if (role === 'PLATFORM_ADMIN' && activeTab === 'dashboard') setActiveTab('companies');

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
+import { trackFirst } from '../utils/analytics';
 
 const statusColors = {
   RECEIVING: 'bg-blue-100 text-blue-700',
@@ -75,6 +76,7 @@ const Grn = ({ detailId, setDetailId }) => {
     if (!receiveItems.some(i => i.receivedQty > 0)) return toast.error('Enter at least one item qty');
     setSubmitting(true);
     try {
+      const itemCount = receiveItems.filter(i => i.receivedQty > 0).length;
       await API.post('/grn', {
         poId: selectedPo.id,
         vendorInvoiceNo,
@@ -89,6 +91,7 @@ const Grn = ({ detailId, setDetailId }) => {
           mrp: i.mrp ? Number(i.mrp) : undefined,
         })),
       });
+      trackFirst('grn', 'grn_created', { po_id: selectedPo.id, item_count: itemCount });
       toast.success('GRN created');
       setShowReceiveModal(false);
       setSelectedPo(null);

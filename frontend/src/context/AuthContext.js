@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { track, setUserId, setUserProperties, clearUser } from '../utils/analytics';
 
 const API = process.env.REACT_APP_API_URL;
 
@@ -54,9 +55,18 @@ export const AuthProvider = ({ children }) => {
     setTenantId(tenant);
     localStorage.setItem('token', token);
     localStorage.setItem('auth', JSON.stringify({ user: userData, company: companyData, tenantId: tenant }));
+    if (userData?.id) setUserId(userData.id);
+    setUserProperties({
+      user_role: userData?.role || 'unknown',
+      tenant_id: tenant || 'unknown',
+      tenant_slug: companyData?.slug || 'unknown',
+    });
+    track('login', { method: userData?.role === 'PLATFORM_ADMIN' ? 'platform' : 'tenant' });
   };
 
   const logout = () => {
+    track('logout');
+    clearUser();
     setUser(null);
     setCompany(null);
     setTenantId(null);

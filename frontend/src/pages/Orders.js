@@ -6,6 +6,7 @@ import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import { track, trackFirst } from '../utils/analytics';
 
 const statusColors = {
   PENDING: 'bg-amber-100 text-amber-700',
@@ -360,13 +361,15 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
     }
     setCreating(true);
     try {
+      const source = form.source || 'MANUAL';
       await API.post('/orders', {
         ...form,
         orderDate: form.orderDate ? new Date(form.orderDate).toISOString() : null,
-        source: form.source || 'MANUAL',
+        source,
         items: items.map(i => ({ skuId: i.skuId, quantity: i.quantity, unitPrice: i.unitPrice, mrp: i.mrp, discountAmount: i.discountAmount })),
         orderAmount: payable,
       });
+      trackFirst('order', 'order_created', { source, item_count: items.length, amount: payable });
       toast.success('Manual order created');
       onSuccess();
     } catch (err) {

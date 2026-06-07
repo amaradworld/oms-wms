@@ -23,6 +23,24 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DNG7EHNNFX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DNG7EHNNFX', { send_page_view: false });
+    gtag('event', 'page_view', { page_title: document.title, page_location: window.location.href, page_path: window.location.pathname });
+
+    document.addEventListener('click', function(e) {
+      var a = e.target.closest('a');
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      var text = (a.textContent || '').trim().slice(0, 60);
+      if (href.indexOf('signup=true') !== -1) gtag('event', 'free_trial_clicked', { cta_text: text, source: '/blog' });
+      else if (href.indexOf('topic=demo') !== -1) gtag('event', 'demo_requested', { cta_text: text, source: '/blog' });
+    });
+  </script>
   <link rel="stylesheet" href="/landing/styles.css" />
   <link rel="stylesheet" href="/landing/pages.css" />
   <link rel="stylesheet" href="/blog/styles.css" />
