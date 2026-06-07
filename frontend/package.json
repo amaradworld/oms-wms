@@ -2,6 +2,7 @@
   "name": "oms-wms-frontend",
   "version": "0.1.0",
   "private": true,
+  "homepage": "/app/",
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
     "axios": "^1.6.0",
@@ -18,7 +19,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "cross-env CI=false react-scripts build",
+    "build": "cross-env CI=false react-scripts build && node scripts/postbuild.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
