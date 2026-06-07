@@ -84,6 +84,29 @@
     }
   }
   </script>
+
+  <script>
+    (function() {
+      var host = window.location.hostname;
+      var parts = host.split('.');
+      var sub = parts.length >= 3 ? parts[0] : '';
+      var KNOWN = {leosales:'Leosales',coyu2lyst:'Listkart',primewear:'PrimeWear',ecothreads:'EcoThreads',infi:'InfiStyles',platform:'Platform'};
+      var appLink = document.querySelector('.cta-group a[href="/app"]');
+      var trialLink = document.querySelector('.cta-group a[href="/app?signup=true"]');
+      if (sub && KNOWN[sub] && sub !== 'platform' && appLink) {
+        appLink.textContent = 'Sign in to ' + KNOWN[sub];
+        if (trialLink) trialLink.textContent = 'Go to ' + KNOWN[sub] + ' dashboard';
+      } else if (sub === 'platform' && appLink) {
+        appLink.textContent = 'Platform admin sign in';
+        if (trialLink) trialLink.style.display = 'none';
+      }
+      if (sub && KNOWN[sub]) {
+        document.querySelectorAll('.js-tenant-url').forEach(function(el){
+          el.textContent = sub + '.globalsupply.in';
+        });
+      }
+    })();
+  </script>
 </head>
 <body>
   <!-- HEADER -->

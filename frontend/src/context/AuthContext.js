@@ -98,6 +98,12 @@ export const AuthProvider = ({ children }) => {
     return null;
   };
 
+  const isOnCompanySubdomain = () => {
+    const sub = detectSubdomain();
+    if (!sub || sub === 'platform' || sub === 'app') return false;
+    return findCompanyBySubdomain(sub) !== null;
+  };
+
   const findCompanyBySubdomain = (subdomain) => {
     if (!subdomain) return null;
     return companies.find(c => c.slug === subdomain) || null;
@@ -106,7 +112,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, company, tenantId, loading, login, logout,
-      detectSubdomain, findCompanyBySubdomain, companies, refreshCompanies: fetchCompanies,
+      detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
     }}>

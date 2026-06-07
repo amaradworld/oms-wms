@@ -24,22 +24,30 @@ const LoginPage = () => {
   const [resetToken, setResetToken] = useState('');
   const [resetSent, setResetSent] = useState(false);
 
-  const getSubdomainCompany = () => {
+  const getSubdomainInfo = () => {
     const host = window.location.hostname;
     const parts = host.split('.');
-    if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'localhost') {
-      return companies.find(c => c.slug === parts[0]) || null;
+    if (parts.length < 3 || parts[0] === 'www' || host === 'localhost' || host.startsWith('127.0.0.1') || host.startsWith('192.168.')) {
+      return { type: 'root' };
     }
-    return null;
+    const sub = parts[0];
+    if (sub === 'platform') return { type: 'platform' };
+    if (sub === 'app') return { type: 'app-marketing' };
+    const company = companies.find(c => c.slug === sub) || null;
+    return { type: company ? 'company' : 'unknown', sub, company };
   };
 
   useEffect(() => {
-    const company = getSubdomainCompany();
-    if (company) {
-      setSelectedCompany(company);
+    if (companies.length === 0) return;
+    const info = getSubdomainInfo();
+    if (info.type === 'company' && info.company) {
+      setSelectedCompany(info.company);
+      setStep('credentials');
+    } else if (info.type === 'platform' && showPlatformLogin) {
+      setPlatformMode(true);
       setStep('credentials');
     }
-  }, [companies]);
+  }, [companies, showPlatformLogin]);
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);
@@ -213,6 +221,11 @@ const LoginPage = () => {
                 <h2 className="text-xl font-bold">Select Your Company</h2>
                 <p className="text-sm text-slate-500 mt-1">Choose your organization to continue</p>
               </div>
+              {getSubdomainInfo().type === 'unknown' && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                  We don&apos;t recognize <span className="font-mono font-semibold">{getSubdomainInfo().sub}.{baseDomain}</span>. Pick your company below or contact support.
+                </div>
+              )}
               <nav aria-label="Company selection" className="space-y-3">
                 {companies.filter(c => c.isActive !== false).map((c) => (
                   <button
@@ -295,7 +308,7 @@ const LoginPage = () => {
                   <button type="button" onClick={() => { setPlatformMode(false); setStep('company'); }} className="text-xs text-amber-600 hover:underline mt-1">
                     Back to company login
                   </button>
-                ) : !getSubdomainCompany() && (
+                ) : getSubdomainInfo().type !== 'company' && !platformMode && (
                   <button type="button" onClick={() => setStep('company')} className="text-xs text-violet-600 hover:underline mt-1">
                     Change company
                   </button>
