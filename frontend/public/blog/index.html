@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog — SupplyHub | Operations, Tech, and Indian Ecommerce</title>
+  <meta name="description" content="Articles on warehouse operations, order management, marketplace integrations, GST compliance, and the technology behind Indian ecommerce. Written by the SupplyHub team." />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Blog — SupplyHub" />
+  <meta property="og:description" content="Operations, tech, and Indian ecommerce — from the SupplyHub team." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://globalsupply.in/blog" />
+  <meta property="og:image" content="https://globalsupply.in/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <meta name="theme-color" content="#0F172A" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="canonical" href="https://globalsupply.in/blog" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/landing/styles.css" />
+  <link rel="stylesheet" href="/landing/pages.css" />
+  <link rel="stylesheet" href="/blog/styles.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "SupplyHub Blog",
+    "url": "https://globalsupply.in/blog",
+    "description": "Operations, tech, and Indian ecommerce — from the SupplyHub team.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "GlobalSupply Technologies",
+      "logo": { "@type": "ImageObject", "url": "https://globalsupply.in/logo.png" }
+    }
+  }
+  </script>
+</head>
+<body>
+  <header class="lh-header">
+    <div class="lh-container lh-header-inner">
+      <a href="/" class="lh-logo">
+        <div class="lh-logo-mark">SH</div>
+        <div>
+          <div class="lh-logo-name">SupplyHub</div>
+          <div class="lh-logo-tag">by GlobalSupply</div>
+        </div>
+      </a>
+      <nav class="lh-nav">
+        <a href="/features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/blog" class="active">Blog</a>
+      </nav>
+      <div class="lh-header-cta">
+        <a href="/app" class="lh-btn lh-btn-ghost">Sign in</a>
+        <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="lh-container">
+        <span class="eyebrow">Blog</span>
+        <h1>Notes from the floor</h1>
+        <p>Operations, technology, and Indian ecommerce — written by the team building SupplyHub and the warehouse teams using it.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="lh-container">
+        <div class="bl-filters">
+          <button type="button" class="bl-filter active" data-cat="all">All</button>
+          <button type="button" class="bl-filter" data-cat="operations">Operations</button>
+          <button type="button" class="bl-filter" data-cat="tech">Tech</button>
+          <button type="button" class="bl-filter" data-cat="compliance">Compliance</button>
+          <button type="button" class="bl-filter" data-cat="product">Product updates</button>
+        </div>
+
+        <article class="bl-featured">
+          <div class="bl-featured-img" style="background:linear-gradient(135deg,#0F172A 0%,#1E293B 100%);">
+            <div class="bl-featured-overlay">FEATURED</div>
+            <div class="bl-featured-title">Why most Indian D2C brands outgrow spreadsheets in their second year</div>
+          </div>
+          <div class="bl-featured-body">
+            <div class="bl-meta">
+              <span class="bl-cat">Operations</span>
+              <span>·</span>
+              <span>8 min read</span>
+              <span>·</span>
+              <time datetime="2026-05-22">May 22, 2026</time>
+            </div>
+            <h2><a href="#">Why most Indian D2C brands outgrow spreadsheets in their second year</a></h2>
+            <p>The pattern is strikingly consistent. Year one: founders track everything in a Google Sheet. Year two: the sheet has 27 tabs, the operations team spends 4 hours/day reconciling, and a single typo in a tracking upload costs ₹80,000 in RTOs. Here's how to spot the inflection point — and what to do about it.</p>
+            <a href="#" class="bl-read-more">Read article →</a>
+          </div>
+        </article>
+
+        <div class="bl-grid">
+          <article class="bl-post" data-cat="tech">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#14B8A6 0%,#0D9488 100%);">
+              <span class="bl-post-emoji">⚙️</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Tech</span>
+                <span>·</span>
+                <span>5 min read</span>
+              </div>
+              <h3><a href="#">How we cut our marketplace sync latency from 90s to 6s</a></h3>
+              <p>A deep-dive on the queue-and-batching refactor that took our Nykaa and Myntra order sync from a 90-second worst case down to a 6-second p95. Postgres, BullMQ, and a lot of profiling.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-05-15">May 15, 2026</time>
+                <span>·</span>
+                <span>Rahul</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="bl-post" data-cat="compliance">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);">
+              <span class="bl-post-emoji">📋</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Compliance</span>
+                <span>·</span>
+                <span>6 min read</span>
+              </div>
+              <h3><a href="#">GST e-invoicing for B2B ecommerce: what changed in 2026 and what to do</a></h3>
+              <p>If you sell to businesses and your turnover crossed ₹5 Cr in 2025, you need to be on e-invoicing via IRP. Here's a practical guide, including the schema fields that trip up most implementations.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-05-08">May 8, 2026</time>
+                <span>·</span>
+                <span>Priya</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="bl-post" data-cat="operations">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#3B82F6 0%,#1E40AF 100%);">
+              <span class="bl-post-emoji">📦</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Operations</span>
+                <span>·</span>
+                <span>4 min read</span>
+              </div>
+              <h3><a href="#">The 4 numbers every Indian warehouse manager should know on Monday morning</a></h3>
+              <p>Pick accuracy, RTO rate, dispatch TAT, and dead stock. Forget dashboards with 40 KPIs — these are the four that actually move P&L. Here's how to calculate and improve each.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-04-28">Apr 28, 2026</time>
+                <span>·</span>
+                <span>Alok</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="bl-post" data-cat="product">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#10B981 0%,#047857 100%);">
+              <span class="bl-post-emoji">🚀</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Product updates</span>
+                <span>·</span>
+                <span>3 min read</span>
+              </div>
+              <h3><a href="#">Wave picking is now in beta: pick 8 orders in the time it used to take to pick 1</a></h3>
+              <p>Our new wave-picking workflow groups orders by route, courier, and bin, and walks the picker through the optimal path. Early results: 4x pick rate, 80% reduction in walking distance.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-04-20">Apr 20, 2026</time>
+                <span>·</span>
+                <span>Priya</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="bl-post" data-cat="tech">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#8B5CF6 0%,#6D28D9 100%);">
+              <span class="bl-post-emoji">🔌</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Tech</span>
+                <span>·</span>
+                <span>7 min read</span>
+              </div>
+              <h3><a href="#">Building a multi-tenant data layer on Postgres without going insane</a></h3>
+              <p>Row-level security, schema-per-tenant, or shared-schema with tenant_id? We tried all three. Here's why we chose the third, what we learned, and the migration path if you ever need to switch.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-04-12">Apr 12, 2026</time>
+                <span>·</span>
+                <span>Rahul</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="bl-post" data-cat="operations">
+            <div class="bl-post-img" style="background:linear-gradient(135deg,#EC4899 0%,#BE185D 100%);">
+              <span class="bl-post-emoji">🤝</span>
+            </div>
+            <div class="bl-post-body">
+              <div class="bl-meta">
+                <span class="bl-cat">Operations</span>
+                <span>·</span>
+                <span>5 min read</span>
+              </div>
+              <h3><a href="#">When to outsource fulfilment to a 3PL (and when it makes you slower)</a></h3>
+              <p>The honest truth from someone who's run both. A 3PL makes sense after a certain volume and SKU count — but the transition itself is the dangerous part. Here's the checklist we use with brands considering the jump.</p>
+              <div class="bl-post-foot">
+                <time datetime="2026-04-05">Apr 5, 2026</time>
+                <span>·</span>
+                <span>Alok</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="bl-subscribe">
+          <h2>Get the next one in your inbox</h2>
+          <p>One email per month. New article, plus 3 short ops tips. No spam, unsubscribe anytime.</p>
+          <form class="bl-subscribe-form" onsubmit="event.preventDefault(); this.querySelector('.bl-sub-result').classList.add('show'); this.querySelector('input').value='';">
+            <input type="email" placeholder="you@yourbrand.in" required />
+            <button type="submit" class="lh-btn lh-btn-primary">Subscribe</button>
+            <div class="bl-sub-result">Thanks! Check your inbox to confirm.</div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lh-footer">
+    <div class="lh-container lh-footer-inner">
+      <div class="lh-footer-brand">
+        <div class="lh-logo-mark">SH</div>
+        <p>© 2026 GlobalSupply Technologies Pvt. Ltd. All rights reserved.</p>
+      </div>
+      <div class="lh-footer-cols">
+        <div>
+          <h4>Product</h4>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/changelog">Changelog</a>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/blog">Blog</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/security">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.bl-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.dataset.cat;
+        document.querySelectorAll('.bl-filter').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.bl-post').forEach(p => {
+          p.style.display = (cat === 'all' || p.dataset.cat === cat) ? '' : 'none';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

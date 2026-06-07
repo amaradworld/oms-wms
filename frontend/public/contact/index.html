@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — SupplyHub Sales, Support & Partnerships</title>
+  <meta name="description" content="Talk to SupplyHub sales for a demo, reach support for help, or explore partnership opportunities. Mumbai-based, India-wide." />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Contact — SupplyHub" />
+  <meta property="og:description" content="Talk to sales, support, or partnerships. Mumbai-based, India-wide." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://globalsupply.in/contact" />
+  <meta property="og:image" content="https://globalsupply.in/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <meta name="theme-color" content="#0F172A" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="canonical" href="https://globalsupply.in/contact" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/landing/styles.css" />
+  <link rel="stylesheet" href="/landing/pages.css" />
+  <link rel="stylesheet" href="/contact/styles.css" />
+</head>
+<body>
+  <header class="lh-header">
+    <div class="lh-container lh-header-inner">
+      <a href="/" class="lh-logo">
+        <div class="lh-logo-mark">SH</div>
+        <div>
+          <div class="lh-logo-name">SupplyHub</div>
+          <div class="lh-logo-tag">by GlobalSupply</div>
+        </div>
+      </a>
+      <nav class="lh-nav">
+        <a href="/features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+        <a href="/contact" class="active">Contact</a>
+        <a href="/blog">Blog</a>
+      </nav>
+      <div class="lh-header-cta">
+        <a href="/app" class="lh-btn lh-btn-ghost">Sign in</a>
+        <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="lh-container">
+        <span class="eyebrow">Contact</span>
+        <h1>Let's talk</h1>
+        <p>Whether you need a demo, want to chat with support, or are exploring a partnership — we're here. Most messages get a reply within 4 business hours.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="lh-container">
+        <div class="ct-layout">
+          <div class="ct-form-wrap">
+            <h2>Send us a message</h2>
+            <p class="ct-form-sub">Fill in the form and we'll route it to the right person on our team.</p>
+            <form class="ct-form" id="contactForm" action="https://api.web3forms.com/submit" method="POST">
+              <input type="hidden" name="access_key" value="YOUR_WEB3FORMS_KEY" />
+              <input type="hidden" name="subject" value="New contact form submission — globalsupply.in" />
+              <input type="hidden" name="from_name" value="SupplyHub Website Contact Form" />
+              <input type="checkbox" name="botcheck" class="ct-honeypot" tabindex="-1" autocomplete="off" />
+
+              <div class="ct-field">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" required />
+              </div>
+              <div class="ct-field">
+                <label for="email">Work email *</label>
+                <input type="email" id="email" name="email" required />
+              </div>
+              <div class="ct-field">
+                <label for="company">Company</label>
+                <input type="text" id="company" name="company" />
+              </div>
+              <div class="ct-field">
+                <label for="topic">What can we help with? *</label>
+                <select id="topic" name="topic" required>
+                  <option value="">Select a topic…</option>
+                  <option value="demo">Book a demo</option>
+                  <option value="pricing">Pricing question</option>
+                  <option value="support">Technical support</option>
+                  <option value="partnership">Partnership / integration</option>
+                  <option value="press">Press / media</option>
+                  <option value="other">Something else</option>
+                </select>
+              </div>
+              <div class="ct-field">
+                <label for="message">Message *</label>
+                <textarea id="message" name="message" rows="5" required placeholder="Tell us a bit about your operation, what you're looking for, and any timeline."></textarea>
+              </div>
+              <button type="submit" class="lh-btn lh-btn-primary ct-submit">Send message</button>
+              <p class="ct-form-note">By submitting, you agree to our <a href="/privacy">privacy policy</a>. We never share your details with third parties.</p>
+              <div class="ct-result" id="ctResult"></div>
+            </form>
+          </div>
+
+          <aside class="ct-sidebar">
+            <div class="ct-channel">
+              <h3>Sales</h3>
+              <p>For demos, pricing, or volume quotes.</p>
+              <a href="mailto:sales@globalsupply.in">sales@globalsupply.in</a>
+              <p class="ct-meta">Reply within 4 business hours</p>
+            </div>
+            <div class="ct-channel">
+              <h3>Support</h3>
+              <p>For existing customers needing help.</p>
+              <a href="mailto:support@globalsupply.in">support@globalsupply.in</a>
+              <p class="ct-meta">Pro: 4h business hours · Enterprise: 1h, 24×7</p>
+            </div>
+            <div class="ct-channel">
+              <h3>Partnerships</h3>
+              <p>Marketplace, courier, or technology integrations.</p>
+              <a href="mailto:partners@globalsupply.in">partners@globalsupply.in</a>
+              <p class="ct-meta">Reply within 2 business days</p>
+            </div>
+            <div class="ct-channel">
+              <h3>Office</h3>
+              <p>
+                GlobalSupply Technologies Pvt. Ltd.<br>
+                WeWork, BKC<br>
+                Mumbai 400051, MH, India
+              </p>
+              <p class="ct-meta">GSTIN: 27AAACG0000A1Z5</p>
+            </div>
+            <div class="ct-channel ct-channel-cta">
+              <h3>Want to try it first?</h3>
+              <p>14-day free trial. No credit card. No sales call first.</p>
+              <a href="/app?signup=true" class="lh-btn lh-btn-primary">Start free trial →</a>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lh-footer">
+    <div class="lh-container lh-footer-inner">
+      <div class="lh-footer-brand">
+        <div class="lh-logo-mark">SH</div>
+        <p>© 2026 GlobalSupply Technologies Pvt. Ltd. All rights reserved.</p>
+      </div>
+      <div class="lh-footer-cols">
+        <div>
+          <h4>Product</h4>
+          <a href="/features">Features</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/changelog">Changelog</a>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <a href="/about">About</a>
+          <a href="/contact">Contact</a>
+          <a href="/blog">Blog</a>
+        </div>
+        <div>
+          <h4>Legal</h4>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/security">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const form = document.getElementById('contactForm');
+    const result = document.getElementById('ctResult');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const submit = form.querySelector('.ct-submit');
+      const orig = submit.textContent;
+      submit.disabled = true;
+      submit.textContent = 'Sending…';
+      try {
+        const res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+          result.className = 'ct-result ct-result-success';
+          result.textContent = 'Thanks! Your message is on its way. We\'ll be in touch within 4 business hours.';
+          form.reset();
+        } else {
+          result.className = 'ct-result ct-result-error';
+          result.textContent = 'Something went wrong: ' + (data.message || 'Please email us directly.');
+        }
+      } catch (err) {
+        result.className = 'ct-result ct-result-error';
+        result.textContent = 'Network error. Please email us at sales@globalsupply.in directly.';
+      } finally {
+        submit.disabled = false;
+        submit.textContent = orig;
+      }
+    });
+  </script>
+</body>
+</html>
