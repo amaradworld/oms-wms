@@ -3,6 +3,7 @@ import { RefreshCw, Plus, X, Filter, Eye, XCircle, Loader2, Hash, Clock, Tag, Us
 import ImportButton from '../components/ImportButton';
 import SampleCSVButton from '../components/SampleCSVButton';
 import DataTable from '../components/DataTable';
+import ExportButton from '../components/ExportButton';
 import { toast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import API from '../utils/api';
@@ -253,6 +254,24 @@ const Orders = ({ detailId, setDetailId }) => {
           </button>
           <SampleCSVButton type="orders" />
           <ImportButton label="Orders" endpoint="orders" onSuccess={fetchOrders} />
+          <ExportButton
+            filename="orders"
+            data={sortedOrders}
+            columns={[
+              { key: 'orderNumber', label: 'Order ID' },
+              { key: 'customerName', label: 'Customer' },
+              { key: 'customerPhone', label: 'Phone' },
+              { key: 'customerCity', label: 'City' },
+              { key: 'source', label: 'Source' },
+              { key: 'orderStatus', label: 'Status' },
+              { key: 'totalAmount', label: 'Total', get: (r) => r.totalAmount ?? r.amount ?? '' },
+              { key: 'paymentMode', label: 'Payment' },
+              { key: 'trackingNumber', label: 'AWB' },
+              { key: 'courier', label: 'Courier' },
+              { key: 'itemsCount', label: 'Items', get: (r) => r.items?.length || 0 },
+              { key: 'createdAt', label: 'Date', get: (r) => r.createdAt ? new Date(r.createdAt).toISOString().slice(0, 10) : '' },
+            ]}
+          />
         </div>
       </div>
 

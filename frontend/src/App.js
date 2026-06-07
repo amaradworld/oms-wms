@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import FacilitySelector from './components/FacilitySelector';
 import GlobalSearch from './components/GlobalSearch';
 import OnboardingWizard from './components/OnboardingWizard';
+import Welcome from './components/Welcome';
 import AssistantBot from './components/AssistantBot';
 import { useAuth } from './context/AuthContext';
 
@@ -290,6 +291,7 @@ const App = () => {
       <VercelAnalytics />
       <GlobalSearch onNavigate={setActiveTab} />
       <AssistantBot onNavigate={setActiveTab} />
+      <Welcome onNavigate={setActiveTab} />
     </div>
   );
 };

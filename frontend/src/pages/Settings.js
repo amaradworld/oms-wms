@@ -528,7 +528,15 @@ const Settings = () => {
 
   return (
     <div className="p-4 md:p-8 space-y-4 md:space-y-6">
-      <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
+        <button
+          onClick={() => { localStorage.removeItem('welcome-dismissed'); window.location.reload(); }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+        >
+          Restart welcome tour
+        </button>
+      </div>
 
       <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 bg-indigo-50/60 border border-indigo-100/60 rounded-xl p-1">
         {TABS.map(tab => (

@@ -74,6 +74,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('auth');
   };
 
+  const resetWelcome = () => {
+    localStorage.removeItem('welcome-dismissed');
+  };
+
   const [selectedFacility, setSelectedFacility] = useState(() => {
     const saved = localStorage.getItem('selectedFacility');
     return saved ? JSON.parse(saved) : null;
@@ -111,7 +115,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, company, tenantId, loading, login, logout,
+      user, company, tenantId, loading, login, logout, resetWelcome,
       detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
