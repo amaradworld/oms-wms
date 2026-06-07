@@ -58,7 +58,6 @@ export const sendNewLeadEmail = async (lead: any) => {
       body: JSON.stringify({
         access_key: WEB3FORMS_KEY,
         from_name: 'SupplyHub Leads',
-        to: SALES_EMAIL,
         replyto: lead.email,
         subject,
         html,
@@ -66,8 +65,8 @@ export const sendNewLeadEmail = async (lead: any) => {
       }),
     });
     const json: any = await res.json().catch(() => ({}));
-    console.log(`[email] New lead email to ${SALES_EMAIL}: status=${res.status} success=${json?.success} message=${json?.message || '-'}`);
-    return { ok: res.ok && json?.success !== false, status: res.status, message: json?.message };
+    console.log(`[email] New lead email: status=${res.status} success=${json?.success} message=${json?.message || '-'}`);
+    return { ok: res.ok && json?.success !== false, status: res.status, message: json?.message, data: json };
   } catch (e: any) {
     console.error('[email] Failed to send new lead email:', e.message);
     return { ok: false, error: e.message };
@@ -147,7 +146,6 @@ export const sendDailyDigest = async (req: AuthRequest, res: Response) => {
       body: JSON.stringify({
         access_key: WEB3FORMS_KEY,
         from_name: 'SupplyHub Leads',
-        to: SALES_EMAIL,
         subject,
         html,
         'New in period': String(newLeads.length),
@@ -164,12 +162,12 @@ export const sendDailyDigest = async (req: AuthRequest, res: Response) => {
       action: ok ? 'LEAD_DIGEST_SENT' : 'LEAD_DIGEST_FAILED',
       entityType: 'Lead',
       entityId: null,
-      newValue: { hours, newCount: newLeads.length, allOpen, wonThisWeek, to: SALES_EMAIL, web3formsMessage: json?.message || '' },
+      newValue: { hours, newCount: newLeads.length, allOpen, wonThisWeek, web3formsMessage: json?.message || json?.data || '' },
     });
     res.json({
       ok,
-      sent: { hours, newCount: newLeads.length, allOpen, wonThisWeek, totalLeads, to: SALES_EMAIL },
-      web3forms: { status: r.status, message: json?.message },
+      sent: { hours, newCount: newLeads.length, allOpen, wonThisWeek, totalLeads },
+      web3forms: { status: r.status, success: json?.success, message: json?.message || json?.data },
     });
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e.message });
