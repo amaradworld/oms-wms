@@ -59,15 +59,28 @@ const app = express();
 app.use(helmet());
 app.use(httpsRedirect);
 app.use(cors({
-  origin: [
-    'https://globalsupply.in',
-    'https://www.globalsupply.in',
-    'https://app.globalsupply.in',
-    'https://oms-wms-phi.vercel.app',
-    'https://oms-wms-git-main-amaradworlds-projects.vercel.app',
-    'http://localhost:3000',
-    ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [])
-  ],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = [
+      'https://globalsupply.in',
+      'https://www.globalsupply.in',
+      'https://app.globalsupply.in',
+      'https://oms-wms-phi.vercel.app',
+      'https://oms-wms-git-main-amaradworlds-projects.vercel.app',
+      'http://localhost:3000',
+    ];
+    if (process.env.FRONTEND_URL) {
+      process.env.FRONTEND_URL.split(',').forEach(u => allowed.push(u.trim()));
+    }
+    try {
+      const url = new URL(origin);
+      const host = url.hostname;
+      if (allowed.includes(origin)) return callback(null, true);
+      if (host === 'globalsupply.in' || host.endsWith('.globalsupply.in')) return callback(null, true);
+      if (host.endsWith('.vercel.app')) return callback(null, true);
+    } catch {}
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));

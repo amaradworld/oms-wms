@@ -105,6 +105,49 @@
           el.textContent = sub + '.globalsupply.in';
         });
       }
+
+      if (sub && (KNOWN[sub] || sub === 'platform')) {
+        var name = KNOWN[sub] || 'Platform';
+        var isPlatform = sub === 'platform';
+        var initial = name.charAt(0).toUpperCase();
+        document.title = name + ' — Sign in';
+        document.body.innerHTML = '' +
+          '<div style="min-height:100vh;background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,sans-serif;">' +
+            '<div style="max-width:420px;width:100%;">' +
+              '<div style="text-align:center;margin-bottom:32px;">' +
+                '<div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:18px;background:' + (isPlatform ? 'linear-gradient(135deg,#F59E0B,#EF4444)' : 'linear-gradient(135deg,#3B82F6,#6366F1)') + ';color:#fff;font-size:32px;font-weight:700;margin-bottom:18px;box-shadow:0 12px 32px rgba(99,102,241,0.35);">' + initial + '</div>' +
+                '<h1 style="color:#fff;font-size:30px;font-weight:700;margin:0 0 6px 0;letter-spacing:-0.02em;">' + name + '</h1>' +
+                '<p style="color:#94A3B8;font-size:14px;margin:0;">' + (isPlatform ? 'Platform administration console' : 'Warehouse operations portal') + '</p>' +
+              '</div>' +
+              '<div style="background:#fff;border-radius:20px;padding:32px;box-shadow:0 24px 64px rgba(0,0,0,0.35);">' +
+                '<a href="/app" style="display:block;width:100%;padding:14px 20px;background:linear-gradient(135deg,#3B82F6,#6366F1);color:#fff;text-align:center;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;transition:transform 0.15s ease,box-shadow 0.15s ease;box-shadow:0 6px 16px rgba(99,102,241,0.35);" onmouseover="this.style.transform=\'translateY(-1px)\';this.style.boxShadow=\'0 10px 24px rgba(99,102,241,0.45)\';" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'0 6px 16px rgba(99,102,241,0.35)\';">' +
+                  'Sign in to ' + name +
+                '</a>' +
+                '<div style="margin-top:18px;padding-top:18px;border-top:1px solid #E2E8F0;text-align:center;">' +
+                  '<p style="font-size:12px;color:#64748B;margin:0 0 4px 0;">' + (isPlatform ? 'Manage all companies, billing, and infrastructure' : 'Access your orders, inventory, and shipping') + '</p>' +
+                  '<p style="font-size:11px;color:#94A3B8;margin:0;">Secure access · 2FA available</p>' +
+                '</div>' +
+              '</div>' +
+              '<p style="text-align:center;margin-top:28px;font-size:12px;color:#64748B;">' +
+                'Powered by <a href="https://globalsupply.in" style="color:#A5B4FC;text-decoration:none;font-weight:500;">SupplyHub</a>' +
+                (isPlatform ? ' · <a href="https://globalsupply.in" style="color:#64748B;text-decoration:none;">Marketing site</a>' : '') +
+              '</p>' +
+            '</div>' +
+          '</div>';
+      } else if (sub) {
+        document.body.innerHTML = '' +
+          '<div style="min-height:100vh;background:#0F172A;display:flex;align-items:center;justify-content:center;padding:24px;font-family:system-ui,-apple-system,sans-serif;color:#fff;">' +
+            '<div style="max-width:420px;width:100%;text-align:center;">' +
+              '<div style="font-size:48px;margin-bottom:16px;">⚠️</div>' +
+              '<h1 style="font-size:24px;font-weight:700;margin:0 0 12px 0;">Unknown subdomain</h1>' +
+              '<p style="color:#94A3B8;margin:0 0 24px 0;font-size:14px;line-height:1.6;">' +
+                'We don\'t recognize <code style="background:#1E293B;padding:2px 8px;border-radius:4px;font-family:monospace;color:#FBBF24;">' + sub + '.globalsupply.in</code>.' +
+                '<br>Please check the URL or contact your administrator.' +
+              '</p>' +
+              '<a href="https://globalsupply.in" style="display:inline-block;padding:10px 20px;background:#3B82F6;color:#fff;text-decoration:none;border-radius:8px;font-size:14px;font-weight:500;">Go to SupplyHub</a>' +
+            '</div>' +
+          '</div>';
+      }
     })();
   </script>
 </head>

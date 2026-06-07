@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
   const [tenantId, setTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [companies, setCompanies] = useState(FALLBACK_COMPANIES);
+  const [companiesLoading, setCompaniesLoading] = useState(true);
 
   useEffect(() => {
     const saved = localStorage.getItem('auth');
@@ -41,11 +42,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchCompanies = () => {
+    setCompaniesLoading(true);
     axios.get(`${API}/api/tenants?public=1`).then(res => {
       if (Array.isArray(res.data) && res.data.length > 0) {
         setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive })));
       }
-    }).catch(() => { /* use fallback */ });
+    }).catch(() => { /* use fallback */ })
+      .finally(() => setCompaniesLoading(false));
   };
 
   const login = (userData, companyData, token) => {
@@ -116,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{
       user, company, tenantId, loading, login, logout, resetWelcome,
-      detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, refreshCompanies: fetchCompanies,
+      detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, companiesLoading, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,
     }}>

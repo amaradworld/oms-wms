@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield } from 'lucide-react';
+import { Building2, Lock, Mail, ArrowRight, Globe, AlertCircle, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
 import { track, setUserProperties } from '../utils/analytics';
 
 const LoginPage = () => {
-  const { login, companies } = useAuth();
+  const { login, companies, companiesLoading } = useAuth();
   const showPlatformLogin = process.env.REACT_APP_SHOW_PLATFORM_LOGIN === 'true';
   const [step, setStep] = useState('company');
   const [selectedCompany, setSelectedCompany] = useState(null);
@@ -38,16 +38,26 @@ const LoginPage = () => {
   };
 
   useEffect(() => {
-    if (companies.length === 0) return;
     const info = getSubdomainInfo();
     if (info.type === 'company' && info.company) {
-      setSelectedCompany(info.company);
-      setStep('credentials');
+      if (!selectedCompany || selectedCompany._pending || selectedCompany.id !== info.company.id) {
+        setSelectedCompany(info.company);
+        setStep('credentials');
+      }
+    } else if (info.type === 'company' && !info.company && companiesLoading) {
+      if (!selectedCompany || selectedCompany.slug !== info.sub) {
+        setSelectedCompany({ id: 'pending', name: info.sub.charAt(0).toUpperCase() + info.sub.slice(1), slug: info.sub, _pending: true });
+        setStep('credentials');
+      }
+    } else if (info.type === 'company' && !info.company && !companiesLoading) {
+      setStep('company');
     } else if (info.type === 'platform' && showPlatformLogin) {
       setPlatformMode(true);
       setStep('credentials');
+    } else if (info.type === 'unknown' && !companiesLoading) {
+      setStep('company');
     }
-  }, [companies, showPlatformLogin]);
+  }, [companies, companiesLoading, showPlatformLogin]);
 
   const handleCompanySelect = (company) => {
     setSelectedCompany(company);
@@ -57,6 +67,10 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (selectedCompany?._pending) {
+      setError('Loading tenant info, please wait a moment…');
+      return;
+    }
     setError('');
     setSubmitting(true);
 
@@ -164,6 +178,13 @@ const LoginPage = () => {
           <h1 className="text-4xl font-bold text-white tracking-tight">SupplyHub</h1>
           <p className="text-slate-400 mt-2">Warehouse Management System</p>
         </div>
+
+        {companiesLoading && step === 'company' && (
+          <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <Loader2 size={32} className="mx-auto text-blue-600 animate-spin mb-3" />
+            <p className="text-sm text-slate-500">Loading…</p>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {step === 'forgot' ? (
@@ -359,10 +380,10 @@ const LoginPage = () => {
                 </div>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || selectedCompany?._pending}
                   className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {submitting ? 'Signing In...' : <>{platformMode ? 'Sign In as Platform Owner' : <>Sign In to {selectedCompany.name}</>} <ArrowRight size={18} /></>}
+                  {submitting ? 'Signing In...' : selectedCompany?._pending ? <><Loader2 size={18} className="animate-spin" /> Loading…</> : <>{platformMode ? 'Sign In as Platform Owner' : <>Sign In to {selectedCompany.name}</>} <ArrowRight size={18} /></>}
                 </button>
               </div>
             </form>
