@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, RefreshCw, CheckCircle, Calendar, Plus, X, Truck, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const STATUS_BADGE = {
@@ -41,6 +42,7 @@ const NdrDashboard = ({ detailId, setDetailId }) => {
     }
   }, [detailId]);
 
+  const confirm = useConfirm();
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -123,7 +125,12 @@ const NdrDashboard = ({ detailId, setDetailId }) => {
   };
 
   const resolveCase = async (id) => {
-    if (!window.confirm('Resolve this NDR case?')) return;
+    if (!await confirm({
+      title: 'Resolve this NDR case?',
+      message: 'This will mark the NDR as resolved and trigger the configured resolution action (re-attempt / return).',
+      confirmText: 'Resolve NDR',
+      variant: 'info',
+    })) return;
     setResolving(id);
     try {
       await API.patch(`/ndr/${id}/resolve`, {});

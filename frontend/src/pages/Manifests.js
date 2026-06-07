@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Package, Plus, ChevronDown, ChevronRight, Download, CheckCircle, X, Truck, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const STATUS_BADGE = {
@@ -16,6 +17,7 @@ const safeDate = (d) => {
 };
 
 const Manifests = ({ detailId, setDetailId }) => {
+  const confirm = useConfirm();
   const [manifests, setManifests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
@@ -123,7 +125,12 @@ const Manifests = ({ detailId, setDetailId }) => {
   };
 
   const closeManifest = async (id) => {
-    if (!window.confirm('Close this manifest? Orders will be marked as DISPATCHED.')) return;
+    if (!await confirm({
+      title: 'Close this manifest?',
+      message: 'All orders in this manifest will be marked as DISPATCHED. AWB numbers will be locked. This action cannot be undone.',
+      confirmText: 'Close manifest',
+      variant: 'warning',
+    })) return;
     setClosingId(id);
     try {
       await API.patch(`/manifests/${id}/close`);

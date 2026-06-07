@@ -3,10 +3,12 @@ import { Building2, Plus, Search, X, Check, Loader2, ToggleLeft, ToggleRight } f
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const Companies = () => {
   const { refreshCompanies } = useAuth();
+  const confirm = useConfirm();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -88,7 +90,13 @@ const Companies = () => {
   };
 
   const handleDelete = async (c) => {
-    if (!window.confirm(`Delete company "${c.name}"? This cannot be undone.`)) return;
+    if (!await confirm({
+      title: `Delete "${c.name}"?`,
+      message: `This will permanently delete the tenant, all its users, warehouses, orders, inventory, and history. This CANNOT be undone. Type the company name to confirm.`,
+      confirmText: 'Delete permanently',
+      variant: 'danger',
+      requireText: c.name,
+    })) return;
     try {
       await API.delete(`/tenants/${c.id}`);
       setCompanies(prev => prev.filter(x => x.id !== c.id));

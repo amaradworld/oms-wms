@@ -3,11 +3,13 @@ import { Plus, X, Trash2 } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
 const BinManager = () => {
   const { selectedFacility } = useAuth();
+  const confirm = useConfirm();
   const [bins, setBins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -50,7 +52,12 @@ const BinManager = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this bin?')) return;
+    if (!await confirm({
+      title: 'Delete this bin?',
+      message: 'Inventory in this bin will not be deleted, but the bin will be removed from the location list. This cannot be undone.',
+      confirmText: 'Delete bin',
+      variant: 'danger',
+    })) return;
     try {
       await API.delete(`/bins/${id}`);
       toast.success('Bin deleted');

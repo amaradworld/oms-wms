@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Link, Unlink, CheckCircle2, AlertCircle, Loader2, Store, Eye, EyeOff } from 'lucide-react';
 import API from '../utils/api';
+import { useConfirm } from '../components/ConfirmDialog';
 
 const MARKETPLACE_LOGOS = {
   NYKAA: '🎨',
@@ -151,6 +152,7 @@ const MarketplaceCard = ({ mp, config, onSave, onDelete, onSync, syncing }) => {
 };
 
 const MarketplaceSettings = () => {
+  const confirm = useConfirm();
   const [connectors, setConnectors] = useState([]);
   const [configs, setConfigs] = useState({});
   const [syncing, setSyncing] = useState(null);
@@ -181,6 +183,12 @@ const MarketplaceSettings = () => {
   };
 
   const handleDelete = async (mp) => {
+    if (!await confirm({
+      title: `Disconnect ${mp}?`,
+      message: `This will remove the ${mp} integration. Order sync and inventory pushes will stop. The integration can be re-added later.`,
+      confirmText: 'Disconnect',
+      variant: 'danger',
+    })) return;
     try {
       await API.delete(`/marketplace/configs/${mp}`);
       setConfigs(prev => { const n = { ...prev }; delete n[mp]; return n; });

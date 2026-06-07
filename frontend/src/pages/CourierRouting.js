@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Truck, Plus, Edit3, Trash2, Search, X, RefreshCw, Loader2 } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const SPEED_COLORS = {
@@ -11,6 +12,7 @@ const SPEED_COLORS = {
 };
 
 const CourierRouting = () => {
+  const confirm = useConfirm();
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -85,7 +87,12 @@ const CourierRouting = () => {
   };
 
   const deleteConfig = async (id) => {
-    if (!window.confirm('Delete this routing config?')) return;
+    if (!await confirm({
+      title: 'Delete this routing config?',
+      message: 'Orders will no longer be routed using this rule. You can recreate it later with the same settings.',
+      confirmText: 'Delete config',
+      variant: 'danger',
+    })) return;
     try {
       await API.delete(`/courier/routing/${id}`);
       toast.success('Config deleted');

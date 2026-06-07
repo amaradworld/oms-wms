@@ -3,9 +3,11 @@ import { Layers, Plus, RefreshCw, Check, X, Loader2, AlertTriangle } from 'lucid
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const Replenishment = () => {
+  const confirm = useConfirm();
   const { selectedFacility } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,12 @@ const Replenishment = () => {
   };
 
   const handleCancel = async (id) => {
+    if (!await confirm({
+      title: 'Cancel this replenishment task?',
+      message: 'The task will be marked as cancelled. Pickers will not see it. You can create a new task later.',
+      confirmText: 'Cancel task',
+      variant: 'warning',
+    })) return;
     try {
       await API.put(`/replenishment/${id}/cancel`);
       toast.success('Task cancelled');

@@ -3,9 +3,11 @@ import { Truck, Plus, RefreshCw, Search, ChevronDown, ChevronRight, Loader2 } fr
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const AsnPage = () => {
+  const confirm = useConfirm();
   const { selectedFacility } = useAuth();
   const [asns, setAsns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,12 @@ const AsnPage = () => {
   };
 
   const handleStatusUpdate = async (id, status) => {
+    if (status === 'CANCELLED' && !await confirm({
+      title: 'Cancel this ASN?',
+      message: 'The supplier will be notified of the cancellation. The ASN cannot be re-activated.',
+      confirmText: 'Cancel ASN',
+      variant: 'danger',
+    })) return;
     try {
       await API.put(`/asn/${id}/status`, { status });
       toast.success(`ASN status updated to ${status}`);

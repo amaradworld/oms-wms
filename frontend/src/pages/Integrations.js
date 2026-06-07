@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, X, Loader2, Globe, RefreshCw, Link, Power, PowerOff, Settings } from 'lucide-react';
 import API from '../utils/api';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 
@@ -16,6 +17,7 @@ const INTEGRATION_PLATFORMS = [
 ];
 
 const Integrations = () => {
+  const confirm = useConfirm();
   const [integrations, setIntegrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -75,7 +77,12 @@ const Integrations = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this integration?')) return;
+    if (!await confirm({
+      title: 'Delete this integration?',
+      message: 'This will remove the integration. Active syncs and queued data will be lost. The platform connector can be re-added later.',
+      confirmText: 'Delete integration',
+      variant: 'danger',
+    })) return;
     try {
       await API.delete(`/integrations/${id}`);
       toast.success('Integration deleted');

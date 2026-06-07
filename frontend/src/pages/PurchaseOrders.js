@@ -115,7 +115,7 @@ const PurchaseOrders = () => {
 
       {tab === 'orders' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          {loading ? <TableSkeleton rows={5} cols={5} /> : pos.length === 0 ? <EmptyState icon="orders" title="No purchase orders" description="Create a PO to replenish stock from suppliers." />
+          {loading ? <TableSkeleton rows={5} cols={5} /> : pos.length === 0 ? <EmptyState icon="orders" title="No purchase orders" description="Create a PO to replenish stock from suppliers." primaryAction={{ label: 'Create PO', onClick: () => setShowModal(true) }} />
           : <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[600px]">
               <thead className="bg-slate-50 border-b">
@@ -154,7 +154,7 @@ const PurchaseOrders = () => {
 
       {tab === 'suppliers' && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          {suppliers.length === 0 ? <EmptyState icon="orders" title="No suppliers" description="Add suppliers to create purchase orders." />
+          {suppliers.length === 0 ? <EmptyState icon="orders" title="No suppliers" description="Add suppliers to create purchase orders." primaryAction={{ label: 'Add supplier', onClick: () => setShowSupplierModal(true) }} />
           : <div className="overflow-x-auto">
             <table className="w-full text-left min-w-[500px]">
               <thead className="bg-slate-50 border-b">

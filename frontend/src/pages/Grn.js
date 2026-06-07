@@ -3,6 +3,7 @@ import { X, CheckCircle, XCircle, Eye, Loader, QrCode } from 'lucide-react';
 import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 import EmptyState from '../components/EmptyState';
 import { trackFirst } from '../utils/analytics';
@@ -16,6 +17,7 @@ const statusColors = {
 };
 
 const Grn = ({ detailId, setDetailId }) => {
+  const confirm = useConfirm();
   const { selectedFacility } = useAuth();
   const [tab, setTab] = useState('incoming');
   const [grns, setGrns] = useState([]);
@@ -137,6 +139,12 @@ const Grn = ({ detailId, setDetailId }) => {
   };
 
   const handleReject = async () => {
+    if (!await confirm({
+      title: 'Reject this GRN?',
+      message: 'This will mark the entire GRN as rejected. The received quantity will be set to 0 and the PO will be returned to the supplier workflow. This cannot be undone.',
+      confirmText: 'Reject GRN',
+      variant: 'danger',
+    })) return;
     try {
       await API.post(`/grn/${selectedGrn.id}/reject`);
       toast.success('GRN rejected');

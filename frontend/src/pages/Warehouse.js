@@ -276,7 +276,7 @@ const Warehouse = () => {
         <div className="text-center py-12 text-slate-500">Loading...</div>
       ) : warehouses.length === 0 ? (
         <EmptyState icon="warehouse" title="No warehouses yet" description="Create your first warehouse to start managing inventory and facilities."
-          action={<button onClick={() => openAdd(null)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Create Warehouse</button>} />
+          primaryAction={{ label: 'Create warehouse', onClick: () => openAdd(null) }} />
       ) : (
         <div className="space-y-3">
           {warehouses.map(wh => (
@@ -307,7 +307,8 @@ const Warehouse = () => {
               {expandWH === wh.id && (
                 <div className="border-t border-slate-100">
                   {wh.children?.length === 0 ? (
-                    <EmptyState icon="warehouse" title="No facilities" description="Add a facility to organize inventory and orders under this warehouse." />
+                    <EmptyState icon="warehouse" title="No facilities" description="Add a facility to organize inventory and orders under this warehouse."
+                      primaryAction={{ label: 'Add facility', onClick: () => openAdd(wh.id) }} />
                   ) : wh.children.map(fac => (
                     <div key={fac.id} className={`px-4 py-3 flex items-center gap-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 ml-8 ${fac.isActive === false ? 'opacity-50' : ''} ${selectedFacility?.id === fac.id ? 'bg-indigo-50 border-indigo-200' : ''}`}>
                       <div className={`w-2 h-2 rounded-full ${fac.isActive === false ? 'bg-slate-300' : 'bg-green-400'}`} />

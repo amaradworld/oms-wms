@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, RefreshCw, Eye, X, CheckCircle2, QrCode, Loader2 } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import { toast } from '../components/Toast';
+import { useConfirm } from '../components/ConfirmDialog';
 import API from '../utils/api';
 
 const statusColors = {
@@ -54,6 +55,7 @@ const Gatepasses = ({ detailId, setDetailId }) => {
     }
   }, [detailId]);
 
+  const confirm = useConfirm();
   const fetchGatepasses = useCallback(async () => {
     setLoading(true);
     try {
@@ -71,6 +73,12 @@ const Gatepasses = ({ detailId, setDetailId }) => {
   useEffect(() => { fetchGatepasses(); }, [fetchGatepasses]);
 
   const handleStatusUpdate = async (id, status) => {
+    if (status === 'CANCELLED' && !await confirm({
+      title: 'Cancel this gatepass?',
+      message: 'The gatepass will be marked as cancelled. Items in the gatepass will not be dispatched. This cannot be undone.',
+      confirmText: 'Cancel gatepass',
+      variant: 'danger',
+    })) return;
     try {
       await API.patch(`/gatepass/${id}/status`, { status });
       toast.success(`Gatepass ${status}`);
