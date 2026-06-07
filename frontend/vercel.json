@@ -47,6 +47,7 @@
     { "source": "/app/sku-history/:id", "destination": "/app/index.html" },
     { "source": "/app/parties", "destination": "/app/index.html" },
     { "source": "/app/companies", "destination": "/app/index.html" },
+    { "source": "/app/leads", "destination": "/app/index.html" },
     { "source": "/app/settings", "destination": "/app/index.html" },
     { "source": "/app/stock-expiry", "destination": "/app/index.html" },
     { "source": "/app/replenishment", "destination": "/app/index.html" },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Package, ShoppingCart, Warehouse, ClipboardCheck, Barcode, PackageCheck, RotateCcw, BarChart3, Settings, LogOut, Building2, Globe, X, Truck, ShoppingBag, Layers, ChevronDown, ChevronRight, Menu, FileText, AlertTriangle, MapPin, ScanLine, Search, Clock } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, Warehouse, ClipboardCheck, Barcode, PackageCheck, RotateCcw, BarChart3, Settings, LogOut, Building2, Globe, X, Truck, ShoppingBag, Layers, ChevronDown, ChevronRight, Menu, FileText, AlertTriangle, MapPin, ScanLine, Search, Clock, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, active, onClick, indent, collapsed }) => (
@@ -94,6 +94,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'integrations', label: 'Integrations', icon: Globe },
         { id: 'parties', label: 'Parties', icon: Building2 },
         { id: 'companies', label: 'Companies', icon: Globe },
+        { id: 'leads', label: 'Leads', icon: UserPlus },
         { id: 'courier-routing', label: 'Courier Routing', icon: Truck },
         { id: 'marketplace', label: 'Marketplace', icon: Globe },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
@@ -127,7 +128,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
   };
 
   const roleMenuMap = {
-    PLATFORM_ADMIN: filterTree(allMenuItems, new Set(['dashboard', 'companies'])),
+    PLATFORM_ADMIN: filterTree(allMenuItems, new Set(['dashboard', 'companies', 'leads'])),
     SUPER_ADMIN: allMenuItems,
     WAREHOUSE_MGR: allMenuItems,
     PICKER: filterTree(allMenuItems, new Set(['dashboard', 'scanning', 'waves'])),

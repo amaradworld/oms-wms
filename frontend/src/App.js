@@ -44,6 +44,7 @@ const BinManager = lazy(() => import(/* webpackChunkName: "page-binmanager" */ '
 const SkuHistory = lazy(() => import(/* webpackChunkName: "page-skuhistory" */ './pages/SkuHistory'));
 const Parties = lazy(() => import(/* webpackChunkName: "page-parties" */ './pages/Parties'));
 const Companies = lazy(() => import(/* webpackChunkName: "page-companies" */ './pages/Companies'));
+const Leads = lazy(() => import(/* webpackChunkName: "page-leads" */ './pages/Leads'));
 const AuditLogs = lazy(() => import(/* webpackChunkName: "page-auditlogs" */ './pages/AuditLogs'));
 const StockExpiry = lazy(() => import(/* webpackChunkName: "page-stockexpiry" */ './pages/StockExpiry'));
 const Replenishment = lazy(() => import(/* webpackChunkName: "page-replenishment" */ './pages/Replenishment'));
@@ -74,7 +75,7 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  PLATFORM_ADMIN: ['dashboard','companies','audit-logs'],
+  PLATFORM_ADMIN: ['dashboard','companies','leads','audit-logs'],
   SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan'],
   WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan'],
   PICKER: ['dashboard','picklist','scanning'],
@@ -89,7 +90,7 @@ const TAB_TO_PATH = {
   manifests:'manifests', ndr:'ndr', 'courier-routing':'courier-routing',
   'inventory-alerts':'inventory-alerts', gatepass:'gatepass', 'gatepass-order':'gatepass-order',
   integrations:'integrations', grn:'grn', putaway:'putaway', bins:'bin-locations',
-  'sku-history':'sku-history', parties:'parties', companies:'companies', settings:'settings',
+  'sku-history':'sku-history', parties:'parties', companies:'companies', leads:'leads', settings:'settings',
   'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan',
 };
 
@@ -251,6 +252,7 @@ const App = () => {
       case 'sku-history': return <SkuHistory {...pageProps} />;
       case 'parties': return <Parties {...pageProps} />;
       case 'companies': return <Companies {...pageProps} />;
+      case 'leads': return <Leads {...pageProps} />;
       case 'audit-logs': return <AuditLogs {...pageProps} />;
       case 'stock-expiry': return <StockExpiry {...pageProps} />;
       case 'replenishment': return <Replenishment {...pageProps} />;
