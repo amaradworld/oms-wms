@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getTenants, getTenant, createTenant, updateTenant, deleteTenant, updateMyTenant, getMyTenant } from '../controllers/tenant.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { getTenants, getTenant, createTenant, updateTenant, deleteTenant, updateMyTenant, getMyTenant, createTenantUser } from '../controllers/tenant.controller';
+import { authenticate, authorize, requirePlatformOwner } from '../middlewares/auth.middleware';
 
 const router = Router();
 
@@ -15,5 +15,6 @@ router.get('/:id', getTenant);
 router.post('/', createTenant);
 router.put('/:id', updateTenant);
 router.delete('/:id', deleteTenant);
+router.post('/:id/users', requirePlatformOwner, createTenantUser);
 
 export default router;

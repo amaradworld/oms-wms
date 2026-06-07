@@ -109,3 +109,32 @@ export const deleteTenant = async (req: AuthRequest, res: Response) => {
   await prisma.tenant.delete({ where: { id } });
   res.json({ message: 'Tenant deleted' });
 };
+
+export const createTenantUser = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.params.id as string;
+  const { email, password, fullName, role } = req.body;
+  if (!email || !password) return res.status(400).json({ message: 'email and password are required' });
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) return res.status(404).json({ message: 'Tenant not found' });
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) return res.status(409).json({ message: 'A user with this email already exists' });
+
+  const VALID_ROLES = ['SUPER_ADMIN', 'WAREHOUSE_MGR', 'PICKER', 'PACKER'];
+  const finalRole = role || 'PICKER';
+  if (!VALID_ROLES.includes(finalRole)) return res.status(400).json({ message: `Invalid role. Must be one of: ${VALID_ROLES.join(', ')}` });
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await prisma.user.create({
+    data: {
+      tenantId,
+      email,
+      passwordHash,
+      fullName: fullName || null,
+      role: finalRole,
+    },
+    select: { id: true, email: true, fullName: true, role: true, warehouseId: true, createdAt: true },
+  });
+  res.status(201).json(user);
+};
