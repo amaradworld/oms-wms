@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { getTenants, getTenant, createTenant, updateTenant, deleteTenant, updateMyTenant, getMyTenant, createTenantUser } from '../controllers/tenant.controller';
-import { authenticate, authorize, requirePlatformOwner } from '../middlewares/auth.middleware';
+import { authenticate, authorize, requirePlatformOwner, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', getTenants);
 router.get('/me', authenticate, getMyTenant);
-router.put('/me', authenticate, updateMyTenant);
+router.put('/me', authenticate, tenantScope, updateMyTenant);
 router.use(authenticate);
 router.use(authorize(['PLATFORM_ADMIN']));
 

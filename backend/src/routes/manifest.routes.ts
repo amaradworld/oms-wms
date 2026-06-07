@@ -7,15 +7,15 @@ import {
   downloadManifestPdf,
   getShippedOrdersForManifest,
 } from '../controllers/manifest.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { authenticate, authorize, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, getManifests);
-router.post('/', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createManifest);
+router.post('/', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createManifest);
 router.get('/shipped-orders', authenticate, getShippedOrdersForManifest);
 router.get('/:id', authenticate, getManifestById);
-router.patch('/:id/close', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), closeManifest);
+router.patch('/:id/close', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), closeManifest);
 router.get('/:id/pdf', authenticate, downloadManifestPdf);
 
 export default router;

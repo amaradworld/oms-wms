@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { getReplenishmentTasks, createReplenishmentTask, completeReplenishmentTask, cancelReplenishmentTask, generateFromAlerts } from '../controllers/replenishment.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 router.get('/', authenticate, getReplenishmentTasks);
-router.post('/', authenticate, createReplenishmentTask);
-router.post('/generate', authenticate, generateFromAlerts);
-router.put('/:id/complete', authenticate, completeReplenishmentTask);
-router.put('/:id/cancel', authenticate, cancelReplenishmentTask);
+router.post('/', authenticate, tenantScope, createReplenishmentTask);
+router.post('/generate', authenticate, tenantScope, generateFromAlerts);
+router.put('/:id/complete', authenticate, tenantScope, completeReplenishmentTask);
+router.put('/:id/cancel', authenticate, tenantScope, cancelReplenishmentTask);
 export default router;

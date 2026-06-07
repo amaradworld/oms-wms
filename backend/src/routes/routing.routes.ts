@@ -5,13 +5,13 @@ import {
   deleteRoutingConfig,
   suggestCourier,
 } from '../controllers/routing.controller';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { authenticate, authorize, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, getRoutingConfigs);
-router.post('/', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), upsertRoutingConfig);
-router.delete('/:id', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), deleteRoutingConfig);
-router.post('/suggest', authenticate, suggestCourier);
+router.post('/', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), upsertRoutingConfig);
+router.delete('/:id', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), deleteRoutingConfig);
+router.post('/suggest', authenticate, tenantScope, suggestCourier);
 
 export default router;

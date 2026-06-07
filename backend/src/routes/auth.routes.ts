@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { verify as verifyTotp } from 'otplib';
 import prisma from '../services/prisma';
 import { AppError } from '../middlewares/error.middleware';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validate.middleware';
 import { loginSchema } from '../schemas';
 import { changePassword } from '../controllers/user.controller';
@@ -149,7 +149,7 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
-router.post('/change-password', authenticate, changePassword);
+router.post('/change-password', authenticate, tenantScope, changePassword);
 
 router.get('/tenant/:slug', async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth.middleware';
+import { authenticate, authorize, tenantScope} from '../middlewares/auth.middleware';
 import {
   getGatepasses,
   getGatepassById,
@@ -13,9 +13,9 @@ const router = Router();
 
 router.get('/', authenticate, getGatepasses);
 router.get('/:id', authenticate, getGatepassById);
-router.post('/', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createGatepass);
-router.post('/from-stock-transfer/:id', authenticate, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createGatepassFromStockTransfer);
-router.patch('/:id/status', authenticate, updateGatepassStatus);
-router.post('/:id/scan', authenticate, scanGatepassItem);
+router.post('/', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createGatepass);
+router.post('/from-stock-transfer/:id', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), createGatepassFromStockTransfer);
+router.patch('/:id/status', authenticate, tenantScope, updateGatepassStatus);
+router.post('/:id/scan', authenticate, tenantScope, scanGatepassItem);
 
 export default router;

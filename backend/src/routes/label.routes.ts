@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { generateSkuLabel, generateShippingLabel } from '../controllers/label.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/generate', authenticate, generateSkuLabel);
-router.post('/generate-shipping', authenticate, generateShippingLabel);
+router.post('/generate', authenticate, tenantScope, generateSkuLabel);
+router.post('/generate-shipping', authenticate, tenantScope, generateShippingLabel);
 
 export default router;

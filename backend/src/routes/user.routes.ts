@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { getUsers, updateUser, createUser } from '../controllers/user.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, getUsers);
-router.post('/', authenticate, createUser);
-router.put('/:id', authenticate, updateUser);
+router.post('/', authenticate, tenantScope, createUser);
+router.put('/:id', authenticate, tenantScope, updateUser);
 
 export default router;

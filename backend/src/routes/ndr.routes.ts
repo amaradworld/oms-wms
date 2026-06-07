@@ -6,14 +6,14 @@ import {
   scheduleReattempt,
   resolveNdrCase,
 } from '../controllers/ndr.controller';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, getNdrCases);
 router.get('/stats', authenticate, getNdrStats);
-router.post('/', authenticate, createNdrCase);
-router.patch('/:id/reattempt', authenticate, scheduleReattempt);
-router.patch('/:id/resolve', authenticate, resolveNdrCase);
+router.post('/', authenticate, tenantScope, createNdrCase);
+router.patch('/:id/reattempt', authenticate, tenantScope, scheduleReattempt);
+router.patch('/:id/resolve', authenticate, tenantScope, resolveNdrCase);
 
 export default router;
