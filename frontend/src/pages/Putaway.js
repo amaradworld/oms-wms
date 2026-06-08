@@ -140,12 +140,17 @@ const Putaway = ({ detailId, setDetailId }) => {
     setSubmitting(true);
     try {
       const items = selectedItems.map(i => ({ skuId: i.skuId, expectedQty: i.expectedQty, sourceId: i.sourceId }));
-      await API.post('/putaway/task', {
+      const res = await API.post('/putaway/task', {
         source: selectedSource,
         warehouseId: selectedFacility.id,
         items,
       });
-      toast.success(`${items.length} putaway task(s) created`);
+      const { created, skipped, message } = res.data;
+      if (skipped > 0) {
+        toast.warning(message || `${skipped} item(s) skipped — already have pending tasks`);
+      } else {
+        toast.success(message || `${created} putaway task(s) created`);
+      }
       setShowCreateModal(false);
       fetchData();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); } finally { setSubmitting(false); }

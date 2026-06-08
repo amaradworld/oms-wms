@@ -49,29 +49,29 @@ export const getPutawaySources = async (req: AuthRequest, res: Response) => {
           },
           orderBy: { createdAt: 'desc' },
         });
-        // Return items that don't already have completed putaway tasks
+        // Return items that don't already have pending/in-progress/completed putaway tasks
         const result = [];
         for (const grn of grns) {
           const existingTasks = await prisma.putawayTask.findMany({
             where: { grnId: grn.id, status: { in: ['PENDING', 'IN_PROGRESS', 'COMPLETED'] } },
             select: { id: true, skuId: true, expectedQty: true, status: true },
           });
-          const alreadyDone = new Set(existingTasks.filter(t => t.status === 'COMPLETED').map(t => t.skuId));
+          const activeTaskSkus = new Set(existingTasks.filter(t => t.status === 'PENDING' || t.status === 'IN_PROGRESS').map(t => t.skuId));
+          const completedSkus = new Set(existingTasks.filter(t => t.status === 'COMPLETED').map(t => t.skuId));
           for (const item of grn.items) {
-            if (!alreadyDone.has(item.skuId)) {
-              const inProgress = existingTasks.find(t => t.skuId === item.skuId && t.status !== 'COMPLETED');
-              result.push({
-                sourceId: grn.id,
-                sourceRef: `GRN #${grn.grnNumber} (PO: ${grn.purchaseOrder?.poNumber})`,
-                skuId: item.skuId,
-                skuCode: item.sku.skuCode,
-                skuName: item.sku.name,
-                skuSize: item.sku.size,
-                expectedQty: item.acceptedQty > 0 ? item.acceptedQty : item.receivedQty,
-                pendingQty: inProgress ? inProgress.expectedQty : (item.acceptedQty > 0 ? item.acceptedQty : item.receivedQty),
-                existingTaskId: inProgress?.id || null,
-              });
-            }
+            if (completedSkus.has(item.skuId)) continue; // fully completed
+            if (activeTaskSkus.has(item.skuId)) continue; // already has pending/in-progress task — skip to prevent dupes
+            result.push({
+              sourceId: grn.id,
+              sourceRef: `GRN #${grn.grnNumber} (PO: ${grn.purchaseOrder?.poNumber})`,
+              skuId: item.skuId,
+              skuCode: item.sku.skuCode,
+              skuName: item.sku.name,
+              skuSize: item.sku.size,
+              expectedQty: item.acceptedQty > 0 ? item.acceptedQty : item.receivedQty,
+              pendingQty: item.acceptedQty > 0 ? item.acceptedQty : item.receivedQty,
+              existingTaskId: null,
+            });
           }
         }
         return res.json(result);
@@ -288,21 +288,56 @@ export const createPutawayTask = async (req: AuthRequest, res: Response) => {
   if (!items || items.length === 0) return res.status(400).json({ message: 'At least one item required' });
 
   try {
-    const tasksData = items.map(item => ({
-      tenantId,
-      warehouseId,
-      source,
-      sourceId: item.sourceId || null,
-      grnId: source === 'PUTAWAY_GRN_ITEM' ? item.sourceId : null,
-      skuId: item.skuId,
-      expectedQty: item.expectedQty,
-      createdById: req.user!.id,
-    }));
+    // Prevent duplicates: check for existing tasks for same SKU+sourceId+warehouseId
+    const existingTasks = await prisma.putawayTask.findMany({
+      where: {
+        warehouseId,
+        tenantId,
+        status: { in: ['PENDING', 'IN_PROGRESS'] },
+        OR: items.map((item: any) => ({
+          skuId: item.skuId,
+          sourceId: item.sourceId || null,
+        })),
+      },
+      select: { id: true, skuId: true, sourceId: true, status: true },
+    });
 
-    await prisma.putawayTask.createMany({ data: tasksData });
+    const existingMap = new Map(existingTasks.map(t => [`${t.skuId}:${t.sourceId || ''}`, t]));
+    const skipped: string[] = [];
+    const toCreate: any[] = [];
 
-    res.status(201).json({ message: 'Putaway tasks created', count: tasksData.length });
-    logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'PutawayTask', newValue: { source, warehouseId, itemCount: items.length } });
+    for (const item of items) {
+      const key = `${item.skuId}:${item.sourceId || ''}`;
+      if (existingMap.has(key)) {
+        const existing = existingMap.get(key)!;
+        skipped.push(`${item.skuId} (already ${existing.status} in task ${existing.id.slice(0, 8)})`);
+      } else {
+        toCreate.push({
+          tenantId,
+          warehouseId,
+          source,
+          sourceId: item.sourceId || null,
+          grnId: source === 'PUTAWAY_GRN_ITEM' ? item.sourceId : null,
+          skuId: item.skuId,
+          expectedQty: item.expectedQty,
+          createdById: req.user!.id,
+        });
+      }
+    }
+
+    if (toCreate.length > 0) {
+      await prisma.putawayTask.createMany({ data: toCreate });
+    }
+
+    const msg = [
+      toCreate.length > 0 ? `${toCreate.length} putaway task(s) created` : '',
+      skipped.length > 0 ? `${skipped.length} skipped (already pending/in-progress): ${skipped.join(', ')}` : '',
+    ].filter(Boolean).join('. ');
+
+    res.status(201).json({ message: msg || 'All items already have pending putaway tasks', created: toCreate.length, skipped: skipped.length });
+    if (toCreate.length > 0) {
+      logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'PutawayTask', newValue: { source, warehouseId, itemCount: toCreate.length, skippedCount: skipped.length } });
+    }
   } catch (error: any) {
     console.error('Create putaway task error:', error);
     res.status(500).json({ message: error?.message || 'Internal server error' });
