@@ -27,9 +27,9 @@ export const createSkuSchema = z.object({
 });
 
 export const updateSkuSchema = z.object({
-  skuCode: z.string().min(1).optional(),
-  epcCode: z.string().length(11).regex(/^\d{11}$/).optional().nullable(),
-  name: z.string().min(1).optional(),
+  skuCode: z.string().optional(),
+  epcCode: z.string().optional().nullable(),
+  name: z.string().optional(),
   styleName: z.string().optional().nullable(),
   size: z.string().optional().nullable(),
   color: z.string().optional().nullable(),
@@ -38,13 +38,13 @@ export const updateSkuSchema = z.object({
   material: z.string().optional().nullable(),
   gender: z.string().optional().nullable(),
   unitType: z.string().optional().nullable(),
-  mrp: z.string().or(z.number()).optional().nullable(),
+  mrp: z.union([z.string(), z.number()]).optional().nullable(),
   description: z.string().optional().nullable(),
   hsnCode: z.string().optional().nullable(),
-  weight: z.string().or(z.number()).optional().nullable(),
+  weight: z.union([z.string(), z.number()]).optional().nullable(),
   dimensions: z.string().optional().nullable(),
   marketplaceSkus: z.record(z.string(), z.string()).optional().nullable(),
-});
+}).passthrough();
 
 export const createWarehouseSchema = z.object({
   name: z.string().min(1, 'Warehouse name is required'),
