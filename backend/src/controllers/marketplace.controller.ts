@@ -24,12 +24,12 @@ export const getConfigs = async (req: AuthRequest, res: Response) => {
 };
 
 export const saveConfig = async (req: AuthRequest, res: Response) => {
-  const { marketplace, apiKey, apiSecret, sellerId } = req.body;
+  const { marketplace, apiKey, apiSecret, sellerId, safetyStockBuffer } = req.body;
   const mp = (marketplace as string).toUpperCase();
   const config = await prisma.marketplaceConfig.upsert({
     where: { tenantId_marketplace: { tenantId: req.user!.tenant_id, marketplace: mp } },
-    update: { apiKey, apiSecret, sellerId },
-    create: { tenantId: req.user!.tenant_id, marketplace: mp, apiKey, apiSecret, sellerId },
+    update: { apiKey, apiSecret, sellerId, safetyStockBuffer: safetyStockBuffer ?? undefined },
+    create: { tenantId: req.user!.tenant_id, marketplace: mp, apiKey, apiSecret, sellerId, safetyStockBuffer: safetyStockBuffer ?? 0 },
   });
   res.json(config);
 };

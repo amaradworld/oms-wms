@@ -34,12 +34,32 @@ async function handleInventoryChange(event: InventoryChangeEvent) {
     const configs = await prisma.marketplaceConfig.findMany({
       where: { tenantId: event.tenantId, syncStatus: { not: 'error' } },
     });
+
+    // Get total available stock for this SKU across all bins
+    const invItems = await prisma.inventory.findMany({
+      where: { sku: { skuCode: event.skuCode }, warehouse: { tenantId: event.tenantId } },
+    });
+    const totalAvailable = invItems.reduce((sum, i) => sum + i.quantityAvailable, 0);
+    const totalReserved = invItems.reduce((sum, i) => sum + i.quantityReserved, 0);
+
+    // Get all active marketplace configs to compute per-channel reservations
+    const allConfigs = await prisma.marketplaceConfig.findMany({
+      where: { tenantId: event.tenantId, isActive: true },
+    });
+
     for (const config of configs) {
       const connector = getConnector(config.marketplace);
       if (!connector?.updateInventory) continue;
+
+      // Channel-aware ATS: total available - this channel's safety buffer - other channels' safety buffers
+      const otherBuffers = allConfigs
+        .filter(c => c.marketplace !== config.marketplace && c.isActive)
+        .reduce((sum, c) => sum + c.safetyStockBuffer, 0);
+      const ats = Math.max(0, totalAvailable - totalReserved - config.safetyStockBuffer - otherBuffers);
+
       connector.updateInventory(
         { apiKey: config.apiKey || undefined, apiSecret: config.apiSecret || undefined, sellerId: config.sellerId || undefined },
-        [{ skuCode: event.skuCode, quantity: event.quantity }]
+        [{ skuCode: event.skuCode, quantity: ats }]
       ).catch(err => {
         console.error(`[MarketplaceEvent] inventory sync failed for ${config.marketplace}:`, err.message);
       });

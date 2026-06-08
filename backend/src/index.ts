@@ -51,6 +51,7 @@ import mfaRoutes from './routes/mfa.routes';
 import tenantRoutes from './routes/tenant.routes';
 import leadRoutes from './routes/lead.routes';
 import returnRoutes from './routes/return.routes';
+import webhookRoutes from './routes/webhook.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
@@ -139,7 +140,8 @@ app.use('/api/replenishment', replenishmentRoutes);
 app.use('/api/productivity', productivityRoutes);
 app.use('/api/asn', asnRoutes);
 app.use('/api/batch', batchRoutes);
-app.use('/api/notifications', notificationRoutes);
+  app.use('/api/notifications', notificationRoutes);
+  app.use('/api/webhooks', webhookRoutes);
 
 app.get('/api/search', authenticate, globalSearch);
 
