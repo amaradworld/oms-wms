@@ -42,6 +42,7 @@ const Grn = lazy(() => import(/* webpackChunkName: "page-grn" */ './pages/Grn'))
 const Putaway = lazy(() => import(/* webpackChunkName: "page-putaway" */ './pages/Putaway'));
 const BinManager = lazy(() => import(/* webpackChunkName: "page-binmanager" */ './pages/BinManager'));
 const SkuHistory = lazy(() => import(/* webpackChunkName: "page-skuhistory" */ './pages/SkuHistory'));
+const SkuMaster = lazy(() => import(/* webpackChunkName: "page-skumaster" */ './pages/SkuMaster'));
 const Parties = lazy(() => import(/* webpackChunkName: "page-parties" */ './pages/Parties'));
 const Companies = lazy(() => import(/* webpackChunkName: "page-companies" */ './pages/Companies'));
 const Leads = lazy(() => import(/* webpackChunkName: "page-leads" */ './pages/Leads'));
@@ -76,8 +77,8 @@ const UNAUTHORIZED = () => (
 
 const roleAccess = {
   PLATFORM_ADMIN: ['dashboard','companies','leads','audit-logs'],
-  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan'],
-  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan'],
+  SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','sku-master','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan'],
+  WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan','sku-master'],
   PICKER: ['dashboard','picklist','scanning'],
   PACKER: ['dashboard','packing','scanning'],
 };
@@ -90,7 +91,7 @@ const TAB_TO_PATH = {
   manifests:'manifests', ndr:'ndr', 'courier-routing':'courier-routing',
   'inventory-alerts':'inventory-alerts', gatepass:'gatepass', 'gatepass-order':'gatepass-order',
   integrations:'integrations', grn:'grn', putaway:'putaway', bins:'bin-locations',
-  'sku-history':'sku-history', parties:'parties', companies:'companies', leads:'leads', settings:'settings',
+  'sku-history':'sku-history', 'sku-master':'sku-master', parties:'parties', companies:'companies', leads:'leads', settings:'settings',
   'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan',
 };
 
@@ -250,6 +251,7 @@ const App = () => {
       case 'putaway': return <Putaway {...pageProps} />;
       case 'bins': return <BinManager {...pageProps} />;
       case 'sku-history': return <SkuHistory {...pageProps} />;
+      case 'sku-master': return <SkuMaster {...pageProps} />;
       case 'parties': return <Parties {...pageProps} />;
       case 'companies': return <Companies {...pageProps} />;
       case 'leads': return <Leads {...pageProps} />;

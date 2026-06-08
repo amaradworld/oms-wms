@@ -1,6 +1,8 @@
 import { Response } from 'express';
+import { parse } from 'csv-parse/sync';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { logAudit } from '../services/audit.service';
 
 export const getSkus = async (req: AuthRequest, res: Response) => {
   const search = (req.query.search || req.query.q) as string | undefined;
@@ -172,7 +174,7 @@ async function generateEpcCode(): Promise<string> {
 }
 
 export const createSku = async (req: AuthRequest, res: Response) => {
-  const { skuCode, epcCode, name, styleName, size, color, brand, category, material, gender, unitType, mrp, description, hsnCode, weight, dimensions } = req.body;
+  const { skuCode, epcCode, name, styleName, size, color, brand, category, material, gender, unitType, mrp, description, hsnCode, weight, dimensions, marketplaceSkus } = req.body;
   try {
     const existing = await prisma.skuMaster.findUnique({ where: { skuCode } });
     if (existing) return res.status(400).json({ message: 'SKU code already exists' });
@@ -191,11 +193,182 @@ export const createSku = async (req: AuthRequest, res: Response) => {
         description, hsnCode,
         weight: weight ? parseFloat(weight) : null,
         dimensions,
+        marketplaceSkus: marketplaceSkus && typeof marketplaceSkus === 'object' ? marketplaceSkus : undefined,
         tenantId: req.user!.tenant_id,
       },
     });
+
+    await logAudit({
+      tenantId: req.user!.tenant_id,
+      userId: req.user!.id,
+      action: 'CREATE',
+      entityType: 'SKU',
+      entityId: sku.id,
+      newValue: { skuCode: sku.skuCode, name: sku.name, mrp: sku.mrp, marketplaceSkus: sku.marketplaceSkus },
+    });
+
     res.status(201).json(sku);
   } catch (error) {
     res.status(400).json({ message: 'Error creating SKU', error: String(error) });
+  }
+};
+
+export const updateSku = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user!.tenant_id;
+  const id = req.params.id as string;
+  const updates = req.body || {};
+
+  try {
+    const existing = await prisma.skuMaster.findFirst({ where: { id, tenantId } });
+    if (!existing) return res.status(404).json({ message: 'SKU not found' });
+
+    if (updates.skuCode && updates.skuCode !== existing.skuCode) {
+      const dup = await prisma.skuMaster.findUnique({ where: { skuCode: updates.skuCode } });
+      if (dup) return res.status(400).json({ message: 'SKU code already exists' });
+    }
+    if (updates.epcCode && updates.epcCode !== existing.epcCode) {
+      const dupEpc = await prisma.skuMaster.findUnique({ where: { epcCode: updates.epcCode } });
+      if (dupEpc) return res.status(400).json({ message: 'EPC code already exists' });
+    }
+
+    const data: any = {};
+    const fields = ['name','styleName','size','color','brand','category','material','gender','unitType','description','hsnCode','dimensions','skuCode','epcCode'];
+    for (const f of fields) {
+      if (updates[f] !== undefined) data[f] = updates[f] || null;
+    }
+    if (updates.mrp !== undefined) data.mrp = updates.mrp ? parseFloat(updates.mrp) : null;
+    if (updates.weight !== undefined) data.weight = updates.weight ? parseFloat(updates.weight) : null;
+    if (updates.marketplaceSkus !== undefined) {
+      data.marketplaceSkus = (updates.marketplaceSkus && typeof updates.marketplaceSkus === 'object') ? updates.marketplaceSkus : null;
+    }
+
+    const updated = await prisma.skuMaster.update({ where: { id }, data });
+
+    await logAudit({
+      tenantId,
+      userId: req.user!.id,
+      action: 'UPDATE',
+      entityType: 'SKU',
+      entityId: id,
+      oldValue: {
+        skuCode: existing.skuCode, name: existing.name, mrp: existing.mrp, brand: existing.brand,
+        size: existing.size, color: existing.color, hsnCode: existing.hsnCode, marketplaceSkus: existing.marketplaceSkus,
+      },
+      newValue: {
+        skuCode: updated.skuCode, name: updated.name, mrp: updated.mrp, brand: updated.brand,
+        size: updated.size, color: updated.color, hsnCode: updated.hsnCode, marketplaceSkus: updated.marketplaceSkus,
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    res.status(400).json({ message: 'Error updating SKU', error: String(error) });
+  }
+};
+
+export const deleteSku = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user!.tenant_id;
+  const id = req.params.id as string;
+  try {
+    const existing = await prisma.skuMaster.findFirst({ where: { id, tenantId } });
+    if (!existing) return res.status(404).json({ message: 'SKU not found' });
+
+    const [invCount, orderItemCount, grnItemCount, poItemCount, putawayCount, replenCount, asnCount, stCount, gpCount, cycleCount] = await Promise.all([
+      prisma.inventory.count({ where: { skuId: id } }),
+      prisma.orderItem.count({ where: { skuId: id } }),
+      prisma.grnItem.count({ where: { skuId: id } }),
+      prisma.purchaseOrderItem.count({ where: { skuId: id } }),
+      prisma.putawayTask.count({ where: { skuId: id } }),
+      prisma.replenishmentTask.count({ where: { skuId: id } }),
+      prisma.asnItem.count({ where: { skuId: id } }),
+      prisma.stockTransferItem.count({ where: { skuId: id } }),
+      prisma.gatepassItem.count({ where: { skuId: id } }),
+      prisma.cycleCountItem.count({ where: { skuId: id } }),
+    ]);
+    const usage = invCount + orderItemCount + grnItemCount + poItemCount + putawayCount + replenCount + asnCount + stCount + gpCount + cycleCount;
+    if (usage > 0) {
+      return res.status(400).json({
+        message: `Cannot delete: SKU is referenced in ${usage} transaction(s). Archive via UI instead.`,
+        usage: { inventory: invCount, orders: orderItemCount, grn: grnItemCount, po: poItemCount, putaway: putawayCount, replenishment: replenCount, asn: asnCount, stockTransfer: stCount, gatepass: gpCount, cycleCount },
+      });
+    }
+
+    await prisma.skuMaster.delete({ where: { id } });
+    await logAudit({
+      tenantId, userId: req.user!.id, action: 'DELETE', entityType: 'SKU', entityId: id,
+      oldValue: { skuCode: existing.skuCode, name: existing.name },
+    });
+    res.json({ message: `SKU ${existing.skuCode} deleted` });
+  } catch (error) {
+    res.status(400).json({ message: 'Error deleting SKU', error: String(error) });
+  }
+};
+
+export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user!.tenant_id;
+    const file = (req as any).file;
+    if (!file) return res.status(400).json({ message: 'CSV file is required' });
+
+    const csv = file.buffer.toString('utf-8');
+    const records: any[] = parse(csv, { columns: true, skip_empty_lines: true, trim: true });
+
+    let created = 0;
+    let updated = 0;
+    const errors: string[] = [];
+
+    for (let i = 0; i < records.length; i++) {
+      const row = records[i];
+      const skuCode = row.skuCode || row.SKU || '';
+      if (!skuCode) { errors.push(`Row ${i + 2}: missing skuCode`); continue; }
+
+      const marketplaceSkus: Record<string, string> = {};
+      const mpFields = ['flipkartSku','amazonSku','myntraSku','nykaaSku','tatacliqSku','meeshoSku','shopifySku'];
+      for (const f of mpFields) {
+        if (row[f]) marketplaceSkus[f] = String(row[f]);
+      }
+
+      const data: any = {
+        name: row.name || row.Name || skuCode,
+        styleName: row.styleName || null,
+        size: row.size || null,
+        color: row.color || null,
+        brand: row.brand || null,
+        category: row.category || null,
+        material: row.material || null,
+        gender: row.gender || null,
+        unitType: row.unitType || null,
+        mrp: row.mrp ? parseFloat(row.mrp) : null,
+        hsnCode: row.hsnCode || null,
+        weight: row.weight ? parseFloat(row.weight) : null,
+        dimensions: row.dimensions || null,
+        description: row.description || null,
+        marketplaceSkus: Object.keys(marketplaceSkus).length ? marketplaceSkus : undefined,
+      };
+
+      try {
+        const existing = await prisma.skuMaster.findFirst({ where: { skuCode, tenantId } });
+        if (existing) {
+          await prisma.skuMaster.update({ where: { id: existing.id }, data });
+          updated++;
+        } else {
+          await prisma.skuMaster.create({
+            data: { ...data, skuCode, tenantId },
+          });
+          created++;
+        }
+      } catch (e: any) {
+        errors.push(`Row ${i + 2} (${skuCode}): ${e.message}`);
+      }
+    }
+
+    await logAudit({
+      tenantId, userId: req.user!.id, action: 'BULK_IMPORT', entityType: 'SKU',
+      newValue: { created, updated, errors: errors.length, file: file.originalname },
+    });
+
+    res.json({ message: `Imported ${created} new + updated ${updated} SKUs${errors.length ? ` (${errors.length} errors)` : ''}`, created, updated, errors });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Import failed', error: error.message });
   }
 };

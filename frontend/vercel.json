@@ -45,6 +45,8 @@
     { "source": "/app/bin-locations", "destination": "/app/index.html" },
     { "source": "/app/sku-history", "destination": "/app/index.html" },
     { "source": "/app/sku-history/:id", "destination": "/app/index.html" },
+    { "source": "/app/sku-master", "destination": "/app/index.html" },
+    { "source": "/app/sku-master/:id", "destination": "/app/index.html" },
     { "source": "/app/parties", "destination": "/app/index.html" },
     { "source": "/app/companies", "destination": "/app/index.html" },
     { "source": "/app/leads", "destination": "/app/index.html" },

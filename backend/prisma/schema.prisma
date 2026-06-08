@@ -192,6 +192,7 @@ model SkuMaster {
   hsnCode            String?
   weight             Decimal?
   dimensions         String?
+  marketplaceSkus    Json?
   createdAt          DateTime            @default(now())
   inventory          Inventory[]
   orderItems         OrderItem[]
