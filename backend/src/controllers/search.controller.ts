@@ -26,6 +26,7 @@ export const globalSearch = async (req: AuthRequest, res: Response) => {
     }),
     prisma.skuMaster.findMany({
       where: {
+        ...tenantFilter,
         OR: [
           { skuCode: { contains: q, mode: 'insensitive' } },
           { epcCode: { contains: q, mode: 'insensitive' } },

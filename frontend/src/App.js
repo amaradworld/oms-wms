@@ -79,7 +79,7 @@ const roleAccess = {
   PLATFORM_ADMIN: ['dashboard','companies','leads','audit-logs'],
   SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','sku-master','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan'],
   WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan','sku-master'],
-  PICKER: ['dashboard','picklist','scanning'],
+  PICKER: ['dashboard','picklist','scanning','waves'],
   PACKER: ['dashboard','packing','scanning'],
 };
 

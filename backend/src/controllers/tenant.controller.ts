@@ -44,7 +44,7 @@ export const createTenant = async (req: AuthRequest, res: Response) => {
         role: 'SUPER_ADMIN',
       },
     });
-    return res.status(201).json({ ...tenant, adminEmail: user.email, adminPassword });
+    return res.status(201).json({ ...tenant, adminEmail: user.email });
   }
 
   res.status(201).json(tenant);

@@ -4,7 +4,7 @@ import { authenticate, authorize, requirePlatformOwner, tenantScope} from '../mi
 
 const router = Router();
 
-router.get('/', getTenants);
+router.get('/', authenticate, getTenants);
 router.get('/me', authenticate, getMyTenant);
 router.put('/me', authenticate, tenantScope, updateMyTenant);
 router.use(authenticate);

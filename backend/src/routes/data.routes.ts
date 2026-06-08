@@ -6,6 +6,15 @@ const router = Router();
 
 router.use(requireApiKey);
 
+function requireTenantId(req: Request, res: Response): string | null {
+  const tenantId = req.query.tenantId as string;
+  if (!tenantId) {
+    res.status(400).json({ message: 'tenantId query parameter is required for data access' });
+    return null;
+  }
+  return tenantId;
+}
+
 const toCsv = (rows: Record<string, any>[]): string => {
   if (!rows.length) return 'No data';
   const headers = Object.keys(rows[0]);
@@ -59,11 +68,13 @@ router.get('/', (_req: Request, res: Response) => {
 });
 
 router.get('/orders', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit as string) || 100));
-  const where: any = {};
+  const where: any = { tenantId };
   if (df.gte || df.lte) where.createdAt = df;
 
   const [raw, total] = await Promise.all([
@@ -113,9 +124,11 @@ router.get('/orders', async (req: Request, res: Response) => {
 });
 
 router.get('/inventory', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const warehouseId = req.query.warehouseId as string;
-  const where: any = {};
+  const where: any = { warehouse: { tenantId } };
   if (warehouseId) where.warehouseId = warehouseId;
 
   const items = await prisma.inventory.findMany({
@@ -148,9 +161,11 @@ router.get('/inventory', async (req: Request, res: Response) => {
 });
 
 router.get('/grn', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
-  const where: any = {};
+  const where: any = { tenantId };
   if (df.gte || df.lte) where.createdAt = df;
 
   const grns = await prisma.grn.findMany({
@@ -186,9 +201,11 @@ router.get('/grn', async (req: Request, res: Response) => {
 });
 
 router.get('/putaway', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const status = req.query.status as string;
-  const where: any = {};
+  const where: any = { warehouse: { tenantId } };
   if (status) where.status = status;
 
   const tasks = await prisma.putawayTask.findMany({
@@ -222,9 +239,11 @@ router.get('/putaway', async (req: Request, res: Response) => {
 });
 
 router.get('/stock-transfers', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
-  const where: any = {};
+  const where: any = { tenantId };
   if (df.gte || df.lte) where.createdAt = df;
 
   const transfers = await prisma.stockTransfer.findMany({
@@ -257,9 +276,11 @@ router.get('/stock-transfers', async (req: Request, res: Response) => {
 });
 
 router.get('/purchase-orders', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
-  const where: any = {};
+  const where: any = { tenantId };
   if (df.gte || df.lte) where.createdAt = df;
 
   const pos = await prisma.purchaseOrder.findMany({
@@ -298,9 +319,11 @@ router.get('/purchase-orders', async (req: Request, res: Response) => {
 });
 
 router.get('/gatepasses', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
-  const where: any = {};
+  const where: any = { tenantId };
   if (df.gte || df.lte) where.createdAt = df;
 
   const gatepasses = await prisma.gatepass.findMany({
@@ -335,9 +358,11 @@ router.get('/gatepasses', async (req: Request, res: Response) => {
 });
 
 router.get('/returns', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const df = dateFilter(req);
-  const where: any = {};
+  const where: any = { order: { tenantId } };
   if (df.gte || df.lte) where.receivedAt = df;
 
   const returns = await prisma.return.findMany({
@@ -361,9 +386,11 @@ router.get('/returns', async (req: Request, res: Response) => {
 });
 
 router.get('/skus', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const search = req.query.search as string;
-  const where: any = {};
+  const where: any = { tenantId };
   if (search) {
     where.OR = [
       { skuCode: { contains: search, mode: 'insensitive' } },
@@ -396,9 +423,11 @@ router.get('/skus', async (req: Request, res: Response) => {
 });
 
 router.get('/bins', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
   const warehouseId = req.query.warehouseId as string;
-  const where: any = {};
+  const where: any = { warehouse: { tenantId } };
   if (warehouseId) where.warehouseId = warehouseId;
 
   const bins = await prisma.binLocation.findMany({
@@ -421,9 +450,12 @@ router.get('/bins', async (req: Request, res: Response) => {
 });
 
 router.get('/suppliers', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
 
   const suppliers = await prisma.supplier.findMany({
+    where: { tenantId },
     orderBy: { name: 'asc' },
   });
 
@@ -440,9 +472,12 @@ router.get('/suppliers', async (req: Request, res: Response) => {
 });
 
 router.get('/integrations', async (req: Request, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
   const format = detectFormat(req);
 
   const integrations = await prisma.platformIntegration.findMany({
+    where: { tenantId },
     orderBy: { name: 'asc' },
   });
 
