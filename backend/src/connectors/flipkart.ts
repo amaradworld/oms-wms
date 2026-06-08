@@ -1,28 +1,59 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const FLIPKART_API_BASE = 'https://api.flipkart.net/sellers';
+const FLIPKART_OAUTH_URL = 'https://api.flipkart.net/oauth/resource/token';
 
 export class FlipkartConnector implements MarketplaceConnector {
   name = 'Flipkart';
 
+  private async getAccessToken(clientId: string, clientSecret: string): Promise<string> {
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const response = await fetch(FLIPKART_OAUTH_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'grant_type=client_credentials',
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new Error(`Flipkart OAuth failed (${response.status}): ${body.slice(0, 200)}`);
+    }
+    const data = await response.json();
+    if (!data.access_token) {
+      throw new Error('Flipkart OAuth: no access_token in response');
+    }
+    console.log(`[Flipkart] OAuth token obtained, expires in ${data.expires_in || '?'}s`);
+    return data.access_token;
+  }
+
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
     if (config.apiKey && config.apiKey !== 'demo') {
+      let accessToken: string;
+
+      if (config.apiSecret) {
+        // apiSecret is present: treat apiKey as client_id and apiSecret as client_secret
+        // Exchange credentials for an access token via OAuth
+        accessToken = await this.getAccessToken(config.apiKey, config.apiSecret);
+      } else {
+        // No apiSecret: assume apiKey is already a valid access token
+        accessToken = config.apiKey;
+      }
+
       const filter: any = {};
       if (config.lastSyncAt) {
         filter.orderDate = { fromDate: config.lastSyncAt.toISOString() };
       }
 
       const body: any = { filter };
-      if (config.sellerId) {
-        body.sellerId = config.sellerId;
-      }
 
       console.log(`[Flipkart] Searching orders from ${FLIPKART_API_BASE}/v2/orders/search`);
 
       const response = await fetch(`${FLIPKART_API_BASE}/v2/orders/search`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${config.apiKey}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -116,10 +147,14 @@ export class FlipkartConnector implements MarketplaceConnector {
   async updateInventory(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
     try {
+      let accessToken = config.apiKey;
+      if (config.apiSecret) {
+        accessToken = await this.getAccessToken(config.apiKey, config.apiSecret);
+      }
       const res = await fetch(`${FLIPKART_API_BASE}/v2/inventory`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${config.apiKey}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -132,19 +167,23 @@ export class FlipkartConnector implements MarketplaceConnector {
     }
   }
 
-  async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
+  async pushTracking(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
     try {
+      let accessToken = config.apiKey;
+      if (config.apiSecret) {
+        accessToken = await this.getAccessToken(config.apiKey, config.apiSecret);
+      }
       const res = await fetch(`${FLIPKART_API_BASE}/v2/orders/shipments`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${config.apiKey}`,
+          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          orderId: orderId,
-          awb: awb,
-          courier: courier,
+          orderId,
+          awb,
+          courier,
         }),
       });
       console.log(`[Flipkart pushTracking] ${orderId}: ${res.status}`);
