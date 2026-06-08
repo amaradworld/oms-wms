@@ -2,6 +2,7 @@ import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { resolveSku } from '../utils/sku-resolver';
+import { emitInventoryChange } from '../services/marketplaceEvents.service';
 
 export const getInventory = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
@@ -164,6 +165,8 @@ export const scanInventory = async (req: AuthRequest, res: Response) => {
   }
 
   res.json({ message: `Scanned +1 for ${skuCode}`, inventory: inv, sku: { skuCode: sku.skuCode, name: sku.name } });
+
+  emitInventoryChange({ tenantId, skuCode: sku.skuCode, quantity: inv.quantityOnHand, warehouseId });
 };
 
 export const getInventoryAlerts = async (req: AuthRequest, res: Response) => {

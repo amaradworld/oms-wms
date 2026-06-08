@@ -93,4 +93,25 @@ export class TataCliqConnector implements MarketplaceConnector {
       return false;
     }
   }
+
+  async pushStatus(config: { apiKey?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
+    try {
+      const statusMap: Record<string, string> = {
+        DELIVERED: 'delivered', CANCELLED: 'cancelled', RETURNED: 'returned', DISPATCHED: 'shipped',
+      };
+      const tataStatus = statusMap[status];
+      if (!tataStatus) return true;
+      const res = await fetch(`${TATACLIQ_API_BASE}/v2/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Seller-Id': config.sellerId || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: tataStatus, reason: reason || '' }),
+      });
+      console.log(`[TataCliq pushStatus] ${orderId} → ${status}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[TataCliq pushStatus] ${orderId}:`, err);
+      return false;
+    }
+  }
 }

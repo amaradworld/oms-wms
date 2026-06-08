@@ -191,4 +191,32 @@ export class FlipkartConnector implements MarketplaceConnector {
       return false;
     }
   }
+
+  async pushStatus(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
+    try {
+      let accessToken = config.apiKey;
+      if (config.apiSecret) {
+        accessToken = await this.getAccessToken(config.apiKey, config.apiSecret);
+      }
+      const statusMap: Record<string, string> = {
+        DELIVERED: 'DELIVERED',
+        CANCELLED: 'CANCELLED',
+        RETURNED: 'RETURNED',
+        DISPATCHED: 'DISPATCHED',
+      };
+      const fkStatus = statusMap[status];
+      if (!fkStatus) return true;
+      const res = await fetch(`${FLIPKART_API_BASE}/v2/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: fkStatus, reason: reason || '' }),
+      });
+      console.log(`[Flipkart pushStatus] ${orderId} → ${status}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[Flipkart pushStatus] ${orderId}:`, err);
+      return false;
+    }
+  }
 }

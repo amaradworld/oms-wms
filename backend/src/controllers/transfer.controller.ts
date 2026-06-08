@@ -5,6 +5,7 @@ import fs from 'fs';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { resolveSku } from '../utils/sku-resolver';
+import { emitInventoryChange } from '../services/marketplaceEvents.service';
 
 const LOGO_PATH = path.join(__dirname, '../../assets/logo.png');
 
@@ -125,6 +126,8 @@ export const scanTransferItem = async (req: AuthRequest, res: Response) => {
   });
 
   res.json(updated);
+
+  emitInventoryChange({ tenantId, skuCode: sku.skuCode, quantity: newQty, warehouseId: transfer.toWarehouseId });
 };
 
 export const completeTransfer = async (req: AuthRequest, res: Response) => {
@@ -151,11 +154,7 @@ export const completeTransfer = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: `Insufficient stock for ${item.sku?.skuCode}` });
     }
     await prisma.inventory.update({ where: { id: fromInv.id }, data: { quantityOnHand: { decrement: item.receivedQty }, quantityAvailable: { decrement: item.receivedQty } } });
-    await prisma.inventory.upsert({
-      where: { warehouseId_skuId_binLocation: { warehouseId: transfer.toWarehouseId, skuId: item.skuId, binLocation: 'TRANSFERRED' } },
-      update: { quantityOnHand: { increment: item.receivedQty }, quantityAvailable: { increment: item.receivedQty } },
-      create: { warehouseId: transfer.toWarehouseId, skuId: item.skuId, binLocation: 'TRANSFERRED', quantityOnHand: item.receivedQty, quantityAvailable: item.receivedQty },
-    });
+    // Destination inventory already incremented by scanTransferItem — no double-post
   }
   await prisma.stockTransfer.update({
     where: { id },

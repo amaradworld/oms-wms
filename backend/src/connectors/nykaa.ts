@@ -86,4 +86,25 @@ export class NykaaConnector implements MarketplaceConnector {
       return false;
     }
   }
+
+  async pushStatus(config: { apiKey?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
+    try {
+      const statusMap: Record<string, string> = {
+        DELIVERED: 'delivered', CANCELLED: 'cancelled', RETURNED: 'returned', DISPATCHED: 'shipped',
+      };
+      const nykaaStatus = statusMap[status];
+      if (!nykaaStatus) return true;
+      const res = await fetch(`${NYKAA_API_BASE}/v1/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nykaaStatus, reason: reason || '' }),
+      });
+      console.log(`[Nykaa pushStatus] ${orderId} → ${status}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[Nykaa pushStatus] ${orderId}:`, err);
+      return false;
+    }
+  }
 }

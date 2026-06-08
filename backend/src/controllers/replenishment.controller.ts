@@ -3,6 +3,7 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logAudit, logUpdateAudit, captureSnapshot } from '../services/audit.service';
 import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
+import { emitInventoryChange } from '../services/marketplaceEvents.service';
 
 export const getReplenishmentTasks = async (req: AuthRequest, res: Response) => {
   const { tenant_id } = req.user!;
@@ -66,6 +67,33 @@ export const completeReplenishmentTask = async (req: AuthRequest, res: Response)
   const task = await prisma.replenishmentTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ message: 'Task not found' });
   if (task.tenantId !== req.user!.tenant_id) return res.status(403).json({ message: 'Not authorized' });
+
+  if (task.fromBin && task.toBin) {
+    const fromInv = await prisma.inventory.findFirst({
+      where: { warehouseId: task.warehouseId, skuId: task.skuId, binLocation: task.fromBin },
+    });
+    if (!fromInv || fromInv.quantityAvailable < task.quantity) {
+      return res.status(400).json({ message: `Insufficient stock in bin ${task.fromBin} (available: ${fromInv?.quantityAvailable ?? 0}, needed: ${task.quantity})` });
+    }
+    await prisma.inventory.update({
+      where: { id: fromInv.id },
+      data: { quantityOnHand: { decrement: task.quantity }, quantityAvailable: { decrement: task.quantity } },
+    });
+    await prisma.inventory.upsert({
+      where: { warehouseId_skuId_binLocation: { warehouseId: task.warehouseId, skuId: task.skuId, binLocation: task.toBin } },
+      update: { quantityOnHand: { increment: task.quantity }, quantityAvailable: { increment: task.quantity } },
+      create: {
+        warehouseId: task.warehouseId, skuId: task.skuId, binLocation: task.toBin,
+        quantityOnHand: task.quantity, quantityAvailable: task.quantity,
+        virtualInventory: 0, notFound: 0, type: 'Good', status: 'ACTIVE',
+        inventoryAllocation: true, inventorySync: true, skuMixing: true, shelfOnHold: false,
+      },
+    });
+    const sku = await prisma.skuMaster.findUnique({ where: { id: task.skuId }, select: { skuCode: true } });
+    if (sku) {
+      emitInventoryChange({ tenantId: task.tenantId, skuCode: sku.skuCode, quantity: fromInv.quantityOnHand - task.quantity, warehouseId: task.warehouseId });
+    }
+  }
 
   const now = new Date();
   const updated = await prisma.replenishmentTask.update({

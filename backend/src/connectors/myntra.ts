@@ -85,4 +85,25 @@ export class MyntraConnector implements MarketplaceConnector {
       return false;
     }
   }
+
+  async pushStatus(config: { apiKey?: string; apiSecret?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
+    if (!config.apiKey || config.apiKey === 'demo') return true;
+    try {
+      const statusMap: Record<string, string> = {
+        DELIVERED: 'delivered', CANCELLED: 'cancelled', RETURNED: 'returned', DISPATCHED: 'shipped',
+      };
+      const myntraStatus = statusMap[status];
+      if (!myntraStatus) return true;
+      const res = await fetch(`${MYNTRA_API_BASE}/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Secret': config.apiSecret || '', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: myntraStatus, reason: reason || '' }),
+      });
+      console.log(`[Myntra pushStatus] ${orderId} → ${status}: ${res.status}`);
+      return res.ok;
+    } catch (err) {
+      console.error(`[Myntra pushStatus] ${orderId}:`, err);
+      return false;
+    }
+  }
 }

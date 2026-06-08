@@ -1,4 +1,5 @@
 import prisma from './prisma';
+import { emitOrderStatusChange } from './marketplaceEvents.service';
 
 const STAGE_FIELDS: Record<string, string> = {
   PICKING: 'pickedAt',
@@ -82,5 +83,19 @@ export async function applyOrderStatus(
     { deadline: order.slaDeadline, status: order.slaStatus }
   );
 
-  return prisma.order.update({ where: { id: orderId }, data });
+  const updated = await prisma.order.update({ where: { id: orderId }, data });
+
+  if (updated.tenantId && updated.orderNumber) {
+    const tracking = await prisma.courierTracking.findFirst({ where: { orderId } });
+    emitOrderStatusChange({
+      tenantId: updated.tenantId,
+      orderId: updated.id,
+      orderNumber: updated.orderNumber,
+      newStatus,
+      awb: tracking?.awbNumber || undefined,
+      courier: tracking?.courierName || undefined,
+    });
+  }
+
+  return updated;
 }
