@@ -107,37 +107,58 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
           slaStatus: 'ON_TRACK',
           warehouseId: warehouseId || null,
           ...fallbackBilling,
-          items: {
-            create: items.map(i => ({
-              skuId: i.skuId,
-              quantity: i.quantity,
-              unitPrice: i.unitPrice || 0,
-              mrp: i.mrp || null,
-              discountAmount: i.discountAmount || 0,
-              totalAmount: ((i.unitPrice || 0) * i.quantity) - (i.discountAmount || 0),
-            })),
-          },
         },
       });
 
+      // FEFO soft reservation: allocate from earliest-expiring batches first
+      const allocationResults: { skuId: string; allocated: number; requested: number; batchNo?: string; expiryDate?: Date }[] = [];
       for (const item of items) {
         if (!warehouseId) continue;
-        const inv = await tx.inventory.findFirst({
-          where: { warehouseId, skuId: item.skuId },
+
+        // FEFO: order by expiryDate ASC (nulls last), then by lastUpdated ASC
+        const inventoryRecords = await tx.inventory.findMany({
+          where: { warehouseId, skuId: item.skuId, quantityAvailable: { gt: 0 } },
+          orderBy: [{ expiryDate: 'asc' }, { lastUpdated: 'asc' }],
         });
-        if (inv) {
-          const deduct = Math.min(item.quantity, inv.quantityAvailable);
+
+        let remaining = item.quantity;
+        let totalAllocated = 0;
+        let firstBatchNo: string | undefined;
+        let firstExpiryDate: Date | undefined;
+
+        for (const inv of inventoryRecords) {
+          if (remaining <= 0) break;
+          const alloc = Math.min(remaining, inv.quantityAvailable);
           await tx.inventory.update({
             where: { id: inv.id },
-            data: {
-              quantityOnHand: { decrement: deduct },
-              quantityAvailable: { decrement: deduct },
-            },
+            data: { quantityReserved: { increment: alloc }, quantityAvailable: { decrement: alloc } },
           });
+          remaining -= alloc;
+          totalAllocated += alloc;
+          if (!firstBatchNo && inv.batch) firstBatchNo = inv.batch;
+          if (!firstExpiryDate && inv.expiryDate) firstExpiryDate = inv.expiryDate;
         }
+
+        allocationResults.push({ skuId: item.skuId, allocated: totalAllocated, requested: item.quantity, batchNo: firstBatchNo, expiryDate: firstExpiryDate });
+
+        // Create order item with allocation info
+        await tx.orderItem.create({
+          data: {
+            orderId: order.id,
+            skuId: item.skuId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice || 0,
+            mrp: item.mrp || null,
+            discountAmount: item.discountAmount || 0,
+            totalAmount: ((item.unitPrice || 0) * item.quantity) - (item.discountAmount || 0),
+            batchNo: firstBatchNo || null,
+            expiryDate: firstExpiryDate || null,
+            status: totalAllocated >= item.quantity ? 'ALLOCATED' : totalAllocated > 0 ? 'PARTIAL' : 'UNALLOCATED',
+          },
+        });
       }
 
-      return order;
+      return { ...order, _allocation: allocationResults };
     });
 
     res.status(201).json(order);
@@ -267,28 +288,19 @@ export const cancelOrder = async (req: Request, res: Response) => {
       });
       if (!o) throw new Error('Order not found');
 
+      // Release reserved inventory for each item
       for (const item of o.items) {
         if (!o.warehouseId) continue;
-        await tx.inventory.upsert({
-          where: {
-            warehouseId_skuId_binLocation: {
-              warehouseId: o.warehouseId,
-              skuId: item.skuId,
-              binLocation: 'RETURNED',
-            },
-          },
-          update: {
-            quantityOnHand: { increment: item.quantity },
-            quantityAvailable: { increment: item.quantity },
-          },
-          create: {
-            warehouseId: o.warehouseId,
-            skuId: item.skuId,
-            binLocation: 'RETURNED',
-            quantityOnHand: item.quantity,
-            quantityAvailable: item.quantity,
-          },
+        const reservedInv = await tx.inventory.findFirst({
+          where: { warehouseId: o.warehouseId, skuId: item.skuId, quantityReserved: { gt: 0 } },
         });
+        if (reservedInv) {
+          const release = Math.min(item.quantity, reservedInv.quantityReserved);
+          await tx.inventory.update({
+            where: { id: reservedInv.id },
+            data: { quantityReserved: { decrement: release }, quantityAvailable: { increment: release } },
+          });
+        }
       }
 
       return tx.order.update({

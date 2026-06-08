@@ -73,10 +73,40 @@ export const updateReturnStatus = async (req: AuthRequest, res: Response) => {
     where: { id },
     data,
     include: {
-      order: { select: { orderNumber: true, customerName: true } },
+      order: { select: { orderNumber: true, customerName: true, warehouseId: true } },
       sku: { select: { skuCode: true, name: true } },
     },
   });
+
+  // On RESTOCKED: add returned items back to inventory
+  if (status === 'RESTOCKED' && ret.order?.warehouseId) {
+    const qty = existing.quantity;
+    await prisma.inventory.upsert({
+      where: {
+        warehouseId_skuId_binLocation: {
+          warehouseId: ret.order.warehouseId,
+          skuId: existing.skuId,
+          binLocation: 'QC-PASS',
+        },
+      },
+      update: { quantityOnHand: { increment: qty }, quantityAvailable: { increment: qty } },
+      create: {
+        warehouseId: ret.order.warehouseId,
+        skuId: existing.skuId,
+        binLocation: 'QC-PASS',
+        quantityOnHand: qty,
+        quantityAvailable: qty,
+        virtualInventory: 0,
+        notFound: 0,
+        type: 'Good',
+        status: 'ACTIVE',
+        inventoryAllocation: true,
+        inventorySync: true,
+        skuMixing: true,
+        shelfOnHold: false,
+      },
+    });
+  }
 
   res.json(ret);
 };

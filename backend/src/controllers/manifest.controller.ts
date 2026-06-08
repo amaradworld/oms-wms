@@ -116,16 +116,42 @@ export const closeManifest = async (req: AuthRequest, res: Response) => {
 
   const now = new Date();
   const orderIds = manifest.shipments.map(s => s.orderId);
-  await prisma.$transaction([
-    prisma.manifest.update({
+
+  // Fetch orders with items for inventory deduction
+  const orders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    include: { items: true },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.manifest.update({
       where: { id },
       data: { status: 'CLOSED', closedAt: now },
-    }),
-    prisma.order.updateMany({
+    });
+
+    // Hard deduction: convert reserved → shipped
+    for (const order of orders) {
+      if (!order.warehouseId) continue;
+      for (const item of order.items) {
+        // Decrement quantityOnHand and quantityReserved
+        const reservedInv = await tx.inventory.findFirst({
+          where: { warehouseId: order.warehouseId, skuId: item.skuId, quantityReserved: { gt: 0 } },
+        });
+        if (reservedInv) {
+          const deduct = Math.min(item.quantity, reservedInv.quantityReserved);
+          await tx.inventory.update({
+            where: { id: reservedInv.id },
+            data: { quantityOnHand: { decrement: deduct }, quantityReserved: { decrement: deduct } },
+          });
+        }
+      }
+    }
+
+    await tx.order.updateMany({
       where: { id: { in: orderIds } },
       data: { orderStatus: 'DISPATCHED', dispatchedAt: now },
-    }),
-  ]);
+    });
+  });
   for (const oid of orderIds) {
     await applyOrderStatus(oid, 'DISPATCHED', 'SHIPPED').catch(() => {});
   }
