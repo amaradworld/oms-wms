@@ -169,6 +169,50 @@ export const scanInventory = async (req: AuthRequest, res: Response) => {
   emitInventoryChange({ tenantId, skuCode: sku.skuCode, quantity: inv.quantityOnHand, warehouseId });
 };
 
+export const assignAbcClass = async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user!.tenant_id;
+  const { warehouseId } = req.body;
+
+  const invWhere: any = { warehouse: { tenantId }, quantityOnHand: { gt: 0 } };
+  if (warehouseId) invWhere.warehouseId = warehouseId;
+
+  const items = await prisma.inventory.findMany({
+    where: invWhere,
+    include: { sku: { select: { id: true, mrp: true } } },
+  });
+
+  // Compute value per SKU (quantity * MRP)
+  const skuValues = new Map<string, number>();
+  for (const inv of items) {
+    const val = inv.quantityOnHand * Number(inv.sku.mrp || 0);
+    skuValues.set(inv.skuId, (skuValues.get(inv.skuId) || 0) + val);
+  }
+
+  // Sort by value descending
+  const sorted = Array.from(skuValues.entries()).sort((a, b) => b[1] - a[1]);
+  const totalValue = sorted.reduce((sum, [, v]) => sum + v, 0);
+
+  // A = top 80% value, B = next 15%, C = last 5%
+  let cumPct = 0;
+  const classMap = new Map<string, string>();
+  for (const [skuId, val] of sorted) {
+    cumPct += totalValue > 0 ? (val / totalValue) * 100 : 0;
+    classMap.set(skuId, cumPct <= 80 ? 'A' : cumPct <= 95 ? 'B' : 'C');
+  }
+
+  // Update inventory records
+  let updated = 0;
+  for (const inv of items) {
+    const cls = classMap.get(inv.skuId);
+    if (cls && cls !== inv.abcClass) {
+      await prisma.inventory.update({ where: { id: inv.id }, data: { abcClass: cls } });
+      updated++;
+    }
+  }
+
+  res.json({ message: `ABC classification updated for ${updated} records`, aCount: Array.from(classMap.values()).filter(c => c === 'A').length, bCount: Array.from(classMap.values()).filter(c => c === 'B').length, cCount: Array.from(classMap.values()).filter(c => c === 'C').length });
+};
+
 export const getInventoryAlerts = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
   const threshold = parseInt(req.query.threshold as string) || 5;

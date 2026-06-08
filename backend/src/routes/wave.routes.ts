@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { getWaves, createWave, getWaveOrders, startWave, scanWaveItem, completeWave, confirmWaveOrder } from '../controllers/wave.controller';
+import { getWaves, createWave, autoCreateWave, getWaveOrders, startWave, scanWaveItem, completeWave, confirmWaveOrder } from '../controllers/wave.controller';
 import { authenticate, tenantScope} from '../middlewares/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, getWaves);
 router.post('/', authenticate, tenantScope, createWave);
+router.post('/auto', authenticate, tenantScope, autoCreateWave);
 router.get('/:id/orders', authenticate, getWaveOrders);
 router.put('/:id/start', authenticate, tenantScope, startWave);
 router.put('/:id/complete', authenticate, tenantScope, completeWave);

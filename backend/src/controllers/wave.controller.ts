@@ -204,6 +204,71 @@ export const confirmWaveOrder = async (req: AuthRequest, res: Response) => {
   res.json({ message: 'Order confirmed with short pick ✓' });
 };
 
+export const autoCreateWave = async (req: AuthRequest, res: Response) => {
+  const { warehouseId, maxOrders, carrierName } = req.body;
+  const tenantId = req.user!.tenant_id;
+
+  if (!warehouseId) return res.status(400).json({ message: 'warehouseId is required' });
+
+  const max = Math.min(50, Math.max(1, maxOrders || 20));
+
+  // Find PENDING/PROCESSING orders in this warehouse that are ready for picking
+  const where: any = {
+    tenantId,
+    warehouseId,
+    orderStatus: { in: ['PENDING', 'PROCESSING'] },
+  };
+
+  const orders = await prisma.order.findMany({
+    where,
+    include: {
+      items: true,
+      tracking: true,
+    },
+    orderBy: [{ slaDeadline: 'asc' }, { createdAt: 'asc' }],
+    take: max,
+  });
+
+  if (orders.length === 0) {
+    return res.status(400).json({ message: 'No eligible orders found for wave creation' });
+  }
+
+  // Group by carrier (if tracking exists) or by shipping zone (pincode prefix)
+  const groups = new Map<string, string[]>();
+  for (const order of orders) {
+    const carrier = order.tracking?.courierName || carrierName || 'UNASSIGNED';
+    const key = carrier;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(order.id);
+  }
+
+  const createdWaves: any[] = [];
+  for (const [carrier, orderIds] of groups) {
+    const wave = await prisma.$transaction(async (tx) => {
+      const w = await tx.pickWave.create({
+        data: {
+          tenantId,
+          warehouseId,
+          name: `Auto-${carrier}-${Date.now()}`,
+          orders: { create: orderIds.map((oid: string) => ({ orderId: oid })) },
+        },
+        include: { _count: { select: { orders: true } } },
+      });
+      await tx.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: { orderStatus: 'PROCESSING' },
+      });
+      return w;
+    });
+    createdWaves.push(wave);
+  }
+
+  res.status(201).json({
+    message: `Created ${createdWaves.length} wave(s) for ${orders.length} orders`,
+    waves: createdWaves,
+  });
+};
+
 export const completeWave = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const wave = await prisma.pickWave.findUnique({

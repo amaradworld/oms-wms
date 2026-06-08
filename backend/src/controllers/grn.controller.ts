@@ -111,6 +111,22 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
         qcAt: now,
       },
     });
+
+    // Move QC_FAILED items to quarantine bin
+    if (item.qcStatus === 'FAILED' && item.rejectedQty && item.rejectedQty > 0) {
+      const grnItem = await prisma.grnItem.findUnique({ where: { id: item.grnItemId }, select: { skuId: true } });
+      if (grnItem) {
+        await prisma.inventory.upsert({
+          where: { warehouseId_skuId_binLocation: { warehouseId: grn.warehouseId, skuId: grnItem.skuId, binLocation: 'QUARANTINE' } },
+          update: { quantityOnHand: { increment: item.rejectedQty } },
+          create: {
+            warehouseId: grn.warehouseId, skuId: grnItem.skuId, binLocation: 'QUARANTINE',
+            quantityOnHand: item.rejectedQty, quantityAvailable: 0, // quarantine items not available for allocation
+            type: 'Quarantine', status: 'ON_HOLD',
+          },
+        });
+      }
+    }
   }
 
   const updatedItems = await prisma.grnItem.findMany({ where: { grnId: id } });
@@ -255,6 +271,19 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
       qcAt: now,
     },
   });
+
+  // Move QC_FAILED items to quarantine bin
+  if (!isPass) {
+    await prisma.inventory.upsert({
+      where: { warehouseId_skuId_binLocation: { warehouseId: grn.warehouseId, skuId: grnItem.skuId, binLocation: 'QUARANTINE' } },
+      update: { quantityOnHand: { increment: 1 } },
+      create: {
+        warehouseId: grn.warehouseId, skuId: grnItem.skuId, binLocation: 'QUARANTINE',
+        quantityOnHand: 1, quantityAvailable: 0,
+        type: 'Quarantine', status: 'ON_HOLD',
+      },
+    });
+  }
 
   const updatedItems = await prisma.grnItem.findMany({ where: { grnId } });
   const totalReceived = updatedItems.reduce((s, i) => s + i.receivedQty, 0);

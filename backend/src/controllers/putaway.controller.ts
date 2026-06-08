@@ -403,6 +403,56 @@ export const assignBinToTask = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const suggestBin = async (req: AuthRequest, res: Response) => {
+  const { skuId, warehouseId } = req.query;
+  if (!skuId || !warehouseId) return res.status(400).json({ message: 'skuId and warehouseId are required' });
+
+  const tenantId = req.user!.tenant_id;
+
+  // Find existing bins with this SKU (directed putaway: prefer same zone)
+  const existingInv = await prisma.inventory.findMany({
+    where: { warehouseId: warehouseId as string, skuId: skuId as string, quantityOnHand: { gt: 0 } },
+    select: { binLocation: true },
+  });
+  const existingZones = new Set(existingInv.map(i => i.binLocation));
+
+  // Get all active bins in this warehouse
+  const bins = await prisma.binLocation.findMany({
+    where: { warehouseId: warehouseId as string, tenantId, isActive: true },
+  });
+
+  // Get current fill levels
+  const binInventory = await prisma.inventory.groupBy({
+    by: ['binLocation'],
+    where: { warehouseId: warehouseId as string, quantityOnHand: { gt: 0 } },
+    _sum: { quantityOnHand: true },
+  });
+  const fillMap = new Map(binInventory.map(b => [b.binLocation, b._sum.quantityOnHand || 0]));
+
+  // Score bins: prefer same zone, then less full, then lower capacity usage
+  const scored = bins.map(bin => {
+    const currentFill = fillMap.get(bin.code) || 0;
+    const isSameZone = existingZones.has(bin.code);
+    const capacityPct = bin.maxCapacity > 0 ? currentFill / bin.maxCapacity : 0;
+    const hasRoom = bin.maxCapacity === 0 || currentFill < bin.maxCapacity;
+
+    let score = 0;
+    if (isSameZone) score += 100; // strong preference for same zone
+    if (hasRoom) score += 50;
+    score -= capacityPct * 30; // prefer less full bins
+    if (bin.zone === 'QC-PASS') score -= 200; // avoid quarantine zone for normal putaway
+
+    return { ...bin, currentFill, capacityPct, score, hasRoom };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  res.json({
+    suggestions: scored.filter(b => b.hasRoom).slice(0, 5),
+    existingZones: Array.from(existingZones),
+  });
+};
+
 export const completePutaway = async (req: AuthRequest, res: Response) => {
   const before = await captureSnapshot('PutawayTask', req.params.id as string);
   const task = await prisma.putawayTask.findFirst({

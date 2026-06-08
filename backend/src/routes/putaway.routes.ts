@@ -6,11 +6,13 @@ import {
   getPutawayTasks,
   assignBinToTask,
   completePutaway,
+  suggestBin,
 } from '../controllers/putaway.controller';
 
 const router = Router();
 
 router.get('/sources', authenticate, getPutawaySources);
+router.get('/suggest-bin', authenticate, suggestBin);
 router.post('/task', authenticate, tenantScope, createPutawayTask);
 router.get('/', authenticate, getPutawayTasks);
 router.put('/:id/assign-bin', authenticate, tenantScope, assignBinToTask);

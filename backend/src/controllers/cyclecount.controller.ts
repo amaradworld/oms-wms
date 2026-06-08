@@ -35,13 +35,19 @@ export const getCycleCount = async (req: AuthRequest, res: Response) => {
 
 export const createCycleCount = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
-  const { warehouseId, notes } = req.body;
+  const { warehouseId, notes, blindMode, abcFilter } = req.body;
 
   const warehouse = await prisma.warehouse.findFirst({ where: { id: warehouseId, tenantId } });
   if (!warehouse) return res.status(400).json({ message: 'Warehouse/facility not found' });
 
+  const invWhere: any = { warehouseId, quantityOnHand: { gt: 0 } };
+  if (abcFilter) {
+    const classes = abcFilter.split(',').map((s: string) => s.trim().toUpperCase()).filter(Boolean);
+    if (classes.length > 0) invWhere.abcClass = { in: classes };
+  }
+
   const inventoryItems = await prisma.inventory.findMany({
-    where: { warehouseId, quantityOnHand: { gt: 0 } },
+    where: invWhere,
     include: { sku: true },
   });
 
@@ -52,6 +58,8 @@ export const createCycleCount = async (req: AuthRequest, res: Response) => {
       tenantId,
       warehouseId,
       status: 'IN_PROGRESS',
+      blindMode: blindMode || false,
+      abcFilter: abcFilter || null,
       startedBy: req.user!.id,
       startedAt: new Date(),
       notes,
