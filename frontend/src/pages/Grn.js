@@ -37,7 +37,9 @@ const Grn = ({ detailId, setDetailId }) => {
 
   useEffect(() => {
     if (detailId && !selectedGrn) {
-      API.get(`/grn/${detailId}`).then(res => { setSelectedGrn(res.data); setShowDetailModal(true); }).catch(() => setDetailId(''));
+      const controller = new AbortController();
+      API.get(`/grn/${detailId}`, { signal: controller.signal }).then(res => { setSelectedGrn(res.data); setShowDetailModal(true); }).catch(() => { if (!controller.signal.aborted) setDetailId(''); });
+      return () => controller.abort();
     }
   }, [detailId]);
 

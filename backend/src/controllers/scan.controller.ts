@@ -17,7 +17,8 @@ export const verifyScan = async (req: AuthRequest, res: Response) => {
 
     if (scanType === 'BIN') {
       const bins = await prisma.inventory.findMany({
-        where: { binLocation: scanValue }
+        where: { binLocation: scanValue, warehouse: { tenantId: tenant_id } },
+        include: { sku: { select: { skuCode: true, name: true } }, warehouse: { select: { name: true } } },
       });
       if (bins.length === 0) return res.status(404).json({ message: 'Bin not found' });
       return res.json({ status: 'SUCCESS', data: bins });

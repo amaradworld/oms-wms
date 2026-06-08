@@ -19,7 +19,7 @@ export const searchBatches = async (req: AuthRequest, res: Response) => {
     );
     res.json(result);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to search batches', error });
+    res.status(500).json({ message: 'Failed to search batches',  });
   }
 };
 
@@ -54,6 +54,6 @@ export const traceBatch = async (req: AuthRequest, res: Response) => {
 
     res.json({ batchNo, inventory, grnItems, orderItems, asnItems, gatepassItems });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to trace batch', error });
+    res.status(500).json({ message: 'Failed to trace batch',  });
   }
 };

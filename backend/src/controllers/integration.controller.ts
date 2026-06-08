@@ -2,12 +2,21 @@ import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
+const MASK = '••••••••';
+
+const maskSecrets = (int: any) => ({
+  ...int,
+  apiKey: int.apiKey ? MASK : null,
+  apiSecret: int.apiSecret ? MASK : null,
+  accessToken: int.accessToken ? MASK : null,
+});
+
 export const getIntegrations = async (req: AuthRequest, res: Response) => {
   const integrations = await prisma.platformIntegration.findMany({
     where: { tenantId: req.user!.tenant_id },
     orderBy: { createdAt: 'desc' },
   });
-  res.json(integrations);
+  res.json(integrations.map(maskSecrets));
 };
 
 export const getIntegration = async (req: AuthRequest, res: Response) => {
@@ -15,7 +24,7 @@ export const getIntegration = async (req: AuthRequest, res: Response) => {
     where: { id: req.params.id as string, tenantId: req.user!.tenant_id },
   });
   if (!integration) return res.status(404).json({ message: 'Integration not found' });
-  res.json(integration);
+  res.json(maskSecrets(integration));
 };
 
 export const createIntegration = async (req: AuthRequest, res: Response) => {

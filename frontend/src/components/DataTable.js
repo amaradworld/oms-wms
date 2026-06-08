@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, MoreVertical, ChevronLeft, ChevronRight, Loader2, CheckSquare, Square, ChevronUp, ChevronDown } from 'lucide-react';
 import { TableSkeleton } from './Skeleton';
 import EmptyState from './EmptyState';
@@ -269,4 +269,4 @@ const DataTable = ({
   );
 };
 
-export default DataTable;
+export default React.memo(DataTable);

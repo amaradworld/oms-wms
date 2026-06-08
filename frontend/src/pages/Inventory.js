@@ -40,24 +40,27 @@ const Inventory = () => {
   const [scanning, setScanning] = useState(false);
   const [lastScanned, setLastScanned] = useState(null);
   const [selectedItems, setSelectedItems] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
   const scanRef = useRef(null);
 
-  const fetchInventory = useCallback(async (silent) => {
-    if (silent) setRefreshing(true); else setLoading(true);
-    try {
-      const params = selectedFacility ? { warehouseId: selectedFacility.id } : {};
-      const res = await API.get('/inventory', { params });
-      setItems(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      toast.error('Failed to load inventory');
-      setItems([]);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [selectedFacility]);
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    const params: any = { page, limit: 100 };
+    if (selectedFacility) params.warehouseId = selectedFacility.id;
+    if (search) params.search = search;
+    API.get('/inventory', { params, signal: controller.signal }).then(res => {
+      const data = res.data;
+      if (Array.isArray(data)) { setItems(data); setTotalPages(1); setTotal(data.length); }
+      else { setItems(data.items || []); setTotalPages(data.totalPages || 1); setTotal(data.total || 0); }
+    }).catch(() => { if (!controller.signal.aborted) { toast.error('Failed to load inventory'); setItems([]); } }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [selectedFacility, page, search, refreshKey]);
 
-  useEffect(() => { fetchInventory(); }, [fetchInventory]);
+  const refetchInventory = useCallback(() => setRefreshKey(k => k + 1), []);
 
   const handleScan = async (e) => {
     e.preventDefault();
@@ -72,7 +75,7 @@ const Inventory = () => {
       const res = await API.post('/inventory/scan', payload);
       setLastScanned(res.data.sku);
       toast.success(`+1 ${res.data.sku.skuCode} (${res.data.sku.name})`);
-      fetchInventory(true);
+      refetchInventory(true);
       setScanInput('');
       scanRef.current?.focus();
     } catch (err) {
@@ -130,14 +133,14 @@ const Inventory = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Inventory Management</h1>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => fetchInventory()} disabled={loading || refreshing} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
+          <button onClick={() => refetchInventory()} disabled={loading || refreshing} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
             <RefreshCw size={16} /> Refresh
           </button>
           <button onClick={handleExport} disabled={exporting} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 disabled:opacity-50">
             <Download size={16} /> {exporting ? 'Exporting...' : 'Export'}
           </button>
           <SampleCSVButton type="inventory" />
-          <ImportButton label="Inventory" endpoint="inventory" onSuccess={fetchInventory} warehouseId={selectedFacility?.id || ''} />
+          <ImportButton label="Inventory" endpoint="inventory" onSuccess={refetchInventory} warehouseId={selectedFacility?.id || ''} />
         </div>
       </div>
 
@@ -176,11 +179,15 @@ const Inventory = () => {
         loading={loading}
         searchable
         searchValue={search}
-        onSearch={setSearch}
+        onSearch={(v) => { setSearch(v); setPage(1); }}
         searchPlaceholder="Search by SKU, name, style, brand, color, shelf..."
         selectable
         selected={selectedItems}
         onSelectionChange={setSelectedItems}
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={setPage}
         actions={(item) => [
           { label: 'Print Label', icon: Printer, onClick: () => handlePrintLabel(item.skuCode, item.name) },
         ]}

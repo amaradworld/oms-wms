@@ -18,6 +18,7 @@ if (!JWT_SECRET) {
 
 const MFA_JWT_SECRET = process.env.JWT_SECRET + '_mfa';
 
+const RESET_SECRET = (process.env.JWT_SECRET || '') + '_reset';
 const router = Router();
 
 router.post('/login', validate(loginSchema), async (req, res, next) => {
@@ -99,8 +100,7 @@ router.post('/mfa-challenge', async (req, res, next) => {
   }
 });
 
-// In-memory reset token store (single-instance; replace with Redis for multi-instance)
-const resetTokens = new Map();
+// Password reset tokens use signed JWTs (no in-memory storage; survives restarts)
 
 router.post('/forgot-password', async (req, res, next) => {
   try {
@@ -111,8 +111,7 @@ router.post('/forgot-password', async (req, res, next) => {
     if (!user) return res.json({ message: 'If the email exists, a reset code has been generated' });
 
     const code = crypto.randomInt(100000, 999999).toString();
-    const token = crypto.randomUUID();
-    resetTokens.set(email, { code, token, expiresAt: Date.now() + 15 * 60 * 1000, userId: user.id });
+    const token = jwt.sign({ email, code, userId: user.id }, RESET_SECRET, { expiresIn: '15m' });
 
     try {
       await sendResetCode(email, code, user.fullName ? undefined : undefined);
@@ -130,19 +129,21 @@ router.post('/reset-password', async (req, res, next) => {
   try {
     const { email, code, newPassword } = req.body;
     if (!email || !code || !newPassword) return res.status(400).json({ message: 'Email, code, and new password are required' });
-    if (newPassword.length < 4) return res.status(400).json({ message: 'Password must be at least 4 characters' });
+    if (newPassword.length < 8) return res.status(400).json({ message: 'Password must be at least 8 characters' });
 
-    const entry = resetTokens.get(email);
-    if (!entry) return res.status(400).json({ message: 'No reset request found. Request a new code.' });
-    if (entry.code !== code) return res.status(400).json({ message: 'Invalid reset code' });
-    if (Date.now() > entry.expiresAt) {
-      resetTokens.delete(email);
-      return res.status(400).json({ message: 'Reset code expired. Request a new one.' });
+    let payload: any;
+    try {
+      payload = jwt.verify(code, RESET_SECRET);
+    } catch {
+      return res.status(400).json({ message: 'Invalid or expired reset code. Request a new one.' });
+    }
+
+    if (payload.email !== email || payload.code !== code) {
+      return res.status(400).json({ message: 'Invalid reset code' });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: entry.userId }, data: { passwordHash } });
-    resetTokens.delete(email);
+    await prisma.user.update({ where: { id: payload.userId }, data: { passwordHash } });
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
     next(error);

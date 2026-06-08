@@ -81,16 +81,21 @@ app.use(cors({
       const host = url.hostname;
       if (allowed.includes(origin)) return callback(null, true);
       if (host === 'globalsupply.in' || host.endsWith('.globalsupply.in')) return callback(null, true);
-      if (host.endsWith('.vercel.app')) return callback(null, true);
     } catch {}
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
 }));
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { message: 'Too many requests' } }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200, message: { message: 'Too many requests' } }));
 
+const authRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { message: 'Too many authentication attempts. Try again later.' } });
+const resetRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { message: 'Too many password reset attempts. Try again later.' } });
+
+app.use('/api/auth/login', authRateLimit);
+app.use('/api/auth/forgot-password', resetRateLimit);
+app.use('/api/auth/reset-password', resetRateLimit);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/scan', scanRoutes);

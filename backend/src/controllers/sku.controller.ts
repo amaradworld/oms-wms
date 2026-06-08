@@ -155,7 +155,7 @@ export const getSkuHistory = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     console.error('SKU history error:', error);
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -209,7 +209,7 @@ export const createSku = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(sku);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating SKU', error: String(error) });
+    res.status(400).json({ message: 'Error creating SKU', });
   }
 };
 
@@ -262,7 +262,7 @@ export const updateSku = async (req: AuthRequest, res: Response) => {
 
     res.json(updated);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating SKU', error: String(error) });
+    res.status(400).json({ message: 'Error updating SKU', });
   }
 };
 
@@ -300,7 +300,7 @@ export const deleteSku = async (req: AuthRequest, res: Response) => {
     });
     res.json({ message: `SKU ${existing.skuCode} deleted` });
   } catch (error) {
-    res.status(400).json({ message: 'Error deleting SKU', error: String(error) });
+    res.status(400).json({ message: 'Error deleting SKU', });
   }
 };
 
@@ -369,6 +369,6 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `Imported ${created} new + updated ${updated} SKUs${errors.length ? ` (${errors.length} errors)` : ''}`, created, updated, errors });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', error: error.message });
+    res.status(500).json({ message: 'Import failed', });
   }
 };

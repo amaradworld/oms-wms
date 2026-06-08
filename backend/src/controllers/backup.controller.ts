@@ -173,7 +173,7 @@ export const runBackup = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     [tmpSql, tmpGz].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {} });
-    res.status(500).json({ message: 'Backup failed', error: String(error?.message || error) });
+    res.status(500).json({ message: 'Backup failed', });
   }
 };
 
@@ -217,7 +217,7 @@ export const listBackups = async (req: AuthRequest, res: Response) => {
       }));
     res.json({ count: items.length, retention: KEEP_COUNT, items });
   } catch (error) {
-    res.status(500).json({ message: 'List failed', error: String(error) });
+    res.status(500).json({ message: 'List failed', });
   }
 };
 
@@ -233,7 +233,7 @@ export const deleteBackup = async (req: AuthRequest, res: Response) => {
     await s3.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }));
     res.json({ message: 'Deleted', key });
   } catch (error) {
-    res.status(500).json({ message: 'Delete failed', error: String(error) });
+    res.status(500).json({ message: 'Delete failed', });
   }
 };
 
@@ -254,7 +254,7 @@ export const downloadBackup = async (req: AuthRequest, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     (obj.Body as Readable).pipe(res);
   } catch (error) {
-    res.status(500).json({ message: 'Download failed', error: String(error) });
+    res.status(500).json({ message: 'Download failed', });
   }
 };
 
@@ -340,7 +340,7 @@ export const restoreBackup = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     [tmpGz, tmpSql].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {} });
-    res.status(500).json({ message: 'Restore failed', error: String(error?.message || error) });
+    res.status(500).json({ message: 'Restore failed', });
   }
 };
 
@@ -361,11 +361,11 @@ export const streamBackup = async (req: AuthRequest, res: Response) => {
     pgDump.on('close', code => {
       if (code !== 0) {
         console.error(`[Backup] pg_dump exited ${code}: ${stderr}`);
-        if (!res.headersSent) res.status(500).json({ message: 'Backup failed', error: stderr });
+        if (!res.headersSent) res.status(500).json({ message: 'Backup failed', });
       }
     });
     pgDump.stdout.pipe(res);
   } catch (error) {
-    res.status(500).json({ message: 'Backup failed to start', error: String(error) });
+    res.status(500).json({ message: 'Backup failed to start', });
   }
 };

@@ -111,7 +111,7 @@ export const triggerAlerts = async (req: AuthRequest, res: Response) => {
     await checkAndSendAlerts(tenant_id);
     res.json({ message: 'Alerts checked and sent' });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to send alerts', error });
+    res.status(500).json({ message: 'Failed to send alerts',  });
   }
 };
 
@@ -120,7 +120,7 @@ export const triggerSlaCron = async (_req: AuthRequest, res: Response) => {
     const result = await runSlaCron();
     res.json({ message: 'SLA cron completed', ...result });
   } catch (error) {
-    res.status(500).json({ message: 'SLA cron failed', error: String(error) });
+    res.status(500).json({ message: 'SLA cron failed', });
   }
 };
 
@@ -147,7 +147,7 @@ export const getPreferences = async (req: AuthRequest, res: Response) => {
     const prefs = await getTenantPrefs(tenant_id);
     res.json(prefs);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch preferences', error });
+    res.status(500).json({ message: 'Failed to fetch preferences',  });
   }
 };
 
@@ -162,6 +162,6 @@ export const updatePreferences = async (req: AuthRequest, res: Response) => {
     });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update preferences', error });
+    res.status(500).json({ message: 'Failed to update preferences',  });
   }
 };

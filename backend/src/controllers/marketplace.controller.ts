@@ -7,12 +7,20 @@ export const listConnectors = async (req: AuthRequest, res: Response) => {
   res.json(getAllConnectors());
 };
 
+const MASK = '••••••••';
+
+const maskSecrets = (config: any) => ({
+  ...config,
+  apiKey: config.apiKey ? MASK : null,
+  apiSecret: config.apiSecret ? MASK : null,
+});
+
 export const getConfigs = async (req: AuthRequest, res: Response) => {
   const configs = await prisma.marketplaceConfig.findMany({
     where: { tenantId: req.user!.tenant_id },
     orderBy: { marketplace: 'asc' },
   });
-  res.json(configs);
+  res.json(configs.map(maskSecrets));
 };
 
 export const saveConfig = async (req: AuthRequest, res: Response) => {
@@ -116,7 +124,7 @@ export const syncOrders = async (req: AuthRequest, res: Response) => {
       where: { tenantId, marketplace: mp },
       data: { syncStatus: 'error', syncMessage: error.message || 'Sync failed' },
     });
-    res.status(500).json({ message: 'Sync failed', error: String(error) });
+    res.status(500).json({ message: 'Sync failed', });
   }
 };
 

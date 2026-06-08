@@ -62,7 +62,7 @@ export const importInventory = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `${count} inventory items imported to ${warehouse.name}` });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', error: error.message });
+    res.status(500).json({ message: 'Import failed', });
   }
 };
 
@@ -101,7 +101,7 @@ export const importOrders = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `${count} orders imported` });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', error: error.message });
+    res.status(500).json({ message: 'Import failed', });
   }
 };
 
@@ -141,7 +141,7 @@ export const importParties = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `${count} parties imported${errors.length ? ` (${errors.length} errors: ${errors.join('; ')})` : ''}` });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', error: error.message });
+    res.status(500).json({ message: 'Import failed', });
   }
 };
 
@@ -172,6 +172,6 @@ export const importReturns = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `${count} returns imported` });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', error: error.message });
+    res.status(500).json({ message: 'Import failed', });
   }
 };

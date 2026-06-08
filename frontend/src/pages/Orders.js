@@ -58,14 +58,23 @@ const Orders = ({ detailId, setDetailId }) => {
   const [detailOrder, setDetailOrder] = useState(null);
   const [showManualOrder, setShowManualOrder] = useState(false);
   const [allSources, setAllSources] = useState([]);
+  const [splitModalOrder, setSplitModalOrder] = useState(null);
+  const [splitInput, setSplitInput] = useState('');
+  const [ewayModalOrder, setEwayModalOrder] = useState(null);
+  const [ewayInput, setEwayInput] = useState('');
+  const [irnModalOrder, setIrnModalOrder] = useState(null);
+  const [irnInput, setIrnInput] = useState('');
   const [selectedOrders, setSelectedOrders] = useState(new Set());
   const [sortKey, setSortKey] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
+  const [refreshKey, setRefreshKey] = useState(0);
   const { selectedFacility } = useAuth();
 
   useEffect(() => {
     if (detailId && !detailOrder) {
-      API.get(`/orders/${detailId}`).then(res => setDetailOrder(res.data)).catch(() => setDetailId(''));
+      const controller = new AbortController();
+      API.get(`/orders/${detailId}`, { signal: controller.signal }).then(res => setDetailOrder(res.data)).catch(() => { if (!controller.signal.aborted) setDetailId(''); });
+      return () => controller.abort();
     }
   }, [detailId]);
 
@@ -79,17 +88,19 @@ const Orders = ({ detailId, setDetailId }) => {
     if (setDetailId) setDetailId('');
   };
 
-  const fetchOrders = useCallback(async (targetPage) => {
+  const refetchOrders = useCallback(() => setRefreshKey(k => k + 1), []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    try {
-      const pg = targetPage || 1;
-      const params = { page: pg, limit: 50 };
-      if (selectedFacility) params.warehouseId = selectedFacility.id;
-      if (sourceFilter !== 'ALL') params.source = sourceFilter;
-      if (statusFilter !== 'ALL') params.orderStatus = statusFilter;
-      if (dateFrom) params.dateFrom = dateFrom;
-      if (dateTo) params.dateTo = dateTo;
-      const res = await API.get('/orders', { params });
+    const pg = 1;
+    const params = { page: pg, limit: 50 };
+    if (selectedFacility) params.warehouseId = selectedFacility.id;
+    if (sourceFilter !== 'ALL') params.source = sourceFilter;
+    if (statusFilter !== 'ALL') params.orderStatus = statusFilter;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    API.get('/orders', { params, signal: controller.signal }).then(res => {
       const data = res.data;
       setOrders(data.orders || []);
       setTotalPages(data.totalPages || 1);
@@ -97,14 +108,9 @@ const Orders = ({ detailId, setDetailId }) => {
       setPage(pg);
       const sources = [...new Set((data.orders || []).map(o => o.source).filter(Boolean))];
       setAllSources(sources);
-    } catch {
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedFacility, sourceFilter, statusFilter, dateFrom, dateTo]);
-
-  useEffect(() => { fetchOrders(1); }, [fetchOrders]);
+    }).catch(() => { if (!controller.signal.aborted) setOrders([]); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [selectedFacility, sourceFilter, statusFilter, dateFrom, dateTo, refreshKey]);
 
   const filteredOrders = orders.filter(o => {
     return !searchTerm ||
@@ -133,7 +139,7 @@ const Orders = ({ detailId, setDetailId }) => {
         duration: 6000,
         onUndo: () => toast.info('To restore a cancelled order, please recreate it manually.'),
       });
-      fetchOrders();
+      refetchOrders();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to cancel');
     }
@@ -158,7 +164,7 @@ const Orders = ({ detailId, setDetailId }) => {
     try {
       await API.patch(`/delivery/orders/${order.id}/deliver`);
       toast.success(`Order ${order.orderNumber} marked delivered`);
-      fetchOrders();
+      refetchOrders();
       if (detailOrder?.id === order.id) {
         setDetailOrder({ ...detailOrder, orderStatus: 'DELIVERED' });
       }
@@ -178,7 +184,7 @@ const Orders = ({ detailId, setDetailId }) => {
     try {
       await API.patch(`/orders/${order.id}/status`, { status: isHeld ? 'PENDING' : 'ON_HOLD' });
       toast.success(`Order ${order.orderNumber} ${isHeld ? 'unheld' : 'held'}`);
-      fetchOrders();
+      refetchOrders();
       if (detailOrder?.id === order.id) setDetailOrder({ ...detailOrder, orderStatus: isHeld ? 'PENDING' : 'ON_HOLD' });
     } catch (err) {
       toast.error(err.response?.data?.message || `Failed to ${isHeld ? 'unhold' : 'hold'} order`);
@@ -188,20 +194,8 @@ const Orders = ({ detailId, setDetailId }) => {
   const handleSplitOrder = async (order) => {
     const items = order.items || [];
     if (items.length < 2) return toast.error('Need at least 2 items to split');
-    const choices = items.map((item, i) => `${i + 1}. ${item.sku?.name || item.skuId} x${item.quantity}`);
-    const input = prompt(`Split order ${order.orderNumber}\nEnter item numbers for the NEW order (comma-separated, e.g. "1,3"):\n\n${choices.join('\n')}`);
-    if (!input) return;
-    const indices = input.split(',').map(s => parseInt(s.trim()) - 1).filter(n => n >= 0 && n < items.length);
-    if (indices.length === 0 || indices.length >= items.length) return toast.error('Select at least 1 but not all items for the new order');
-    const splitItemIds = indices.map(i => items[i].id);
-    try {
-      const res = await API.post(`/orders/${order.id}/split`, { splits: [{ itemIds: [] }, { itemIds: splitItemIds }] });
-      toast.success(res.data?.message || 'Order split successfully');
-      fetchOrders();
-      setDetailOrder(null);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to split order');
-    }
+    setSplitInput('');
+    setSplitModalOrder(order);
   };
 
   const handleBulkCancel = async (selected) => {
@@ -224,7 +218,7 @@ const Orders = ({ detailId, setDetailId }) => {
       toast.warning(`Cancelled ${cancelled}, ${failed} failed`);
     }
     setSelectedOrders(new Set());
-    fetchOrders();
+    refetchOrders();
   };
 
   const handleSort = (key, dir) => {
@@ -249,11 +243,11 @@ const Orders = ({ detailId, setDetailId }) => {
           <button onClick={() => setShowManualOrder(true)} className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-indigo-700 transition-colors">
             <Plus size={14} /> Manual Order
           </button>
-          <button onClick={() => fetchOrders(1)} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs md:text-sm font-medium hover:bg-slate-50">
+          <button onClick={() => refetchOrders()} className="flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs md:text-sm font-medium hover:bg-slate-50">
             <RefreshCw size={14} /> Refresh
           </button>
           <SampleCSVButton type="orders" />
-          <ImportButton label="Orders" endpoint="orders" onSuccess={fetchOrders} />
+          <ImportButton label="Orders" endpoint="orders" onSuccess={refetchOrders} />
           <ExportButton
             filename="orders"
             data={sortedOrders}
@@ -294,7 +288,7 @@ const Orders = ({ detailId, setDetailId }) => {
               <X size={14} />
             </button>
           )}
-          <button onClick={() => fetchOrders(1)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">Apply</button>
+          <button onClick={() => refetchOrders()} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors">Apply</button>
         </div>
       </div>
 
@@ -315,7 +309,7 @@ const Orders = ({ detailId, setDetailId }) => {
         page={page}
         totalPages={totalPages}
         total={total}
-        onPageChange={fetchOrders}
+        onPageChange={(p) => { setLoading(true); API.get('/orders', { params: { page: p, limit: 50 } }).then(res => { setOrders(res.data.orders || []); setTotalPages(res.data.totalPages || 1); setTotal(res.data.total || 0); setPage(p); }).catch(() => {}).finally(() => setLoading(false)); }}
         actions={actionsConfig}
         bulkActions={[
           { label: 'Bulk Cancel', icon: XCircle, onClick: (selected) => handleBulkCancel(selected), variant: 'danger' },
@@ -327,18 +321,68 @@ const Orders = ({ detailId, setDetailId }) => {
         <OrderDetailModal
           order={detailOrder}
           onClose={closeOrderDetail}
-          onUpdate={(updated) => { setDetailOrder(updated); fetchOrders(); }}
+          onUpdate={(updated) => { setDetailOrder(updated); refetchOrders(); }}
           onMarkDelivered={handleMarkDelivered}
           onHoldUnhold={handleHoldUnhold}
           onSplitOrder={handleSplitOrder}
+          onSetEway={() => { setEwayInput(''); setEwayModalOrder(detailOrder); }}
+          onSetIrn={() => { setIrnInput(''); setIrnModalOrder(detailOrder); }}
         />
       )}
 
       {showManualOrder && (
         <ManualOrderModal
           onClose={() => setShowManualOrder(false)}
-          onSuccess={() => { setShowManualOrder(false); fetchOrders(1); }}
+          onSuccess={() => { setShowManualOrder(false); refetchOrders(); }}
         />
+      )}
+
+      {splitModalOrder && (() => {
+        const items = splitModalOrder.items || [];
+        const choices = items.map((item, i) => `${i + 1}. ${item.sku?.name || item.skuId} x${item.quantity}`);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setSplitModalOrder(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold">Split Order {splitModalOrder.orderNumber}</h2>
+                <button onClick={() => setSplitModalOrder(null)} className="p-1 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+              </div>
+              <p className="text-sm text-slate-600">Enter item numbers for the NEW order (comma-separated):</p>
+              <div className="bg-slate-50 rounded-lg p-3 text-sm font-mono text-slate-700 max-h-32 overflow-y-auto">{choices.join('\n')}</div>
+              <input autoFocus type="text" value={splitInput} onChange={e => setSplitInput(e.target.value)} placeholder='e.g. "1,3"' className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+              <div className="flex gap-2">
+                <button onClick={() => setSplitModalOrder(null)} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50">Cancel</button>
+                <button onClick={() => { if (!splitInput.trim()) return; const order = splitModalOrder; const orderItems = order.items || []; const indices = splitInput.split(',').map(s => parseInt(s.trim()) - 1).filter(n => n >= 0 && n < orderItems.length); if (indices.length === 0 || indices.length >= orderItems.length) { toast.error('Select at least 1 but not all items'); return; } const splitItemIds = indices.map(i => orderItems[i].id); const remainingItemIds = orderItems.filter((_, i) => !indices.includes(i)).map(item => item.id); setSplitModalOrder(null); API.post(`/orders/${order.id}/split`, { splits: [{ itemIds: remainingItemIds }, { itemIds: splitItemIds }] }).then(res => { toast.success(res.data?.message || 'Order split successfully'); refetchOrders(); setDetailOrder(null); }).catch(err => toast.error(err.response?.data?.message || 'Failed to split order')); }} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Split</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {ewayModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setEwayModalOrder(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold">E-way Bill Number</h2>
+            <input autoFocus type="text" value={ewayInput} onChange={e => setEwayInput(e.target.value)} placeholder="Enter E-way Bill number" className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            <div className="flex gap-2">
+              <button onClick={() => setEwayModalOrder(null)} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50">Cancel</button>
+              <button onClick={() => { if (!ewayInput.trim()) return; const o = ewayModalOrder; setEwayModalOrder(null); API.patch(`/invoice/${o.id}/eway-bill`, { ewayBillNumber: ewayInput }).then(() => { toast.success('E-way bill saved'); if (detailOrder?.id === o.id) setDetailOrder({ ...o, ewayBillNumber: ewayInput }); refetchOrders(); }).catch(() => toast.error('Failed')); }} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {irnModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={() => setIrnModalOrder(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-bold">IRN</h2>
+            <input autoFocus type="text" value={irnInput} onChange={e => setIrnInput(e.target.value)} placeholder="Enter IRN" className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-200" />
+            <div className="flex gap-2">
+              <button onClick={() => setIrnModalOrder(null)} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50">Cancel</button>
+              <button onClick={() => { if (!irnInput.trim()) return; const o = irnModalOrder; setIrnModalOrder(null); API.patch(`/invoice/${o.id}/eway-bill`, { irn: irnInput }).then(() => { toast.success('IRN saved'); if (detailOrder?.id === o.id) setDetailOrder({ ...o, irn: irnInput }); refetchOrders(); }).catch(() => toast.error('Failed')); }} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Save</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -719,7 +763,7 @@ const ManualOrderModal = ({ onClose, onSuccess }) => {
   );
 };
 
-const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered, onHoldUnhold, onSplitOrder }) => {
+const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered, onHoldUnhold, onSplitOrder, onSetEway, onSetIrn }) => {
   const [activeTab, setActiveTab] = useState('details');
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({ customerName: order.customerName, shippingAddress: order.shippingAddress, notificationEmail: order.notificationEmail || '', notificationMobile: order.notificationMobile || '' });
@@ -937,10 +981,10 @@ const OrderDetailModal = ({ order, onClose, onUpdate, onMarkDelivered, onHoldUnh
               <DetailField label="IRN" value={order.irn || '—'} />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { const v = prompt('Enter E-way Bill number:'); if (v) { API.patch(`/invoice/${order.id}/eway-bill`, { ewayBillNumber: v }).then(() => { toast.success('E-way bill saved'); onUpdate({ ...order, ewayBillNumber: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+              <button onClick={onSetEway} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
                 <FileText size={13} /> Set E-way Bill
               </button>
-              <button onClick={() => { const v = prompt('Enter IRN:'); if (v) { API.patch(`/invoice/${order.id}/eway-bill`, { irn: v }).then(() => { toast.success('IRN saved'); onUpdate({ ...order, irn: v }); }).catch(e => toast.error('Failed')); } }} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
+              <button onClick={onSetIrn} className="flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-xs font-medium hover:bg-slate-50">
                 <FileText size={13} /> Set IRN
               </button>
             </div>

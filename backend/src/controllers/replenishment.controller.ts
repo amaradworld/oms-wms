@@ -122,10 +122,10 @@ export const generateFromAlerts = async (req: AuthRequest, res: Response) => {
   const invWhere: any = { tenantId: tenant_id, reorderPoint: { gt: 0 } };
   if (warehouseId) invWhere.warehouseId = warehouseId;
 
-  const lowItems = await prisma.inventory.findMany({
-    where: { ...invWhere, quantityAvailable: { lte: prisma.inventory.fields.reorderPoint } },
+  const lowItems = (await prisma.inventory.findMany({
+    where: { ...invWhere },
     include: { sku: true, warehouse: true },
-  });
+  })).filter((item: any) => item.quantityAvailable <= item.reorderPoint);
 
   const created = [];
   for (const item of lowItems) {

@@ -41,7 +41,7 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
 
     res.json({ orders, total, page, limit, totalPages: Math.ceil(total / limit) });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching orders', error });
+    res.status(500).json({ message: 'Error fetching orders',  });
   }
 };
 
@@ -143,7 +143,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
     res.status(201).json(order);
     logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'Order', entityId: order.id, newValue: { orderNumber, source: src, itemCount: items.length } });
   } catch (error) {
-    res.status(400).json({ message: 'Error creating order', error: String(error) });
+    res.status(400).json({ message: 'Error creating order', });
   }
 };
 

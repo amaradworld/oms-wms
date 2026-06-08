@@ -273,7 +273,7 @@ export const getPutawaySources = async (req: AuthRequest, res: Response) => {
     }
   } catch (error: any) {
     console.error('Get putaway sources error:', error);
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -340,7 +340,7 @@ export const createPutawayTask = async (req: AuthRequest, res: Response) => {
     }
   } catch (error: any) {
     console.error('Create putaway task error:', error);
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
@@ -485,6 +485,6 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
     }
   } catch (error: any) {
     console.error('Complete putaway error:', error);
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

@@ -43,7 +43,7 @@ export const generateSkuLabel = async (req: AuthRequest, res: Response) => {
 
     doc.end();
   } catch (error) {
-    res.status(500).json({ message: 'Label generation failed', error: String(error) });
+    res.status(500).json({ message: 'Label generation failed', });
   }
 };
 
@@ -226,6 +226,6 @@ export const generateShippingLabel = async (req: AuthRequest, res: Response) => 
     doc.end();
   } catch (error) {
     console.error('Shipping label PDF error:', error);
-    res.status(500).json({ message: 'Label generation failed', error: String(error) });
+    res.status(500).json({ message: 'Label generation failed', });
   }
 };

@@ -37,6 +37,7 @@ const SkuMaster = () => {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -44,15 +45,14 @@ const SkuMaster = () => {
   const fileRef = useRef(null);
   const { confirm } = useConfirm();
 
-  const fetchSkus = useCallback(async () => {
+  useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    try {
-      const res = await API.get('/skus');
+    API.get('/skus', { signal: controller.signal }).then(res => {
       setSkus(Array.isArray(res.data) ? res.data : (res.data?.skus || []));
-    } catch { setSkus([]); } finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchSkus(); }, [fetchSkus]);
+    }).catch(() => { if (!controller.signal.aborted) setSkus([]); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [refreshKey]);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -139,25 +139,15 @@ const SkuMaster = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      const token = localStorage.getItem('token');
-      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${API_BASE}/api/skus/import`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        fetchSkus();
-      } else {
-        toast.error(data.message || 'Import failed');
-      }
-    } catch { toast.error('Connection error'); }
-    finally {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await API.post('/skus/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      toast.success(res.data.message);
+      setRefreshKey(k => k + 1);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Import failed');
+    } finally {
       setImporting(false);
       if (fileRef.current) fileRef.current.value = '';
     }

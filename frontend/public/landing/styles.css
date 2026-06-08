@@ -383,3 +383,70 @@ h2 {
   .hero-cta .btn { justify-content: center; }
   .footer-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== LH-COMPONENTS: shared header/footer/nav for sub-pages ===== */
+.lh-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+.lh-header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.lh-header .lh-container, .lh-header-inner {
+  display: flex; align-items: center; justify-content: space-between; height: 68px;
+}
+.lh-header .lh-container { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+
+.lh-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--navy); }
+.lh-logo-mark {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--teal) 0%, var(--teal-dark) 100%);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-weight: 800; font-size: 14px;
+  box-shadow: 0 4px 12px rgba(20,184,166,0.35); flex-shrink: 0;
+}
+.lh-logo-name { font-weight: 800; font-size: 16px; color: var(--navy); white-space: nowrap; }
+.lh-logo-tag { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+.lh-nav { display: flex; align-items: center; gap: 28px; }
+.lh-nav a { color: var(--text-muted); font-weight: 500; font-size: 14px; text-decoration: none; transition: color 0.15s; }
+.lh-nav a:hover, .lh-nav a.active { color: var(--navy); }
+
+.lh-header-cta { display: flex; align-items: center; gap: 12px; }
+
+.lh-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 10px;
+  font-weight: 600; font-size: 14px;
+  border: 1px solid transparent; cursor: pointer;
+  transition: all 0.15s ease; text-decoration: none; line-height: 1;
+}
+.lh-btn-ghost { color: var(--text); background: transparent; }
+.lh-btn-ghost:hover { background: var(--bg-muted); }
+.lh-btn-primary { background: var(--teal); color: white; border-color: var(--teal); }
+.lh-btn-primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+.lh-btn-secondary { background: var(--navy); color: white; border-color: var(--navy); }
+.lh-btn-secondary:hover { background: var(--navy-2); border-color: var(--navy-2); }
+.lh-btn-on-dark { background: rgba(255,255,255,0.12); color: white; border-color: rgba(255,255,255,0.2); }
+.lh-btn-on-dark:hover { background: rgba(255,255,255,0.2); }
+
+.lh-footer {
+  background: var(--navy); color: rgba(255,255,255,0.7); padding: 48px 0 24px;
+}
+.lh-footer-inner { display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; }
+.lh-footer-brand { max-width: 320px; }
+.lh-footer-brand p { margin-top: 12px; font-size: 13px; line-height: 1.6; }
+.lh-footer-brand .lh-logo-mark { margin-bottom: 8px; }
+.lh-footer-cols { display: flex; gap: 48px; flex-wrap: wrap; }
+.lh-footer-cols h4 { color: white; font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+.lh-footer-cols a { display: block; color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 8px; text-decoration: none; transition: color 0.15s; }
+.lh-footer-cols a:hover { color: white; }
+
+@media (max-width: 768px) {
+  .lh-nav { display: none; }
+  .lh-header-inner { gap: 12px; }
+  .lh-footer-inner { flex-direction: column; gap: 32px; }
+  .lh-footer-cols { gap: 24px; }
+}

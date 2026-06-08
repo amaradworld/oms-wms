@@ -6,21 +6,43 @@ import { resolveSku } from '../utils/sku-resolver';
 export const getInventory = async (req: AuthRequest, res: Response) => {
   const tenantId = req.user!.tenant_id;
   const warehouseId = req.query.warehouseId as string | undefined;
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(200, Math.max(1, parseInt(req.query.limit as string) || 100));
+  const search = (req.query.search as string || '').trim().toLowerCase();
 
   const invWhere: any = { warehouse: { tenantId } };
   if (warehouseId) invWhere.warehouseId = warehouseId;
 
-  const [skus, invItems] = await Promise.all([
-    prisma.skuMaster.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } }),
+  const where: any = { tenantId };
+  if (search) {
+    where.OR = [
+      { skuCode: { contains: search, mode: 'insensitive' } },
+      { name: { contains: search, mode: 'insensitive' } },
+      { styleName: { contains: search, mode: 'insensitive' } },
+      { brand: { contains: search, mode: 'insensitive' } },
+      { color: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  const [total, skus, invItems] = await Promise.all([
+    prisma.skuMaster.count({ where }),
+    prisma.skuMaster.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.inventory.findMany({
       where: invWhere,
-      include: { sku: true, warehouse: true },
+      include: { sku: { select: { id: true } }, warehouse: { select: { name: true } } },
       orderBy: { lastUpdated: 'desc' },
     }),
   ]);
 
+  const skuIds = new Set(skus.map(s => s.id));
   const invAgg = new Map<string, { qty: number; avail: number; resv: number; virt: number; nf: number; bin: string; wh: string; whId: string; last: Date | null }>();
   for (const inv of invItems) {
+    if (!skuIds.has(inv.skuId)) continue;
     const key = inv.skuId;
     const existing = invAgg.get(key);
     if (existing) {
@@ -85,7 +107,7 @@ export const getInventory = async (req: AuthRequest, res: Response) => {
     };
   });
 
-  res.json(result);
+  res.json({ items: result, total, page, totalPages: Math.ceil(total / limit) });
 };
 
 export const scanInventory = async (req: AuthRequest, res: Response) => {

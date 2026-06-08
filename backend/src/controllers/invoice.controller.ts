@@ -278,6 +278,6 @@ export const generateInvoice = async (req: AuthRequest, res: Response) => {
     doc.end();
   } catch (error) {
     console.error('Invoice PDF error:', error);
-    res.status(500).json({ message: 'Invoice generation failed', error: String(error) });
+    res.status(500).json({ message: 'Invoice generation failed', });
   }
 };

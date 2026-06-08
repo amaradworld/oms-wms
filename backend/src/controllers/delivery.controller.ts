@@ -13,7 +13,7 @@ export const checkDeliveries = async (req: AuthRequest, res: Response) => {
     const result = await checkAllShipments();
     res.json(result);
   } catch (error) {
-    res.status(500).json({ message: 'Delivery check failed', error: String(error) });
+    res.status(500).json({ message: 'Delivery check failed', });
   }
 };
 
@@ -37,6 +37,6 @@ export const getShippedOrders = async (req: AuthRequest, res: Response) => {
     });
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching shipped orders', error: String(error) });
+    res.status(500).json({ message: 'Error fetching shipped orders', });
   }
 };

@@ -71,7 +71,7 @@ export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
     res.status(201).json(po);
   } catch (error: any) {
     console.error('Create PO error:', error);
-    res.status(500).json({ message: error?.message || 'Internal server error' });
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 

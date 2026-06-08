@@ -46,7 +46,7 @@ export const generateAWB = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'AWB generated', tracking, awb, courier });
   } catch (error) {
-    res.status(500).json({ message: 'Courier API failure', error: String(error) });
+    res.status(500).json({ message: 'Courier API failure', });
   }
 };
 

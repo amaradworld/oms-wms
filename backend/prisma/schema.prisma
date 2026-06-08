@@ -43,6 +43,7 @@ model User {
   auditLogs    AuditLog[]
   gatepasses   Gatepass[]
 
+  @@index([tenantId])
   @@map("users")
 }
 
@@ -206,6 +207,7 @@ model SkuMaster {
   replenishmentTasks ReplenishmentTask[]
   asnItems           AsnItem[]
 
+  @@index([tenantId])
   @@map("sku_master")
 }
 
@@ -324,9 +326,11 @@ model OrderItem {
   batchNo        String?
   expiryDate     DateTime?
 
-  order Order     @relation(fields: [orderId], references: [id])
+  order Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sku   SkuMaster @relation(fields: [skuId], references: [id])
 
+  @@index([orderId])
+  @@index([skuId])
   @@map("order_items")
 }
 
@@ -370,9 +374,10 @@ model Return {
   status     String // REQUESTED, RECEIVED, QC_FAILED, QC_PASSED
   receivedAt DateTime?
 
-  order Order     @relation(fields: [orderId], references: [id])
+  order Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   sku   SkuMaster @relation(fields: [skuId], references: [id])
 
+  @@index([orderId])
   @@map("returns")
 }
 
@@ -496,6 +501,7 @@ model CycleCount {
   warehouse Warehouse        @relation(fields: [warehouseId], references: [id])
   items     CycleCountItem[]
 
+  @@index([tenantId])
   @@map("cycle_counts")
 }
 
@@ -509,7 +515,7 @@ model CycleCountItem {
   variance     Int?
   status       String  @default("PENDING") // PENDING, COUNTED, VERIFIED
 
-  cycleCount CycleCount @relation(fields: [cycleCountId], references: [id])
+  cycleCount CycleCount @relation(fields: [cycleCountId], references: [id], onDelete: Cascade)
   sku        SkuMaster  @relation(fields: [skuId], references: [id])
 
   @@unique([cycleCountId, skuId])
@@ -551,6 +557,7 @@ model PurchaseOrder {
   items     PurchaseOrderItem[]
   grns      Grn[]
 
+  @@index([tenantId])
   @@map("purchase_orders")
 }
 
@@ -600,6 +607,7 @@ model Grn {
   items         GrnItem[]
   putawayTasks  PutawayTask[]
 
+  @@index([tenantId])
   @@map("grns")
 }
 
@@ -621,10 +629,12 @@ model GrnItem {
   qcAt              DateTime?
   mrp               Decimal?  @default(0)
 
-  grn    Grn               @relation(fields: [grnId], references: [id])
+  grn    Grn               @relation(fields: [grnId], references: [id], onDelete: Cascade)
   poItem PurchaseOrderItem @relation(fields: [poItemId], references: [id])
   sku    SkuMaster         @relation(fields: [skuId], references: [id])
 
+  @@index([grnId])
+  @@index([skuId])
   @@map("grn_items")
 }
 
@@ -666,10 +676,12 @@ model PurchaseOrderItem {
   receivedQty Int     @default(0)
   status      String  @default("PENDING")
 
-  po       PurchaseOrder @relation(fields: [poId], references: [id])
+  po       PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
   sku      SkuMaster     @relation(fields: [skuId], references: [id])
   grnItems GrnItem[]
 
+  @@index([poId])
+  @@index([skuId])
   @@map("purchase_order_items")
 }
 
@@ -690,6 +702,7 @@ model StockTransfer {
   items         StockTransferItem[]
   gatepasses    Gatepass[]
 
+  @@index([tenantId])
   @@map("stock_transfers")
 }
 
@@ -701,9 +714,11 @@ model StockTransferItem {
   receivedQty Int    @default(0)
   status      String @default("PENDING")
 
-  transfer StockTransfer @relation(fields: [transferId], references: [id])
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
   sku      SkuMaster     @relation(fields: [skuId], references: [id])
 
+  @@index([transferId])
+  @@index([skuId])
   @@map("stock_transfer_items")
 }
 
@@ -733,7 +748,7 @@ model PickWaveOrder {
   orderId String
   status  String @default("PENDING")
 
-  wave  PickWave @relation(fields: [waveId], references: [id])
+  wave  PickWave @relation(fields: [waveId], references: [id], onDelete: Cascade)
   order Order    @relation(fields: [orderId], references: [id])
 
   @@unique([waveId, orderId])
@@ -752,6 +767,7 @@ model Manifest {
 
   shipments ManifestShipment[]
 
+  @@index([tenantId])
   @@map("manifests")
 }
 
@@ -762,7 +778,7 @@ model ManifestShipment {
   awbNumber   String
   courierName String
 
-  manifest Manifest @relation(fields: [manifestId], references: [id])
+  manifest Manifest @relation(fields: [manifestId], references: [id], onDelete: Cascade)
   order    Order    @relation(fields: [orderId], references: [id])
 
   @@unique([manifestId, orderId])
@@ -778,6 +794,7 @@ model MarketplaceOrderMapping {
   orderData          Json?
   syncedAt           DateTime @default(now())
 
+  @@index([tenantId])
   @@map("marketplace_order_mappings")
 }
 
@@ -816,10 +833,11 @@ model GatepassItem {
   batchCode     String?
   forceAllocate Boolean  @default(false)
 
-  gatepass Gatepass  @relation(fields: [gatepassId], references: [id])
+  gatepass Gatepass  @relation(fields: [gatepassId], references: [id], onDelete: Cascade)
   sku      SkuMaster @relation(fields: [skuId], references: [id])
 
   @@unique([gatepassId, skuId])
+  @@index([gatepassId])
   @@map("gatepass_items")
 }
 
@@ -888,6 +906,7 @@ model Asn {
   items AsnItem[]
   grns  Grn[]
 
+  @@index([tenantId])
   @@map("asns")
 }
 
@@ -900,9 +919,11 @@ model AsnItem {
   batchNo     String?
   expiryDate  DateTime?
 
-  asn Asn       @relation(fields: [asnId], references: [id])
+  asn Asn       @relation(fields: [asnId], references: [id], onDelete: Cascade)
   sku SkuMaster @relation(fields: [skuId], references: [id])
 
+  @@index([asnId])
+  @@index([skuId])
   @@map("asn_items")
 }
 
@@ -940,5 +961,6 @@ model Lead {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@index([email])
   @@map("leads")
 }

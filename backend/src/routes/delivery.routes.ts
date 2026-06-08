@@ -4,7 +4,7 @@ import { authenticate, authorize, tenantScope} from '../middlewares/auth.middlew
 
 const router = Router();
 
-router.get('/check', checkDeliveries);
+router.get('/check', authenticate, checkDeliveries);
 router.get('/shipped', authenticate, getShippedOrders);
 router.patch('/orders/:id/deliver', authenticate, tenantScope, authorize(['SUPER_ADMIN', 'WAREHOUSE_MGR']), markDelivered);
 

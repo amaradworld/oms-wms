@@ -24,7 +24,7 @@ export const mfaSetup = async (req: AuthRequest, res: Response) => {
 
     res.json({ secret, qrCode, uri: otpauth });
   } catch (error: any) {
-    res.status(500).json({ message: error?.message || 'MFA setup failed' });
+    res.status(500).json({ message: 'MFA setup failed' });
   }
 };
 
@@ -47,7 +47,7 @@ export const mfaVerify = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'MFA enabled successfully' });
   } catch (error: any) {
-    res.status(500).json({ message: error?.message || 'MFA verification failed' });
+    res.status(500).json({ message: 'MFA verification failed' });
   }
 };
 
@@ -75,7 +75,7 @@ export const mfaDisable = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'MFA disabled successfully' });
   } catch (error: any) {
-    res.status(500).json({ message: error?.message || 'Failed to disable MFA' });
+    res.status(500).json({ message: 'Failed to disable MFA' });
   }
 };
 
@@ -104,6 +104,6 @@ export const mfaChallenge = async (req: AuthRequest, res: Response) => {
 
     res.json({ verified: true });
   } catch (error: any) {
-    res.status(500).json({ message: error?.message || 'Challenge failed' });
+    res.status(500).json({ message: 'Challenge failed' });
   }
 };

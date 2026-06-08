@@ -5,7 +5,7 @@ import { authenticate } from '../middlewares/auth.middleware';
 const router = Router();
 
 router.get('/', authenticate, streamBackup);
-router.post('/s3', runBackup);
+router.post('/s3', authenticate, runBackup);
 router.get('/health/db', authenticate, healthDb);
 
 export default router;

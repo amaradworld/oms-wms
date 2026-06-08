@@ -35,7 +35,9 @@ const Putaway = ({ detailId, setDetailId }) => {
 
   useEffect(() => {
     if (detailId && !detailTask) {
-      API.get(`/putaway/${detailId}`).then(res => { setDetailTask(res.data); setShowAssignModal(true); }).catch(() => setDetailId(''));
+      const controller = new AbortController();
+      API.get(`/putaway/${detailId}`, { signal: controller.signal }).then(res => { setDetailTask(res.data); setShowAssignModal(true); }).catch(() => { if (!controller.signal.aborted) setDetailId(''); });
+      return () => controller.abort();
     }
   }, [detailId]);
 

@@ -313,6 +313,6 @@ export const downloadManifestPdf = async (req: AuthRequest, res: Response) => {
     doc.end();
   } catch (error) {
     console.error('Manifest PDF error:', error);
-    res.status(500).json({ message: 'PDF generation failed', error: String(error) });
+    res.status(500).json({ message: 'PDF generation failed', });
   }
 };

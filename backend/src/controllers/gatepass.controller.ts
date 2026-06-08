@@ -30,7 +30,7 @@ export const getGatepasses = async (req: AuthRequest, res: Response) => {
 
     res.json({ gatepasses });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching gatepasses', error });
+    res.status(500).json({ message: 'Error fetching gatepasses',  });
   }
 };
 
@@ -47,7 +47,7 @@ export const getGatepassById = async (req: AuthRequest, res: Response) => {
     if (!gatepass) { res.status(404).json({ message: 'Gatepass not found' }); return; }
     res.json(gatepass);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching gatepass', error });
+    res.status(500).json({ message: 'Error fetching gatepass',  });
   }
 };
 
@@ -85,7 +85,7 @@ export const createGatepass = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(gatepass);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating gatepass', error: String(error) });
+    res.status(400).json({ message: 'Error creating gatepass', });
   }
 };
 
@@ -134,7 +134,7 @@ export const createGatepassFromStockTransfer = async (req: AuthRequest, res: Res
 
     res.status(201).json(gatepass);
   } catch (error) {
-    res.status(400).json({ message: 'Error creating gatepass from transfer', error: String(error) });
+    res.status(400).json({ message: 'Error creating gatepass from transfer', });
   }
 };
 
@@ -167,7 +167,7 @@ export const updateGatepassStatus = async (req: AuthRequest, res: Response) => {
 
     res.json(gatepass);
   } catch (error) {
-    res.status(400).json({ message: 'Error updating gatepass', error });
+    res.status(400).json({ message: 'Error updating gatepass',  });
   }
 };
 
@@ -220,6 +220,6 @@ export const scanGatepassItem = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `Scanned ${resolvedCode}`, item: updated, allScanned });
   } catch (error) {
-    res.status(400).json({ message: 'Error scanning item', error });
+    res.status(400).json({ message: 'Error scanning item',  });
   }
 };

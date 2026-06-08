@@ -1,9 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Upload, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import API from '../utils/api';
 
 const ImportButton = ({ label = 'Import', endpoint, onSuccess, warehouseId }) => {
   const fileRef = useRef(null);
-  const [status, setStatus] = useState('idle'); // idle, uploading, success, error
+  const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
   const handleFile = async (e) => {
@@ -17,26 +18,14 @@ const ImportButton = ({ label = 'Import', endpoint, onSuccess, warehouseId }) =>
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('token');
-      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const params = warehouseId ? `?warehouseId=${encodeURIComponent(warehouseId)}` : '';
-      const res = await fetch(`${API_BASE}/api/${endpoint}/import${params}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus('success');
-        setMessage(data.message || 'Imported successfully');
-        if (onSuccess) onSuccess(data);
-      } else {
-        setStatus('error');
-        setMessage(data.message || 'Import failed');
-      }
+      const res = await API.post(`/${endpoint}/import${params}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setStatus('success');
+      setMessage(res.data.message || 'Imported successfully');
+      if (onSuccess) onSuccess(res.data);
     } catch (err) {
       setStatus('error');
-      setMessage('Connection error');
+      setMessage(err.response?.data?.message || 'Connection error');
     }
 
     setTimeout(() => { setStatus('idle'); setMessage(''); }, 4000);
