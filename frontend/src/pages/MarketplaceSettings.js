@@ -4,6 +4,7 @@ import API from '../utils/api';
 import { useConfirm } from '../components/ConfirmDialog';
 
 const MARKETPLACE_LOGOS = {
+  FLIPKART: '🛍️',
   NYKAA: '🎨',
   MYNTRA: '👕',
   TATACLIQ: '🔷',

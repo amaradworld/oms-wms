@@ -2,8 +2,10 @@ import { MarketplaceConnector } from './base';
 import { NykaaConnector } from './nykaa';
 import { MyntraConnector } from './myntra';
 import { TataCliqConnector } from './tatacliq';
+import { FlipkartConnector } from './flipkart';
 
 const registry: Record<string, MarketplaceConnector> = {
+  FLIPKART: new FlipkartConnector(),
   NYKAA: new NykaaConnector(),
   MYNTRA: new MyntraConnector(),
   TATACLIQ: new TataCliqConnector(),
