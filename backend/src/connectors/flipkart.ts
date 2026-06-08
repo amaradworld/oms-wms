@@ -8,7 +8,7 @@ export class FlipkartConnector implements MarketplaceConnector {
 
   private async getAccessToken(clientId: string, clientSecret: string): Promise<string> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const response = await fetch(`${FLIPKART_OAUTH_URL}?grant_type=client_credentials&scope=Seller_Api,Default`, {
+    const response = await fetch(`${FLIPKART_OAUTH_URL}?grant_type=client_credentials&scope=Seller_Api`, {
       method: 'GET',
       headers: {
         Authorization: `Basic ${credentials}`,
