@@ -1,20 +1,18 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const FLIPKART_API_BASE = 'https://api.flipkart.net/sellers';
-const FLIPKART_OAUTH_URL = 'https://api.flipkart.net/oauth/resource/token';
+const FLIPKART_OAUTH_URL = 'https://api.flipkart.net/oauth-service/oauth/token';
 
 export class FlipkartConnector implements MarketplaceConnector {
   name = 'Flipkart';
 
   private async getAccessToken(clientId: string, clientSecret: string): Promise<string> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const response = await fetch(FLIPKART_OAUTH_URL, {
-      method: 'POST',
+    const response = await fetch(`${FLIPKART_OAUTH_URL}?grant_type=client_credentials&scope=Seller_Api,Default`, {
+      method: 'GET',
       headers: {
         Authorization: `Basic ${credentials}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: 'grant_type=client_credentials',
     });
     if (!response.ok) {
       const body = await response.text().catch(() => '');
