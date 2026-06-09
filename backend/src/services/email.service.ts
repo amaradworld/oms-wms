@@ -11,17 +11,17 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendResetCode(email: string, code: string, companyName?: string) {
-  const fromName = process.env.SMTP_FROM_NAME || 'GlobalSupply Technologies';
+  const fromName = process.env.SMTP_FROM_NAME || 'GlobalSupply Techno';
   const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@globalsupply.in';
 
   await transporter.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
     to: email,
-    subject: 'Password Reset Code - GlobalSupply Technologies',
+    subject: 'Password Reset Code - GlobalSupply Techno',
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="font-size: 24px; color: #1e293b; margin: 0;">GlobalSupply Technologies</h1>
+          <h1 style="font-size: 24px; color: #1e293b; margin: 0;">GlobalSupply Techno</h1>
           <p style="color: #64748b; margin: 4px 0 0;">Warehouse Management System</p>
         </div>
         <div style="background: #f8fafc; border-radius: 12px; padding: 24px; border: 1px solid #e2e8f0;">

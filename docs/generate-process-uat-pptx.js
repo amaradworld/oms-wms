@@ -1,4 +1,4 @@
-// GlobalSupply Technologies — Process Flow + UAT Test Deck
+// GlobalSupply Techno — Process Flow + UAT Test Deck
 // Reuses the visual style of SupplyHub-Redesigned.pptx
 // Run: node generate-process-uat-pptx.js
 const PptxGenJS = require('pptxgenjs');
@@ -7,9 +7,9 @@ const fs = require('fs');
 
 const pptx = new PptxGenJS();
 pptx.layout = 'LAYOUT_WIDE'; // 13.333 x 7.5
-pptx.title = 'GlobalSupply Technologies — Process Flow & UAT';
-pptx.author = 'GlobalSupply Technologies';
-pptx.company = 'GlobalSupply Technologies';
+pptx.title = 'GlobalSupply Techno — Process Flow & UAT';
+pptx.author = 'GlobalSupply Techno';
+pptx.company = 'GlobalSupply Techno';
 pptx.subject = 'User Training & UAT Test Cases';
 
 // === Brand colors (matching SupplyHub-Redesigned.pptx) ===
@@ -43,7 +43,7 @@ const F = {
 };
 
 function addFooter(slide, pageNum, total) {
-  slide.addText('GlobalSupply Technologies  |  User Training & UAT  |  globalsupply.in', {
+  slide.addText('GlobalSupply Techno  |  User Training & UAT  |  globalsupply.in', {
     x: 0.4, y: 7.15, w: 10, h: 0.3, ...F.smallW,
   });
   slide.addText(`${pageNum} / ${total}`, {
@@ -97,13 +97,13 @@ function slide1() {
   const s = darkSlide();
   s.addShape('rect', { x: 0, y: 0, w: 0.4, h: 7.5, fill: { color: C.teal }, line: { type: 'none' } });
 
-  s.addText('GlobalSupply Technologies', { x: 1, y: 1.6, w: 11, h: 1.0, fontSize: 52, fontFace: 'Calibri', bold: true, color: C.white });
+  s.addText('GlobalSupply Techno', { x: 1, y: 1.6, w: 11, h: 1.0, fontSize: 52, fontFace: 'Calibri', bold: true, color: C.white });
   s.addText('Process Flow & UAT Test Guide', { x: 1, y: 2.7, w: 11, h: 0.6, fontSize: 28, fontFace: 'Calibri', color: C.teal, italic: true });
   s.addText('For User Training and User-Acceptance Testing', { x: 1, y: 3.4, w: 11, h: 0.5, fontSize: 16, fontFace: 'Calibri', color: 'C9D1E0' });
 
   s.addShape('line', { x: 1, y: 4.3, w: 4, h: 0, line: { color: C.amber, width: 3 } });
 
-  s.addText('Prepared by GlobalSupply Technologies  •  v2.0  •  June 2026', { x: 1, y: 4.6, w: 11, h: 0.4, fontSize: 12, fontFace: 'Calibri', color: C.amber });
+  s.addText('Prepared by GlobalSupply Techno  •  v2.0  •  June 2026', { x: 1, y: 4.6, w: 11, h: 0.4, fontSize: 12, fontFace: 'Calibri', color: C.amber });
   s.addText('For internal training, customer onboarding, and UAT sign-off', { x: 1, y: 5.0, w: 11, h: 0.4, fontSize: 11, fontFace: 'Calibri', color: 'A8B3CC' });
 
   s.addText('globalsupply.in', { x: 1, y: 6.6, w: 11, h: 0.3, fontSize: 10, fontFace: 'Calibri', color: C.muted });

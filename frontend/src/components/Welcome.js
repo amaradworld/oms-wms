@@ -4,9 +4,9 @@ import API from '../utils/api';
 
 const STEPS = [
   {
-    title: 'Welcome to GlobalSupply Technologies',
+    title: 'Welcome to GlobalSupply Techno',
     subtitle: 'Your warehouse, simplified',
-    body: 'GlobalSupply Technologies unifies your orders, inventory, picking, and shipping across every Indian marketplace — so you can stop tab-switching and start scaling.',
+    body: 'GlobalSupply Techno unifies your orders, inventory, picking, and shipping across every Indian marketplace — so you can stop tab-switching and start scaling.',
     icon: Sparkles,
     cta: 'Get started',
   },
@@ -20,7 +20,7 @@ const STEPS = [
   {
     title: 'Step 2: Add SKUs and inventory',
     subtitle: 'Track what you have',
-    body: 'Each product you sell is a SKU. Add them individually or import a CSV. GlobalSupply Technologies tracks stock by SKU + warehouse, so you always know what is available.',
+    body: 'Each product you sell is a SKU. Add them individually or import a CSV. GlobalSupply Techno tracks stock by SKU + warehouse, so you always know what is available.',
     icon: Package,
     link: { label: 'Open inventory', page: 'inventory' },
   },

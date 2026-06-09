@@ -57,7 +57,7 @@ export const askAssistant = async (req: AuthRequest, res: Response) => {
   const { message } = req.body;
   const tenantId = req.user!.tenant_id;
   if (!message || typeof message !== 'string') {
-    return res.json({ reply: 'Please type a question about any process in GlobalSupply Technologies.', actions: [] });
+    return res.json({ reply: 'Please type a question about any process in GlobalSupply Techno.', actions: [] });
   }
 
   // Check if this is a SKU/transaction history query

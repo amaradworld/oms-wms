@@ -473,7 +473,7 @@ const Leads = () => {
 
               <div className="border-t border-slate-100 pt-4 flex flex-wrap gap-2">
                 <a
-                  href={`mailto:${selected.email}?subject=Re: Your GlobalSupply enquiry&body=Hi ${encodeURIComponent(selected.name?.split(' ')[0] || '')},%0D%0A%0D%0AThanks for your interest in GlobalSupply Technologies!`}
+                  href={`mailto:${selected.email}?subject=Re: Your GlobalSupply enquiry&body=Hi ${encodeURIComponent(selected.name?.split(' ')[0] || '')},%0D%0A%0D%0AThanks for your interest in GlobalSupply Techno!`}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors"
                 >
                   <Mail size={12} /> Email lead
