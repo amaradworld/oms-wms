@@ -301,6 +301,8 @@ model Order {
   tracking CourierTracking?
   returns  Return[]
   rto      Rto?
+  invoice  Invoice?
+  codSettlements CodSettlement[]
 
   warehouse         Warehouse?         @relation(fields: [warehouseId], references: [id])
   pickWaveOrders    PickWaveOrder[]
@@ -968,4 +970,56 @@ model Lead {
 
   @@index([email])
   @@map("leads")
+}
+
+model Invoice {
+  id            String    @id @default(uuid())
+  tenantId      String
+  warehouseId   String
+  orderId       String    @unique
+  invoiceNumber String    @unique
+  invoiceDate   DateTime  @default(now())
+  totalAmount   Decimal
+  taxAmount     Decimal   @default(0)
+  cgstAmount    Decimal   @default(0)
+  sgstAmount    Decimal   @default(0)
+  igstAmount    Decimal   @default(0)
+  status        String    @default("DRAFT") // DRAFT, ISSUED, CANCELLED
+  irn           String?   // e-invoice IRN
+  irnGeneratedAt DateTime?
+  ewayBillNumber String?
+  isCreditNote  Boolean   @default(false)
+  creditNoteReason String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId, invoiceNumber])
+  @@index([tenantId, warehouseId])
+  @@map("invoices")
+}
+
+model CodSettlement {
+  id                String    @id @default(uuid())
+  tenantId          String
+  orderId           String
+  marketplace       String?
+  awbNumber         String?
+  codAmount         Decimal
+  settledAmount     Decimal?  
+  settlementDate    DateTime?
+  reconciliationStatus String @default("PENDING") // PENDING, MATCHED, DISCREPANCY, SETTLED
+  discrepancyReason String?
+  sellerAdjustment  Decimal?  @default(0)
+  tds               Decimal?  @default(0)
+  shippingCharge    Decimal?  @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId, reconciliationStatus])
+  @@index([tenantId, marketplace])
+  @@map("cod_settlements")
 }
