@@ -5,6 +5,9 @@
     { "source": "/pricing", "destination": "/pricing/index.html" },
     { "source": "/about", "destination": "/about/index.html" },
     { "source": "/contact", "destination": "/contact/index.html" },
+    { "source": "/security", "destination": "/security/index.html" },
+    { "source": "/privacy", "destination": "/privacy/index.html" },
+    { "source": "/terms", "destination": "/terms/index.html" },
     { "source": "/blog", "destination": "/blog/index.html" },
     { "source": "/blog/spreadsheets-to-wms", "destination": "/blog/spreadsheets-to-wms/index.html" },
     { "source": "/blog/warehouse-monday-numbers", "destination": "/blog/warehouse-monday-numbers/index.html" },
@@ -107,6 +110,24 @@
     },
     {
       "source": "/contact/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/security/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/privacy/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/terms/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache" }
       ]
