@@ -54,10 +54,12 @@ import returnRoutes from './routes/return.routes';
 import webhookRoutes from './routes/webhook.routes';
 import codRoutes from './routes/cod.routes';
 import menuRoutes from './routes/menu.routes';
+import reportFtpRoutes from './routes/reportFtp.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
 import { startSlaCron } from './services/slaCron.service';
+import { startReportCron } from './services/reportCron.service';
 
 dotenv.config();
 
@@ -146,6 +148,7 @@ app.use('/api/batch', batchRoutes);
   app.use('/api/webhooks', webhookRoutes);
   app.use('/api/cod', codRoutes);
   app.use('/api/menus', menuRoutes);
+  app.use('/api/ftp', reportFtpRoutes);
 
 app.get('/api/search', authenticate, globalSearch);
 
@@ -171,4 +174,5 @@ ensureDefaults().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
   startSlaCron();
+  startReportCron();
 });

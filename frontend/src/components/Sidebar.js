@@ -107,6 +107,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
         { id: 'productivity', label: 'Productivity', icon: BarChart3 },
         { id: 'bins', label: 'Bin Locations', icon: MapPin },
         { id: 'audit-logs', label: 'Audit Logs', icon: Clock },
+        { id: 'reports-ftp', label: 'Reports (FTP)', icon: FileText },
         { id: 'settings', label: 'Settings', icon: Settings },
       ],
     },

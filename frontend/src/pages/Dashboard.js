@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ShoppingCart, Package, IndianRupee, AlertTriangle, Clock, RefreshCw, BarChart3, TrendingUp, X, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import API from '../utils/api';

@@ -69,6 +69,7 @@ export const MENU_CATALOG: MenuItem[] = [
       { id: 'productivity', label: 'Productivity' },
       { id: 'bins', label: 'Bin Locations' },
       { id: 'audit-logs', label: 'Audit Logs' },
+      { id: 'reports-ftp', label: 'Reports (FTP)' },
       { id: 'settings', label: 'Settings' },
     ],
   },

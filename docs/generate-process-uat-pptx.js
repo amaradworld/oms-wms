@@ -1,4 +1,4 @@
-// SupplyHub — Process Flow + UAT Test Deck
+// GlobalSupply Technologies — Process Flow + UAT Test Deck
 // Reuses the visual style of SupplyHub-Redesigned.pptx
 // Run: node generate-process-uat-pptx.js
 const PptxGenJS = require('pptxgenjs');
@@ -7,9 +7,9 @@ const fs = require('fs');
 
 const pptx = new PptxGenJS();
 pptx.layout = 'LAYOUT_WIDE'; // 13.333 x 7.5
-pptx.title = 'SupplyHub — Process Flow & UAT';
-pptx.author = 'GlobalSupply.in';
-pptx.company = 'GlobalSupply.in';
+pptx.title = 'GlobalSupply Technologies — Process Flow & UAT';
+pptx.author = 'GlobalSupply Technologies';
+pptx.company = 'GlobalSupply Technologies';
 pptx.subject = 'User Training & UAT Test Cases';
 
 // === Brand colors (matching SupplyHub-Redesigned.pptx) ===
@@ -43,7 +43,7 @@ const F = {
 };
 
 function addFooter(slide, pageNum, total) {
-  slide.addText('SupplyHub  |  User Training & UAT  |  globalsupply.in', {
+  slide.addText('GlobalSupply Technologies  |  User Training & UAT  |  globalsupply.in', {
     x: 0.4, y: 7.15, w: 10, h: 0.3, ...F.smallW,
   });
   slide.addText(`${pageNum} / ${total}`, {
@@ -97,13 +97,13 @@ function slide1() {
   const s = darkSlide();
   s.addShape('rect', { x: 0, y: 0, w: 0.4, h: 7.5, fill: { color: C.teal }, line: { type: 'none' } });
 
-  s.addText('SupplyHub', { x: 1, y: 1.6, w: 11, h: 1.0, fontSize: 60, fontFace: 'Calibri', bold: true, color: C.white });
+  s.addText('GlobalSupply Technologies', { x: 1, y: 1.6, w: 11, h: 1.0, fontSize: 52, fontFace: 'Calibri', bold: true, color: C.white });
   s.addText('Process Flow & UAT Test Guide', { x: 1, y: 2.7, w: 11, h: 0.6, fontSize: 28, fontFace: 'Calibri', color: C.teal, italic: true });
   s.addText('For User Training and User-Acceptance Testing', { x: 1, y: 3.4, w: 11, h: 0.5, fontSize: 16, fontFace: 'Calibri', color: 'C9D1E0' });
 
   s.addShape('line', { x: 1, y: 4.3, w: 4, h: 0, line: { color: C.amber, width: 3 } });
 
-  s.addText('Prepared by GlobalSupply.in  •  v1.0  •  June 2026', { x: 1, y: 4.6, w: 11, h: 0.4, fontSize: 12, fontFace: 'Calibri', color: C.amber });
+  s.addText('Prepared by GlobalSupply Technologies  •  v2.0  •  June 2026', { x: 1, y: 4.6, w: 11, h: 0.4, fontSize: 12, fontFace: 'Calibri', color: C.amber });
   s.addText('For internal training, customer onboarding, and UAT sign-off', { x: 1, y: 5.0, w: 11, h: 0.4, fontSize: 11, fontFace: 'Calibri', color: 'A8B3CC' });
 
   s.addText('globalsupply.in', { x: 1, y: 6.6, w: 11, h: 0.3, fontSize: 10, fontFace: 'Calibri', color: C.muted });
@@ -116,25 +116,30 @@ function slide2() {
 
   const sections = [
     { num: '01', title: 'End-to-End Lifecycle',       desc: 'PO → Stock → Order → Ship → Dispatch — the full journey in 8 steps.', color: C.teal },
-    { num: '02', title: 'Inbound Process',             desc: 'PO → ASN → GRN → QC → Putaway → Bin. How stock enters your warehouse.', color: C.amber },
-    { num: '03', title: 'Outbound Process',            desc: 'Order → Wave Picking → Packing → AWB → Manifest → Dispatch.', color: C.purple },
-    { num: '04', title: 'Inventory Controls',          desc: 'Cycle count, FEFO expiry, replenishment, and SKU history.', color: C.green },
-    { num: '05', title: 'Returns & RTO',               desc: 'Customer return intake, QC, restock, and reverse pickup.', color: C.red },
-    { num: '06', title: 'UAT Test Cases',              desc: '32 manual test cases across all modules. Each with pre-conditions, steps, and expected results.', color: C.pink },
+    { num: '02', title: 'Inbound Process',             desc: 'PO → ASN → GRN → QC → Putaway → Bin. How stock enters your warehouse. Supports supplier overshipment.', color: C.amber },
+    { num: '03', title: 'Outbound Process',            desc: 'Order → Wave Picking → Packing → AWB → Manifest → Dispatch. FEFO soft reservation.', color: C.purple },
+    { num: '04', title: 'Inventory Controls',          desc: 'Cycle count, FEFO expiry, replenishment, SKU history, ABC classification, directed putaway.', color: C.green },
+    { num: '05', title: 'Returns & RTO',               desc: 'Customer return intake, QC, restock, and reverse pickup. Auto-RTO after 3 failed attempts.', color: C.red },
+    { num: '06', title: 'Allocation Engine',            desc: 'FEFO batch allocation, soft reservation, partial allocation, manifest close = hard deduction.', color: C.pink },
+    { num: '07', title: 'Marketplace & Webhooks',       desc: 'Flipkart/Nykaa/Myntra/TataCliq connectors, webhook processing, auto-NDR, channel-aware ATS.', color: C.teal },
+    { num: '08', title: 'Warehouse Intelligence',       desc: 'Directed putaway, auto-wave by carrier, QC quarantine, blind cycle count.', color: C.amber },
+    { num: '09', title: 'Compliance & Settlement',      desc: 'Sequential invoicing, e-invoicing IRN, credit notes, COD reconciliation.', color: C.purple },
+    { num: '10', title: 'Safety & Access Control',      desc: '8 critical security fixes, idempotency guards, owner-controlled menu access per company.', color: C.green },
+    { num: '11', title: 'UAT Test Cases',              desc: '40+ manual test cases across all modules. Each with pre-conditions, steps, and expected results.', color: C.red },
   ];
 
   sections.forEach((sec, i) => {
     const col = i % 3;
     const row = Math.floor(i / 3);
     const x = 0.5 + col * 4.25;
-    const y = 1.8 + row * 2.6;
-    coloredCard(s, x, y, 4.0, 2.4, sec.color,
+    const y = 1.8 + row * 1.7;
+    coloredCard(s, x, y, 4.0, 1.5, sec.color,
       `${sec.num}. ${sec.title}`,
       sec.desc
     );
   });
 
-  addFooter(s, 2, 25);
+  addFooter(s, 2, 35);
 }
 
 // Slide 3 — Roles & Responsibilities
@@ -159,7 +164,7 @@ function slide3() {
     coloredCard(s, x, y, 4.0, 2.4, r.color, r.name, `${r.scope}\n\n${r.perms}`);
   });
 
-  addFooter(s, 3, 25);
+  addFooter(s, 3, 35);
 }
 
 // ====================================================================
@@ -223,7 +228,7 @@ function slide4() {
     s.addText(k.label, { x, y: 6.2, w: 2.95, h: 0.4, fontSize: 10, fontFace: 'Calibri', color: C.white, align: 'center' });
   });
 
-  addFooter(s, 4, 25);
+  addFooter(s, 4, 35);
 }
 
 // ====================================================================
@@ -252,9 +257,9 @@ function slide5() {
   const details = [
     { title: 'Purchase Order',  body: '• Create PO in Purchase Orders tab\n• Add supplier, SKU, qty, expected date\n• Status: DRAFT → APPROVED → ISSUED\n• Triggers ASN from supplier', color: C.teal },
     { title: 'ASN',              body: '• Supplier ships & uploads ASN\n• ASN shows expected arrival date, items, qty\n• Visible in Inbound → ASN tab\n• Helps pre-plan receiving capacity', color: C.amber },
-    { title: 'GRN + Scan',       body: '• Truck arrives → create GRN from PO\n• Scan each SKU, capture batch, MRP, expiry\n• Capture vendor invoice no. for GST\n• Status: DRAFT → RECEIVING → RECEIVED', color: C.purple },
+    { title: 'GRN + Scan',       body: '• Truck arrives → create GRN from PO\n• Scan each SKU, capture batch, MRP, expiry\n• Vendor invoice no. for GST\n• Supports overshipment (receive > PO qty)\n• Status: DRAFT → RECEIVING → RECEIVED', color: C.purple },
     { title: 'Quality Check',    body: '• Per-item QC: PASS or FAIL\n• Accept/reject quantities separately\n• Rejected qty tracked, not moved to stock\n• Status → QC_PASSED or QC_FAILED', color: C.green },
-    { title: 'Putaway',          body: '• Approved qty flows to GRN-RECEIVED bin\n• Auto-creates putaway task\n• Floor staff scans to move to shelf bin\n• Inventory reflects in real-time', color: C.red },
+    { title: 'Putaway',          body: '• Approved qty flows to GRN-RECEIVED bin\n• Auto-creates putaway task\n• Directed putaway suggests optimal bin\n• Atomic transaction prevents stock loss\n• Inventory reflects in real-time', color: C.red },
   ];
 
   details.forEach((d, i) => {
@@ -270,7 +275,7 @@ function slide5() {
     x: 0.5, y: 6.6, w: 12.3, h: 0.4, fontSize: 10, fontFace: 'Consolas', color: C.amber, align: 'center', italic: true,
   });
 
-  addFooter(s, 5, 25);
+  addFooter(s, 5, 35);
 }
 
 // Slide 6 — Inbound — GRN Screen Mockup
@@ -331,7 +336,7 @@ function slide6() {
     x: 9.4, y: 2.5, w: 3.2, h: 4.2, fontSize: 10, fontFace: 'Calibri', color: C.white,
   });
 
-  addFooter(s, 6, 25);
+  addFooter(s, 6, 35);
 }
 
 // ====================================================================
@@ -344,7 +349,7 @@ function slide7() {
   addHeader(s, 'Outbound Process — Order to Dispatch', '6 stages from customer order to courier handover');
 
   const steps = [
-    { code: '01', title: 'Order',          desc: 'From marketplace or manual entry',         color: C.teal },
+    { code: '01', title: 'Order',          desc: 'From marketplace or manual. FEFO soft reservation.',         color: C.teal },
     { code: '02', title: 'Wave',            desc: 'Group 20-30 orders for batch pick',        color: C.amber },
     { code: '03', title: 'Picking',         desc: 'Picker walks path, scans each SKU',         color: C.purple },
     { code: '04', title: 'Packing',         desc: 'Verify items, pack, generate label',        color: C.green },
@@ -360,7 +365,7 @@ function slide7() {
     coloredCard(s, x, y, 4.0, 2.4, step.color, `${step.code}  ${step.title}`, step.desc);
   });
 
-  addFooter(s, 7, 25);
+  addFooter(s, 7, 35);
 }
 
 // Slide 8 — Outbound — Wave Picking screen
@@ -420,7 +425,7 @@ function slide8() {
     x: 9.4, y: 2.5, w: 3.2, h: 4.2, fontSize: 10, fontFace: 'Calibri', color: C.white,
   });
 
-  addFooter(s, 8, 25);
+  addFooter(s, 8, 35);
 }
 
 // Slide 9 — Outbound — Packing screen
@@ -476,7 +481,7 @@ function slide9() {
     x: 9.4, y: 2.5, w: 3.2, h: 4.2, fontSize: 10, fontFace: 'Calibri', color: C.white,
   });
 
-  addFooter(s, 9, 25);
+  addFooter(s, 9, 35);
 }
 
 // ====================================================================
@@ -493,8 +498,8 @@ function slide10() {
     { title: 'Bin-Level Tracking', desc: 'Every item tracked by SKU + EPC code. Real-time qty per bin, per batch, per expiry.', color: C.amber },
     { title: 'Cycle Count',       desc: 'Blind count: staff counts, system reconciles, variance report auto-generated.', color: C.purple },
     { title: 'FEFO Expiry',       desc: 'First-Expiry-First-Out picking logic. Critical for F&B, pharma, cosmetics.', color: C.green },
-    { title: 'Replenishment',     desc: 'Auto-alerts when bin stock drops below reorder point. Generates putaway task.', color: C.red },
-    { title: 'SKU History',       desc: 'Every event, every location, with running balance. Try getting this from Zoho.', color: C.pink },
+    { title: 'Replenishment',     desc: 'Auto-alerts when bin stock drops below reorder point. Generates putaway task. Atomic decrement+increment.', color: C.red },
+    { title: 'ABC Classification', desc: 'Value-based classification: A=top 80%, B=next 15%, C=last 5%. Drives cycle count and prioritization.', color: C.pink },
   ];
 
   features.forEach((f, i) => {
@@ -505,7 +510,7 @@ function slide10() {
     coloredCard(s, x, y, 4.0, 2.4, f.color, f.title, f.desc);
   });
 
-  addFooter(s, 10, 25);
+  addFooter(s, 10, 35);
 }
 
 // Slide 11 — Returns & RTO
@@ -551,15 +556,167 @@ function slide11() {
     s.addText(o.desc,  { x: x + 0.3, y: 4.6, w: 3.6, h: 1.8, fontSize: 10, fontFace: 'Calibri', color: C.white });
   });
 
-  addFooter(s, 11, 25);
+  addFooter(s, 11, 35);
 }
 
 // ====================================================================
 // SECTION F: ADMIN & ROLES
 // ====================================================================
 
-// Slide 12 — Admin Tasks
-function slide12() {
+// Slide 20 — Allocation Engine
+function slide20() {
+  const s = darkSlide();
+  addHeader(s, 'Allocation Engine — FEFO & Soft Reservation', 'Intelligent inventory allocation with batch-level tracking');
+
+  const features = [
+    { title: 'Soft Reservation', desc: 'Order creation reserves inventory (quantityReserved++) without hard deduction. Prevents overselling across channels.', color: C.teal },
+    { title: 'FEFO Batching', desc: 'Allocates from earliest-expiring batches first. Tracks batchNo and expiryDate on each OrderItem.', color: C.amber },
+    { title: 'Partial Allocation', desc: 'Items marked ALLOCATED / PARTIAL / UNALLOCATED based on available stock. Supports split fulfillment.', color: C.purple },
+    { title: 'Hard Deduction', desc: 'Manifest close does hard deduction: quantityOnHand--, quantityReserved--. Single point of stock commitment.', color: C.green },
+    { title: 'Cancel Release', desc: 'Order cancellation releases reservation: quantityReserved--, quantityAvailable++. No phantom stock.', color: C.red },
+    { title: 'Channel-Aware ATS', desc: 'Each marketplace gets stock - own buffer - other channels buffers. Prevents cross-channel overselling.', color: C.pink },
+  ];
+
+  features.forEach((f, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = 0.5 + col * 4.25;
+    const y = 1.8 + row * 2.6;
+    coloredCard(s, x, y, 4.0, 2.4, f.color, f.title, f.desc);
+  });
+
+  addFooter(s, 20, 35);
+}
+
+// Slide 21 — Marketplace Webhooks
+function slide21() {
+  const s = darkSlide();
+  addHeader(s, 'Marketplace Webhooks & NDR Automation', 'Real-time order status sync with auto-NDR and auto-RTO');
+
+  const steps = [
+    { code: 'WH', title: 'Webhook Received', desc: 'POST /api/webhooks/:marketplace — public endpoint, no auth required', color: C.teal },
+    { code: 'MAP', title: 'Status Mapping', desc: 'Flipkart/Nykaa/Myntra/TataCliq status codes mapped to internal statuses', color: C.amber },
+    { code: 'NDR', title: 'Auto-NDR', desc: 'Delivery failure creates NDR case automatically', color: C.purple },
+    { code: 'RTO', title: 'Auto-RTO', desc: 'After 3 failed attempts → RTO, order → RETURNED', color: C.red },
+    { code: 'INV', title: 'Inventory Sync', desc: 'Marketplace events emit inventory changes to all connectors', color: C.green },
+  ];
+
+  steps.forEach((step, i) => {
+    const x = 0.5 + i * 2.55;
+    s.addShape('roundRect', { x, y: 1.9, w: 2.4, h: 1.0, fill: { color: C.navy2 }, line: { color: step.color, width: 2 }, rectRadius: 0.05 });
+    s.addShape('rect', { x, y: 1.9, w: 2.4, h: 0.15, fill: { color: step.color }, line: { type: 'none' } });
+    s.addText(step.code, { x, y: 2.1, w: 2.4, h: 0.4, fontSize: 16, fontFace: 'Calibri', bold: true, color: step.color, align: 'center' });
+    s.addText(step.title, { x, y: 2.5, w: 2.4, h: 0.4, fontSize: 10, fontFace: 'Calibri', bold: true, color: C.white, align: 'center' });
+    if (i < steps.length - 1) {
+      s.addShape('rightTriangle', { x: x + 2.42, y: 2.3, w: 0.13, h: 0.2, fill: { color: step.color }, line: { type: 'none' }, rotate: 90 });
+    }
+  });
+
+  // Status mapping table
+  const headerStyle = { fill: { color: C.navy2 }, color: C.white, bold: true, align: 'left', fontSize: 10, fontFace: 'Calibri', valign: 'middle' };
+  const cellStyle = { color: C.text, align: 'left', fontSize: 9, fontFace: 'Calibri', valign: 'middle' };
+
+  const rows = [
+    [
+      { text: 'Marketplace', options: headerStyle },
+      { text: 'Delivered', options: headerStyle },
+      { text: 'Cancelled', options: headerStyle },
+      { text: 'Returned', options: headerStyle },
+      { text: 'Delivery Failed', options: headerStyle },
+    ],
+    [{ text: 'Flipkart', options: { ...cellStyle, bold: true } }, { text: 'DELIVERED', options: cellStyle }, { text: 'CANCELLED', options: cellStyle }, { text: 'RETURNED', options: cellStyle }, { text: 'RTO_INITIATED', options: cellStyle }],
+    [{ text: 'Nykaa', options: { ...cellStyle, bold: true } }, { text: 'delivered', options: cellStyle }, { text: 'cancelled', options: cellStyle }, { text: 'returned', options: cellStyle }, { text: 'delivery_failed', options: cellStyle }],
+    [{ text: 'Myntra', options: { ...cellStyle, bold: true } }, { text: 'Delivered', options: cellStyle }, { text: 'Cancelled', options: cellStyle }, { text: 'Returned', options: cellStyle }, { text: 'Failed', options: cellStyle }],
+    [{ text: 'TataCliq', options: { ...cellStyle, bold: true } }, { text: 'delivered', options: cellStyle }, { text: 'cancelled', options: cellStyle }, { text: 'returned', options: cellStyle }, { text: 'delivery_failed', options: cellStyle }],
+  ];
+
+  s.addTable(rows, {
+    x: 0.5, y: 3.3, w: 12.3,
+    colW: [2.0, 2.5, 2.5, 2.5, 2.8],
+    rowH: 0.45,
+    border: { type: 'solid', color: C.border, pt: 1 },
+  });
+
+  addFooter(s, 21, 35);
+}
+
+// Slide 22 — Warehouse Intelligence
+function slide22() {
+  const s = darkSlide();
+  addHeader(s, 'Warehouse Intelligence', 'Directed putaway, auto-wave, QC quarantine, blind cycle count');
+
+  const features = [
+    { title: 'Directed Putaway', desc: 'GET /api/putaway/suggest-bin scores bins by zone match (+100), capacity (+50), fill level (-30×pct). Returns top 5 suggestions.', color: C.teal },
+    { title: 'Auto-Wave', desc: 'POST /api/waves/auto groups pending orders by carrier. Creates waves automatically. maxOrders defaults to 20.', color: C.amber },
+    { title: 'QC Quarantine', desc: 'Failed GRN items auto-moved to QUARANTINE bin with quantityAvailable=0. Not allocatable for orders.', color: C.purple },
+    { title: 'Blind Cycle Count', desc: 'blindMode hides expected qty — staff counts without bias. abcFilter selects A/B/C class items only.', color: C.green },
+    { title: 'Bin Capacity', desc: 'BinLocation.maxCapacity tracks physical limits. Directed putaway respects capacity. Fill % shown in bin dashboard.', color: C.red },
+    { title: 'ABC Classification', desc: 'POST /api/inventory/abc-class — value-based: A=top 80%, B=next 15%, C=last 5%. Drives cycle count frequency.', color: C.pink },
+  ];
+
+  features.forEach((f, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = 0.5 + col * 4.25;
+    const y = 1.8 + row * 2.6;
+    coloredCard(s, x, y, 4.0, 2.4, f.color, f.title, f.desc);
+  });
+
+  addFooter(s, 22, 35);
+}
+
+// Slide 23 — Compliance & Settlement
+function slide23() {
+  const s = darkSlide();
+  addHeader(s, 'Compliance & Settlement', 'Invoicing, e-invoicing, credit notes, COD reconciliation');
+
+  const features = [
+    { title: 'Sequential Invoices', desc: 'Auto-numbered per warehouse: WH-INV-000001. Linked to orders. Tracks IRN for e-invoicing.', color: C.teal },
+    { title: 'E-Invoicing IRN', desc: 'POST /api/invoices/:id/einvoice — generates IRN via IRP API. Demo mode when EINVOICE_API_URL not set.', color: C.amber },
+    { title: 'Credit Notes', desc: 'POST /api/invoices/:id/credit-note — sequential WH-CN-000001. Adjusts invoice totals.', color: C.purple },
+    { title: 'COD Reconciliation', desc: 'Import settlement CSVs from marketplaces. Match by AWB/order. ₹1 tolerance for discrepancy detection.', color: C.green },
+    { title: 'COD Summary', desc: 'GET /api/cod/summary — per-marketplace breakdown, reconciled vs pending amounts, discrepancy alerts.', color: C.red },
+    { title: 'E-Way Bill', desc: 'setEwayBill updates both order and linked invoice. Tracks transport document numbers.', color: C.pink },
+  ];
+
+  features.forEach((f, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = 0.5 + col * 4.25;
+    const y = 1.8 + row * 2.6;
+    coloredCard(s, x, y, 4.0, 2.4, f.color, f.title, f.desc);
+  });
+
+  addFooter(s, 23, 35);
+}
+
+// Slide 24 — Safety & Access Control
+function slide24() {
+  const s = darkSlide();
+  addHeader(s, 'Safety Features & Access Control', '8 critical fixes + owner-controlled menu access per company');
+
+  const fixes = [
+    { title: 'Double-Cancel Guard', desc: 'Order cancellation checks status before releasing inventory. Prevents phantom stock.', color: C.red },
+    { title: 'Double-RESTOCK Guard', desc: 'Returns restock checks existing status. Prevents duplicate inventory additions.', color: C.red },
+    { title: 'Atomic Putaway', desc: 'Source decrement + dest increment wrapped in transaction. Prevents stock vanishing.', color: C.red },
+    { title: 'Cycle Count Transaction', desc: 'Status update + inventory adjustment in single transaction. Prevents partial updates.', color: C.red },
+    { title: 'Double-Approve Guard', desc: 'GRN approval checks status. Prevents duplicate inventory + putaway tasks.', color: C.amber },
+    { title: 'Menu Access Control', desc: 'Owner assigns specific menus to each company. Sidebar filters by tenant menuAccess.', color: C.teal },
+  ];
+
+  fixes.forEach((f, i) => {
+    const col = i % 3;
+    const row = Math.floor(i / 3);
+    const x = 0.5 + col * 4.25;
+    const y = 1.8 + row * 2.6;
+    coloredCard(s, x, y, 4.0, 2.4, f.color, f.title, f.desc);
+  });
+
+  addFooter(s, 24, 35);
+}
+
+// Slide 25 — Admin Tasks (updated)
+function slide25() {
   const s = darkSlide();
   addHeader(s, 'Admin Tasks — Setup & Configuration', 'One-time setup tasks for tenant admins and warehouse managers');
 
@@ -571,7 +728,8 @@ function slide12() {
     { task: 'Add Users & Roles',     step: 'Administration → Users → Invite. Assign role: Warehouse Mgr, Picker, Packer, etc.', color: C.red },
     { task: 'Configure Couriers',    step: 'Administration → Integrations → Couriers. Enter API token for Delhivery, BlueDart, etc.', color: C.pink },
     { task: 'Set Reorder Points',    step: 'Inventory → Reorder Config. Per-warehouse per-SKU min/max levels.', color: C.teal },
-    { task: 'Channel Integrations',  step: 'Administration → Integrations → Channels. Shopify, Amazon, Nykaa, Myntra, etc.', color: C.amber },
+    { task: 'Channel Integrations',  step: 'Administration → Integrations → Channels. Shopify, Amazon, Nykaa, Myntra, Flipkart, TataCliq.', color: C.amber },
+    { task: 'Menu Access Control',   step: 'Administration → Companies → Edit. Owner selects which menus each company can access. Controls feature visibility.', color: C.teal },
   ];
 
   tasks.forEach((t, i) => {
@@ -585,15 +743,15 @@ function slide12() {
     s.addText(t.step, { x: x + 0.3, y: y + 0.5, w: 5.6, h: 0.7, fontSize: 10, fontFace: 'Calibri', color: 'C9D1E0' });
   });
 
-  addFooter(s, 12, 25);
+  addFooter(s, 25, 35);
 }
 
 // ====================================================================
 // SECTION G: UAT TEST CASES — HEADER
 // ====================================================================
 
-// Slide 13 — UAT Overview
-function slide13() {
+// Slide 26 — UAT Overview
+function slide26() {
   const s = darkSlide();
   addHeader(s, 'UAT — Test Plan Overview', '32 manual test cases across 6 modules. Each with pre-conditions, steps, and expected results.');
 
@@ -621,7 +779,7 @@ function slide13() {
     x: 0.5, y: 6.3, w: 12.3, h: 0.7, fontSize: 11, fontFace: 'Calibri', bold: true, color: C.navy, align: 'center', valign: 'middle',
   });
 
-  addFooter(s, 13, 25);
+  addFooter(s, 26, 35);
 }
 
 // ====================================================================
@@ -666,9 +824,9 @@ function makeTestCaseSlide(slideNum, module, color, cases) {
   addFooter(s, slideNum, 25);
 }
 
-// Slide 14 — UAT Inbound test cases
-function slide14() {
-  makeTestCaseSlide(14, 'Inbound (PO + ASN)', C.teal, [
+// Slide 27 — UAT Inbound test cases
+function slide27() {
+  makeTestCaseSlide(27, 'Inbound (PO + ASN)', C.teal, [
     { id: 'PO-001', desc: 'Create a new Purchase Order', pre: 'Logged in as Warehouse Manager. Supplier exists in system.', steps: '1. Go to Inbound → Purchase Orders → New PO\n2. Select supplier\n3. Add 2 SKUs with qty 10 and 5\n4. Click Create PO', expected: 'PO created with status DRAFT. PO number auto-generated.' },
     { id: 'PO-002', desc: 'Approve a DRAFT PO', pre: 'PO exists in DRAFT status.', steps: '1. Open the DRAFT PO\n2. Click Approve\n3. Confirm approval', expected: 'Status changes to APPROVED. ASN can now be linked.' },
     { id: 'PO-003', desc: 'Add ASN to an APPROVED PO', pre: 'PO is APPROVED.', steps: '1. Open PO\n2. Click Add ASN\n3. Enter expected date, qty, vehicle no.\n4. Save ASN', expected: 'ASN visible in Inbound → ASN tab with status EXPECTED.' },
@@ -678,9 +836,9 @@ function slide14() {
   ]);
 }
 
-// Slide 15 — UAT GRN test cases
-function slide15() {
-  makeTestCaseSlide(15, 'GRN + Quality Check', C.amber, [
+// Slide 28 — UAT GRN test cases
+function slide28() {
+  makeTestCaseSlide(28, 'GRN + Quality Check', C.amber, [
     { id: 'GRN-001', desc: 'Create GRN from a PO', pre: 'PO is APPROVED. ASN is RECEIVING.', steps: '1. Open the PO\n2. Click GRN\n3. Select received qty per item\n4. Save GRN', expected: 'GRN created in DRAFT status. GRN number auto-generated.' },
     { id: 'GRN-002', desc: 'Scan items into a GRN', pre: 'GRN exists in DRAFT.', steps: '1. Open GRN\n2. Click Scan to Receive\n3. Scan each item barcode\n4. System increments received qty', expected: 'Received qty increases per scan. Audit log shows each scan.' },
     { id: 'GRN-003', desc: 'Mark items as QC Pass / Fail', pre: 'GRN has all items received.', steps: '1. Open GRN\n2. For each item, mark QC Pass or Fail\n3. Enter accepted qty', expected: 'QC status set per item. Rejected qty tracked separately.' },
@@ -689,9 +847,9 @@ function slide15() {
   ]);
 }
 
-// Slide 16 — UAT Inventory test cases
-function slide16() {
-  makeTestCaseSlide(16, 'Inventory', C.purple, [
+// Slide 29 — UAT Inventory test cases
+function slide29() {
+  makeTestCaseSlide(29, 'Inventory', C.purple, [
     { id: 'INV-001', desc: 'Import SKUs via CSV', pre: 'CSV file with SKU details.', steps: '1. Go to Inventory → Import\n2. Upload SKU CSV\n3. Click Import', expected: 'SKUs created. EPC codes auto-generated. Import summary shown.' },
     { id: 'INV-002', desc: 'Run a blind cycle count', pre: 'Bin has known quantity.', steps: '1. Go to Inventory → Cycle Count\n2. Select bin\n3. Enter counted qty (different from actual)\n4. Save count', expected: 'Variance report generated. Adjustment posted after manager approval.' },
     { id: 'INV-003', desc: 'Set reorder point for an SKU', pre: 'SKU and bin exist.', steps: '1. Open SKU detail\n2. Set reorder point = 10\n3. Save', expected: 'When stock < 10, replenishment alert raised automatically.' },
@@ -700,9 +858,9 @@ function slide16() {
   ]);
 }
 
-// Slide 17 — UAT Outbound test cases
-function slide17() {
-  makeTestCaseSlide(17, 'Outbound (Orders + Wave)', C.green, [
+// Slide 30 — UAT Outbound test cases
+function slide30() {
+  makeTestCaseSlide(30, 'Outbound (Orders + Wave)', C.green, [
     { id: 'ORD-001', desc: 'Receive order from marketplace', pre: 'Channel integration active.', steps: '1. Go to Orders\n2. Wait for sync OR click Sync Now\n3. Find the new order', expected: 'Order appears with status PENDING. Source = marketplace name.' },
     { id: 'ORD-002', desc: 'Manually create an order', pre: 'Customer and SKU exist.', steps: '1. Go to Orders → New Order\n2. Enter customer, address, items\n3. Save', expected: 'Order created with status PENDING. Order number generated.' },
     { id: 'ORD-003', desc: 'Create a wave from pending orders', pre: '5+ orders in PENDING.', steps: '1. Go to Wave Picking → New Wave\n2. Name the wave\n3. Select 5 orders\n4. Create wave', expected: 'Wave created with status PENDING. Order statuses → PROCESSING.' },
@@ -712,9 +870,9 @@ function slide17() {
   ]);
 }
 
-// Slide 18 — UAT Packing test cases
-function slide18() {
-  makeTestCaseSlide(18, 'Packing Station', C.red, [
+// Slide 31 — UAT Packing test cases
+function slide31() {
+  makeTestCaseSlide(31, 'Packing Station', C.red, [
     { id: 'PCK-001', desc: 'Pack an order (full qty)', pre: 'Order in PACKING status.', steps: '1. Go to Packing → Ready to Pack\n2. Select order\n3. Scan each SKU to full qty\n4. Verify all packed', expected: 'Download Invoice + Generate AWB buttons enabled.' },
     { id: 'PCK-002', desc: 'Block over-scanning per SKU', pre: 'Order has 1 unit of SKU X.', steps: '1. Open order in packing\n2. Scan SKU X\n3. Try scanning SKU X again', expected: 'Second scan rejected. Error: "already packed 1/1".' },
     { id: 'PCK-003', desc: 'Generate invoice and AWB', pre: 'All items packed.', steps: '1. Click Download Invoice\n2. Select courier\n3. Click Generate AWB', expected: 'PDF invoice downloaded. AWB number shown. Order → SHIPPED.' },
@@ -722,18 +880,18 @@ function slide18() {
   ]);
 }
 
-// Slide 19 — UAT Returns test cases
-function slide19() {
-  makeTestCaseSlide(19, 'Returns & RTO', C.pink, [
+// Slide 32 — UAT Returns test cases
+function slide32() {
+  makeTestCaseSlide(32, 'Returns & RTO', C.pink, [
     { id: 'RET-001', desc: 'Create a customer return', pre: 'Order is SHIPPED or DELIVERED.', steps: '1. Go to Returns → New Return\n2. Select order\n3. Mark items as return\n4. Save', expected: 'Return created in INITIATED status. Reverse pickup scheduled.' },
     { id: 'RET-002', desc: 'Intake returned items at warehouse', pre: 'Return in TRANSIT status, items arrived.', steps: '1. Open return\n2. Scan each returned item\n3. Mark condition: Good / Damaged\n4. Save', expected: 'Return status → RECEIVED. QC step enabled.' },
     { id: 'RET-003', desc: 'Restock a returned item to bin', pre: 'Return in QC_PASSED status.', steps: '1. Open return\n2. For each item, choose Restock or Refund Only\n3. For restock, select bin\n4. Confirm', expected: 'If Restock: inventory +1 in chosen bin. If Refund: bad inventory. Return → CLOSED.' },
   ]);
 }
 
-// Slide 20 — UAT Admin test cases
-function slide20() {
-  makeTestCaseSlide(20, 'Administration & Setup', C.teal, [
+// Slide 33 — UAT Admin test cases
+function slide33() {
+  makeTestCaseSlide(33, 'Administration & Setup', C.teal, [
     { id: 'ADM-001', desc: 'Create a new user', pre: 'Logged in as Tenant Admin.', steps: '1. Go to Admin → Users → Invite\n2. Enter email, name, role\n3. Click Send Invite', expected: 'User created in INVITED status. Email sent (if SMTP configured).' },
     { id: 'ADM-002', desc: 'Configure a courier integration', pre: 'Courier API token available.', steps: '1. Go to Admin → Integrations → Couriers\n2. Select Delhivery\n3. Paste API token\n4. Save', expected: 'Courier marked as CONFIGURED. AWB generation uses real API.' },
     { id: 'ADM-003', desc: 'Bulk-create bin locations', pre: 'Warehouse exists.', steps: '1. Go to Admin → Bins → Bulk Create\n2. Enter pattern (e.g. A-01-A to A-05-D)\n3. Click Generate', expected: 'All matching bin locations created. Visible in bin picker.' },
@@ -744,8 +902,8 @@ function slide20() {
 // SECTION I: UAT EXECUTION & SIGN-OFF
 // ====================================================================
 
-// Slide 21 — Test execution tracker (overall)
-function slide21() {
+// Slide 34 — Test execution tracker (overall)
+function slide34() {
   const s = darkSlide();
   addHeader(s, 'UAT — Overall Execution Tracker', 'Mark module progress as testers complete each suite');
 
@@ -790,11 +948,11 @@ function slide21() {
     x: 0.5, y: 6.2, w: 12.3, h: 0.7, fontSize: 12, fontFace: 'Calibri', bold: true, color: C.navy, align: 'center', valign: 'middle',
   });
 
-  addFooter(s, 21, 25);
+  addFooter(s, 34, 35);
 }
 
-// Slide 22 — Defect log template
-function slide22() {
+// Slide 35 — Defect log template
+function slide35() {
   const s = darkSlide();
   addHeader(s, 'UAT — Defect Log Template', 'Log any failures found during testing. Use this format for triage.');
 
@@ -881,11 +1039,11 @@ function slide22() {
     s.addText(item.label, { x: x + 0.3, y: 6.0, w: 2.7, h: 0.4, fontSize: 10, fontFace: 'Calibri', color: C.white, valign: 'middle' });
   });
 
-  addFooter(s, 22, 25);
+  addFooter(s, 35, 35);
 }
 
-// Slide 23 — Test environment
-function slide23() {
+// Slide 36 — Test environment
+function slide36() {
   const s = darkSlide();
   addHeader(s, 'Test Environment & Setup Checklist', 'Ensure the test environment is ready before starting UAT');
 
@@ -939,11 +1097,11 @@ function slide23() {
     coloredCard(s, x, y, 6.0, 2.4, sec.color, sec.title, sec.items.map(it => '• ' + it).join('\n'));
   });
 
-  addFooter(s, 23, 25);
+  addFooter(s, 36, 35);
 }
 
-// Slide 24 — Sign-off
-function slide24() {
+// Slide 37 — Sign-off
+function slide37() {
   const s = darkSlide();
   addHeader(s, 'UAT Sign-Off', 'Acceptance criteria: 100% pass on Critical & High tests. < 5 Medium defects.');
 
@@ -1006,11 +1164,11 @@ function slide24() {
     x: 0.8, y: 5.45, w: 12.0, h: 1.4, fontSize: 10, fontFace: 'Calibri', color: C.white,
   });
 
-  addFooter(s, 24, 25);
+  addFooter(s, 37, 35);
 }
 
-// Slide 25 — Closing
-function slide25() {
+// Slide 38 — Closing
+function slide38() {
   const s = darkSlide();
   s.addShape('rect', { x: 0, y: 0, w: 0.4, h: 7.5, fill: { color: C.teal }, line: { type: 'none' } });
 
@@ -1049,28 +1207,33 @@ slide8();
 slide9();
 slide10();
 slide11();
-slide12();
-slide13();
-slide14();
-slide15();
-slide16();
-slide17();
-slide18();
-slide19();
 slide20();
 slide21();
 slide22();
 slide23();
 slide24();
 slide25();
+slide26();
+slide27();
+slide28();
+slide29();
+slide30();
+slide31();
+slide32();
+slide33();
+slide34();
+slide35();
+slide36();
+slide37();
+slide38();
 
 // Write file
-const outFile = path.join('C:\\Users\\alokg\\oms-wms-app\\docs', 'SupplyHub-Process-Flow-UAT.pptx');
+const outFile = path.join('C:\\Users\\alokg\\oms-wms-app\\docs', 'GlobalSupply-Process-Flow-UAT.pptx');
 pptx.writeFile({ fileName: outFile }).then(() => {
   const stat = fs.statSync(outFile);
   console.log(`✅ Generated: ${outFile}`);
   console.log(`   Size: ${(stat.size / 1024).toFixed(1)} KB`);
-  console.log(`   Slides: 25 (process flow + UAT test cases + sign-off)`);
+  console.log(`   Slides: 38 (process flow + 5-phase improvements + UAT test cases + sign-off)`);
 }).catch(err => {
   console.error('Error generating PPTX:', err);
   process.exit(1);

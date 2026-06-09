@@ -1024,3 +1024,27 @@ model CodSettlement {
   @@index([tenantId, marketplace])
   @@map("cod_settlements")
 }
+
+enum ReportType {
+  GRN
+  ORDER
+  STOCK_TRANSFER
+  INVENTORY_SNAPSHOT
+  DISPATCH_MANIFEST
+}
+
+model Report {
+  id         String     @id @default(uuid())
+  tenantId   String
+  reportType ReportType
+  period     DateTime
+  fileName   String
+  fileData   Bytes
+  fileSize   Int
+  createdAt  DateTime   @default(now())
+
+  @@unique([tenantId, reportType, period])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, reportType])
+  @@map("reports")
+}
