@@ -444,9 +444,67 @@ h2 {
 .lh-footer-cols a { display: block; color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 8px; text-decoration: none; transition: color 0.15s; }
 .lh-footer-cols a:hover { color: white; }
 
+/* ===== HAMBURGER MENU ===== */
+.lh-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--text);
+}
+.lh-hamburger svg { width: 24px; height: 24px; }
+.lh-mobile-menu {
+  display: none;
+  position: fixed;
+  top: 68px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 40;
+  padding: 24px;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.lh-mobile-menu.open { display: flex; }
+.lh-mobile-menu a {
+  display: block;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.lh-mobile-menu a:hover { background: var(--bg-muted); }
+.lh-mobile-menu a:active { background: var(--bg-muted); }
+.lh-mobile-menu .lh-mobile-cta {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lh-mobile-menu .lh-mobile-cta .lh-btn { justify-content: center; width: 100%; }
+@media (max-width: 768px) {
+  .lh-hamburger { display: flex; }
+}
+
 @media (max-width: 768px) {
   .lh-nav { display: none; }
   .lh-header-inner { gap: 12px; }
   .lh-footer-inner { flex-direction: column; gap: 32px; }
-  .lh-footer-cols { gap: 24px; }
+  .lh-footer { padding: 36px 0 20px; }
+  .lh-footer-cols { gap: 24px; flex-direction: column; }
+  .lh-header-cta .lh-btn-ghost { display: none; }
+}
+
+/* ===== LEGAL CONTENT RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .page-hero { padding: 72px 0 40px; }
+  .section { padding: 48px 0; }
 }
