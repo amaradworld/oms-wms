@@ -287,6 +287,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
         include: { items: true },
       });
       if (!o) throw new Error('Order not found');
+      if (o.orderStatus === 'CANCELLED') throw new Error('Order already cancelled');
 
       // Release reserved inventory for each item
       for (const item of o.items) {

@@ -460,6 +460,7 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
     include: { bin: true },
   });
   if (!task) return res.status(404).json({ message: 'Task not found' });
+  if (task.status === 'COMPLETED') return res.status(400).json({ message: 'Putaway already completed' });
   if (!task.binId) return res.status(400).json({ message: 'Assign bin first' });
 
   try {
@@ -483,35 +484,41 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
       return res.json({ message: 'Putaway already completed' });
     }
 
-    if (task.source === 'PUTAWAY_SHELF_TRANSFER') {
-      await prisma.inventory.upsert({
-        where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
-        update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
-        create: { warehouseId, skuId, binLocation: task.bin!.code, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
-      });
-    } else {
-      const sourceBin = SOURCE_BIN_MAP[task.source];
-      if (sourceBin) {
-        await prisma.inventory.update({
-          where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: sourceBin } },
-          data: { quantityOnHand: { decrement: acceptedQty }, quantityAvailable: { decrement: acceptedQty } },
+    // Wrap source decrement + destination increment in a transaction
+    await prisma.$transaction(async (tx) => {
+      if (task.source === 'PUTAWAY_SHELF_TRANSFER') {
+        await tx.inventory.upsert({
+          where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
+          update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
+          create: { warehouseId, skuId, binLocation: task.bin!.code, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
+        });
+      } else {
+        const sourceBin = SOURCE_BIN_MAP[task.source];
+        if (sourceBin) {
+          const decremented = await tx.inventory.updateMany({
+            where: { warehouseId, skuId, binLocation: sourceBin, quantityOnHand: { gte: acceptedQty } },
+            data: { quantityOnHand: { decrement: acceptedQty }, quantityAvailable: { decrement: acceptedQty } },
+          });
+          if (decremented.count === 0) {
+            throw new Error(`Insufficient stock in ${sourceBin} for ${skuId}`);
+          }
+        }
+        await tx.inventory.upsert({
+          where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
+          update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
+          create: { warehouseId, skuId, binLocation: task.bin!.code, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
         });
       }
-      await prisma.inventory.upsert({
-        where: { warehouseId_skuId_binLocation: { warehouseId, skuId, binLocation: task.bin!.code } },
-        update: { quantityOnHand: { increment: acceptedQty }, quantityAvailable: { increment: acceptedQty } },
-        create: { warehouseId, skuId, binLocation: task.bin!.code, quantityOnHand: acceptedQty, quantityAvailable: acceptedQty },
-      });
-    }
 
-    const updated = await prisma.putawayTask.update({
-      where: { id: task.id },
-      data: {
-        completedQty: { increment: acceptedQty },
-        completedAt: now,
-        status: 'COMPLETED',
-        startedAt: task.startedAt || now,
-      },
+      await tx.putawayTask.update({
+        where: { id: task.id },
+        data: {
+          completedQty: { increment: acceptedQty },
+          completedAt: now,
+          status: 'COMPLETED',
+          startedAt: task.startedAt || now,
+        },
+      });
     });
 
     await logProductivity({
@@ -527,10 +534,11 @@ export const completePutaway = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: 'Putaway completed. Inventory moved to bin.' });
     if (before) {
+      const afterTask = await prisma.putawayTask.findUnique({ where: { id: task.id } });
       await logUpdateAudit({
         tenantId: req.user!.tenant_id, userId: req.user!.id,
         action: 'COMPLETE', entityType: 'PutawayTask', entityId: task.id,
-        before, after: { ...before, ...updated } as any,
+        before, after: { ...before, ...afterTask } as any,
       });
     }
   } catch (error: any) {

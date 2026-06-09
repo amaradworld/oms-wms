@@ -53,6 +53,7 @@ import leadRoutes from './routes/lead.routes';
 import returnRoutes from './routes/return.routes';
 import webhookRoutes from './routes/webhook.routes';
 import codRoutes from './routes/cod.routes';
+import menuRoutes from './routes/menu.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
@@ -144,6 +145,7 @@ app.use('/api/batch', batchRoutes);
   app.use('/api/notifications', notificationRoutes);
   app.use('/api/webhooks', webhookRoutes);
   app.use('/api/cod', codRoutes);
+  app.use('/api/menus', menuRoutes);
 
 app.get('/api/search', authenticate, globalSearch);
 

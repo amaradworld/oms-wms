@@ -101,6 +101,12 @@ export const qcGrnItem = async (req: AuthRequest, res: Response) => {
   const now = new Date();
   const isFirstQc = !grn.qcStartedAt;
   for (const item of items) {
+    // Idempotency: skip if QC already completed for this item
+    const existingItem = await prisma.grnItem.findUnique({ where: { id: item.grnItemId }, select: { qcStatus: true } });
+    if (existingItem && (existingItem.qcStatus === 'PASSED' || existingItem.qcStatus === 'FAILED')) {
+      continue;
+    }
+
     await prisma.grnItem.update({
       where: { id: item.grnItemId },
       data: {
@@ -173,6 +179,7 @@ export const approveGrn = async (req: AuthRequest, res: Response) => {
     },
   });
   if (!grn) return res.status(404).json({ message: 'GRN not found' });
+  if (grn.status === 'APPROVED') return res.status(400).json({ message: 'GRN already approved' });
 
   // Update inventory for accepted items
   for (const item of grn.items) {
@@ -256,7 +263,6 @@ export const scanReceiveGrnItem = async (req: AuthRequest, res: Response) => {
 
   const grnItem = grn.items.find(i => i.sku.skuCode === code || i.sku.skuCode === epcCode);
   if (!grnItem) return res.status(404).json({ message: `SKU ${code} not found in this GRN` });
-  if (grnItem.receivedQty >= grnItem.expectedQty) return res.status(400).json({ message: `Already fully received for ${grnItem.sku.skuCode}` });
 
   const isPass = qcStatus === 'PASSED';
   const now = new Date();

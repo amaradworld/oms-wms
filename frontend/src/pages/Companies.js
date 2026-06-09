@@ -6,6 +6,110 @@ import { toast } from '../components/Toast';
 import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
+const MENU_CATALOG = [
+  { id: 'dashboard', label: 'Dashboard' },
+  {
+    id: 'order-management', label: 'Order Management',
+    children: ['orders', 'returns', 'waves', 'packing', 'manifests', 'ndr'],
+  },
+  {
+    id: 'warehouse-ops', label: 'Warehouse Operations',
+    children: ['warehouse', 'scanning', 'mobile-scan'],
+  },
+  {
+    id: 'inventory-stock', label: 'Inventory & Stock Control',
+    children: ['inventory', 'cyclecount', 'inventory-alerts', 'sku-history', 'stock-expiry', 'replenishment', 'batch-trace'],
+  },
+  {
+    id: 'inbound-supply', label: 'Inbound & Supply Chain',
+    children: ['purchaseorders', 'asn', 'grn', 'putaway'],
+  },
+  {
+    id: 'outbound', label: 'Outbound',
+    children: ['gatepass', 'stocktransfer', 'gatepass-order'],
+  },
+  {
+    id: 'administration', label: 'Administration',
+    children: ['sku-master', 'integrations', 'parties', 'companies', 'leads', 'courier-routing', 'marketplace', 'analytics', 'productivity', 'bins', 'audit-logs', 'settings'],
+  },
+];
+
+const MenuSelector = ({ value, onChange }) => {
+  const selected = new Set(value || []);
+
+  const allLeafIds = MENU_CATALOG.flatMap(g => g.children);
+
+  const toggle = (id) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange(Array.from(next));
+  };
+
+  const toggleGroup = (group) => {
+    const next = new Set(selected);
+    const allSelected = group.children.every(c => next.has(c));
+    if (allSelected) group.children.forEach(c => next.delete(c));
+    else group.children.forEach(c => next.add(c));
+    onChange(Array.from(next));
+  };
+
+  const toggleAll = () => {
+    if (selected.size === allLeafIds.length) onChange([]);
+    else onChange([...allLeafIds]);
+  };
+
+  const allSelected = selected.size === allLeafIds.length;
+  const someSelected = selected.size > 0 && !allSelected;
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          type="button"
+          onClick={toggleAll}
+          className={`text-xs px-2 py-1 rounded-md font-medium transition-colors ${
+            allSelected ? 'bg-blue-100 text-blue-700' : someSelected ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          {allSelected ? 'Deselect All' : 'Select All'}
+        </button>
+        <span className="text-xs text-slate-400">{selected.size}/{allLeafIds.length} menus</span>
+      </div>
+      {MENU_CATALOG.map(group => {
+        const groupSelected = group.children.every(c => selected.has(c));
+        const groupPartial = group.children.some(c => selected.has(c)) && !groupSelected;
+        return (
+          <div key={group.id} className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => toggleGroup(group)}>
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${
+                groupSelected ? 'bg-blue-600 border-blue-600' : groupPartial ? 'bg-blue-200 border-blue-400' : 'border-slate-300'
+              }`}>
+                {groupSelected && <Check size={10} className="text-white" />}
+                {groupPartial && <div className="w-2 h-0.5 bg-blue-600 rounded" />}
+              </div>
+              <span className="text-sm font-medium text-slate-700">{group.label}</span>
+            </div>
+            <div className="px-3 py-2 space-y-1.5 border-t border-slate-100">
+              {group.children.map(childId => (
+                <label key={childId} className="flex items-center gap-2 cursor-pointer py-0.5 group">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(childId)}
+                    onChange={() => toggle(childId)}
+                    className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-xs text-slate-600 group-hover:text-slate-900 transition-colors">{childId}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Companies = () => {
   const { refreshCompanies } = useAuth();
   const confirm = useConfirm();
@@ -17,6 +121,7 @@ const Companies = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ id: '', name: '', slug: '' });
   const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '' });
+  const [menuAccess, setMenuAccess] = useState(null); // null = all menus
   const [createdCreds, setCreatedCreds] = useState(null);
 
   const fetchCompanies = useCallback(async () => {
@@ -32,6 +137,7 @@ const Companies = () => {
   const resetForm = () => {
     setForm({ id: '', name: '', slug: '' });
     setAdminForm({ email: '', password: '', fullName: '' });
+    setMenuAccess(null);
     setEditId(null);
   };
 
@@ -42,6 +148,7 @@ const Companies = () => {
 
   const openEdit = (c) => {
     setForm({ id: c.id, name: c.name, slug: c.slug });
+    setMenuAccess(c.menuAccess || null);
     setEditId(c.id);
     setShowModal(true);
   };
@@ -52,11 +159,14 @@ const Companies = () => {
     setSubmitting(true);
     try {
       if (editId) {
-        const res = await API.put(`/tenants/${editId}`, { name: form.name, slug: form.slug });
+        const payload = { name: form.name, slug: form.slug };
+        if (menuAccess !== null) payload.menuAccess = menuAccess;
+        const res = await API.put(`/tenants/${editId}`, payload);
         setCompanies(prev => prev.map(c => c.id === editId ? res.data : c));
         toast.success('Company updated');
       } else {
         const payload = { ...form };
+        if (menuAccess !== null) payload.menuAccess = menuAccess;
         if (adminForm.email && adminForm.password) {
           payload.adminEmail = adminForm.email;
           payload.adminPassword = adminForm.password;
@@ -143,19 +253,25 @@ const Companies = () => {
                   <th className="text-left px-4 py-3 font-medium">ID</th>
                   <th className="text-left px-4 py-3 font-medium">Name</th>
                   <th className="text-left px-4 py-3 font-medium">Slug</th>
+                  <th className="text-left px-4 py-3 font-medium">Menus</th>
                   <th className="text-center px-4 py-3 font-medium">Status</th>
                   <th className="text-right px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-8 text-slate-400">No companies found</td></tr>
+                  <tr><td colSpan={6} className="text-center py-8 text-slate-400">No companies found</td></tr>
                 ) : filtered.map(c => (
                   <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">{c.id}</td>
                     <td className="px-4 py-3 font-medium">{c.name}</td>
                     <td className="px-4 py-3">
                       <span className="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">{c.slug}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs text-slate-500">
+                        {c.menuAccess ? `${c.menuAccess.length} menus` : 'All'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -189,7 +305,7 @@ const Companies = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => !submitting && setShowModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold">{editId ? 'Edit Company' : 'Add Company'}</h2>
               <button onClick={() => { if (!submitting) { setShowModal(false); resetForm(); } }} className="p-1 hover:bg-slate-100 rounded-lg">
@@ -260,6 +376,11 @@ const Companies = () => {
                   </div>
                 </div>
               )}
+              <div className="border-t border-slate-100 pt-4">
+                <p className="text-sm font-medium text-slate-700 mb-1">Menu Access</p>
+                <p className="text-xs text-slate-400 mb-3">Leave all selected for full access. Deselect menus to restrict this company.</p>
+                <MenuSelector value={menuAccess} onChange={setMenuAccess} />
+              </div>
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => { setShowModal(false); resetForm(); }} className="flex-1 px-4 py-2 border rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                   Cancel

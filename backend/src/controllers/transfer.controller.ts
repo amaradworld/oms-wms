@@ -86,12 +86,9 @@ export const scanTransferItem = async (req: AuthRequest, res: Response) => {
 
   if (item.receivedQty >= item.quantity) return res.status(400).json({ message: `${code} already fully scanned` });
 
-  const newQty = item.receivedQty + 1;
-  const newStatus = newQty >= item.quantity ? 'RECEIVED' : 'PARTIAL';
-
   const updated = await prisma.stockTransferItem.update({
     where: { id: item.id },
-    data: { receivedQty: newQty, status: newStatus },
+    data: { receivedQty: { increment: 1 }, status: item.receivedQty + 1 >= item.quantity ? 'RECEIVED' : 'PARTIAL' },
     include: { sku: { select: { skuCode: true, name: true } } },
   });
 
@@ -127,7 +124,7 @@ export const scanTransferItem = async (req: AuthRequest, res: Response) => {
 
   res.json(updated);
 
-  emitInventoryChange({ tenantId, skuCode: sku.skuCode, quantity: newQty, warehouseId: transfer.toWarehouseId });
+  emitInventoryChange({ tenantId, skuCode: sku.skuCode, quantity: item.receivedQty + 1, warehouseId: transfer.toWarehouseId });
 };
 
 export const completeTransfer = async (req: AuthRequest, res: Response) => {

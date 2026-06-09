@@ -65,6 +65,11 @@ export const updateReturnStatus = async (req: AuthRequest, res: Response) => {
   });
   if (!existing) return res.status(404).json({ message: 'Return not found' });
 
+  // Idempotency guard: prevent double-RESTOCK
+  if (status === 'RESTOCKED' && existing.status === 'RESTOCKED') {
+    return res.status(400).json({ message: 'Return already restocked' });
+  }
+
   const data: any = { status };
   if (status === 'RECEIVED') data.receivedAt = new Date();
   if (notes) data.reason = notes;

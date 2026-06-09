@@ -17,7 +17,7 @@ export const getTenant = async (req: AuthRequest, res: Response) => {
 };
 
 export const createTenant = async (req: AuthRequest, res: Response) => {
-  const { id, name, slug, adminEmail, adminPassword, adminName } = req.body;
+  const { id, name, slug, adminEmail, adminPassword, adminName, menuAccess } = req.body;
   if (!id || !name || !slug) return res.status(400).json({ message: 'id, name, and slug are required' });
 
   const existing = await prisma.tenant.findUnique({ where: { id } });
@@ -26,7 +26,7 @@ export const createTenant = async (req: AuthRequest, res: Response) => {
   const slugExisting = await prisma.tenant.findUnique({ where: { slug } });
   if (slugExisting) return res.status(409).json({ message: 'Slug already in use' });
 
-  const tenant = await prisma.tenant.create({ data: { id, name, slug } });
+  const tenant = await prisma.tenant.create({ data: { id, name, slug, menuAccess: menuAccess ?? null } });
 
   // Optionally create an initial admin user for the tenant
   if (adminEmail && adminPassword) {
@@ -52,7 +52,7 @@ export const createTenant = async (req: AuthRequest, res: Response) => {
 
 export const updateTenant = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
-  const { name, slug, isActive } = req.body;
+  const { name, slug, isActive, menuAccess } = req.body;
 
   const existing = await prisma.tenant.findUnique({ where: { id } });
   if (!existing) return res.status(404).json({ message: 'Tenant not found' });
@@ -66,6 +66,7 @@ export const updateTenant = async (req: AuthRequest, res: Response) => {
   if (name !== undefined) data.name = name;
   if (slug !== undefined) data.slug = slug;
   if (isActive !== undefined) data.isActive = isActive;
+  if (menuAccess !== undefined) data.menuAccess = menuAccess;
 
   const tenant = await prisma.tenant.update({ where: { id }, data });
   res.json(tenant);

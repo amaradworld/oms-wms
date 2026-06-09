@@ -126,23 +126,26 @@ export const completeCycleCount = async (req: AuthRequest, res: Response) => {
   const pendingItems = count.items.filter(i => i.status === 'PENDING');
   if (pendingItems.length > 0) return res.status(400).json({ message: `${pendingItems.length} items still need counting` });
 
-  await prisma.cycleCount.update({
-    where: { id: count.id },
-    data: { status: 'COMPLETED', completedAt: new Date() },
-  });
+  // Wrap status update + inventory adjustments in a transaction to prevent partial updates
+  await prisma.$transaction(async (tx) => {
+    await tx.cycleCount.update({
+      where: { id: count.id },
+      data: { status: 'COMPLETED', completedAt: new Date() },
+    });
 
-  for (const item of count.items) {
-    if (item.countedQty != null && item.countedQty !== item.expectedQty) {
-      const diff = item.countedQty - item.expectedQty;
-      await prisma.inventory.updateMany({
-        where: { warehouseId: count.warehouseId, skuId: item.skuId },
-        data: {
-          quantityOnHand: { increment: diff },
-          quantityAvailable: { increment: diff },
-        },
-      });
+    for (const item of count.items) {
+      if (item.countedQty != null && item.countedQty !== item.expectedQty) {
+        const diff = item.countedQty - item.expectedQty;
+        await tx.inventory.updateMany({
+          where: { warehouseId: count.warehouseId, skuId: item.skuId },
+          data: {
+            quantityOnHand: { increment: diff },
+            quantityAvailable: { increment: diff },
+          },
+        });
+      }
     }
-  }
+  });
 
   res.json({ message: 'Cycle count completed and inventory adjusted' });
 };

@@ -166,7 +166,6 @@ const Grn = ({ detailId, setDetailId }) => {
       const isEpc = /^\d{11}$/.test(code);
       const item = selectedGrn.items.find(i => i.sku?.skuCode === code);
       if (!item) return toast.error('SKU not found in this GRN');
-      if (item.receivedQty >= item.expectedQty) return toast.error('Already fully received');
       setScannedItem({ ...item, isEpc });
       setScanCode('');
     } catch { toast.error('Scan failed'); } finally { setScanningGrn(false); }
@@ -299,8 +298,8 @@ const Grn = ({ detailId, setDetailId }) => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500">Received</span>
-                      <input type="number" min="0" max={item.expectedQty} value={item.receivedQty}
-                        onChange={e => { const u = [...receiveItems]; u[i].receivedQty = Math.min(parseInt(e.target.value) || 0, item.expectedQty); setReceiveItems(u); }}
+                      <input type="number" min="0" value={item.receivedQty}
+                        onChange={e => { const u = [...receiveItems]; u[i].receivedQty = Math.max(0, parseInt(e.target.value) || 0); setReceiveItems(u); }}
                         className="w-16 px-2 py-1.5 border rounded text-sm text-center" />
                     </div>
                   </div>

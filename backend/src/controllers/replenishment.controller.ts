@@ -67,6 +67,8 @@ export const completeReplenishmentTask = async (req: AuthRequest, res: Response)
   const task = await prisma.replenishmentTask.findUnique({ where: { id } });
   if (!task) return res.status(404).json({ message: 'Task not found' });
   if (task.tenantId !== req.user!.tenant_id) return res.status(403).json({ message: 'Not authorized' });
+  if (task.status === 'COMPLETED') return res.status(400).json({ message: 'Task already completed' });
+  if (task.status === 'CANCELLED') return res.status(400).json({ message: 'Task is cancelled' });
 
   if (task.fromBin && task.toBin) {
     const fromInv = await prisma.inventory.findFirst({
@@ -75,10 +77,14 @@ export const completeReplenishmentTask = async (req: AuthRequest, res: Response)
     if (!fromInv || fromInv.quantityAvailable < task.quantity) {
       return res.status(400).json({ message: `Insufficient stock in bin ${task.fromBin} (available: ${fromInv?.quantityAvailable ?? 0}, needed: ${task.quantity})` });
     }
-    await prisma.inventory.update({
-      where: { id: fromInv.id },
+    // Atomic: decrement source only if sufficient qty exists
+    const decremented = await prisma.inventory.updateMany({
+      where: { id: fromInv.id, quantityOnHand: { gte: task.quantity } },
       data: { quantityOnHand: { decrement: task.quantity }, quantityAvailable: { decrement: task.quantity } },
     });
+    if (decremented.count === 0) {
+      return res.status(400).json({ message: `Insufficient stock in bin ${task.fromBin} (race condition detected)` });
+    }
     await prisma.inventory.upsert({
       where: { warehouseId_skuId_binLocation: { warehouseId: task.warehouseId, skuId: task.skuId, binLocation: task.toBin } },
       update: { quantityOnHand: { increment: task.quantity }, quantityAvailable: { increment: task.quantity } },

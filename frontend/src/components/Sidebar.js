@@ -127,6 +127,12 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       })
       .filter(Boolean);
 
+  const filterByMenuAccess = (items, allowedIds) => {
+    if (!allowedIds) return items; // null = all menus allowed
+    const allowed = new Set(allowedIds);
+    return filterTree(items, allowed);
+  };
+
   const isChildActive = (item) => {
     if (activeTab === item.id) return true;
     if (item.children) return item.children.some(c => isChildActive(c));
@@ -134,13 +140,14 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
   };
 
   const roleMenuMap = {
-    PLATFORM_ADMIN: filterTree(allMenuItems, new Set(['dashboard', 'companies', 'leads', 'audit-logs'])),
+    PLATFORM_ADMIN: allMenuItems,
     SUPER_ADMIN: allMenuItems,
     WAREHOUSE_MGR: allMenuItems,
     PICKER: filterTree(allMenuItems, new Set(['dashboard', 'scanning', 'waves'])),
     PACKER: filterTree(allMenuItems, new Set(['dashboard', 'packing', 'scanning'])),
   };
-  const menuItems = roleMenuMap[role] || allMenuItems;
+  const roleFiltered = roleMenuMap[role] || allMenuItems;
+  const menuItems = role === 'PLATFORM_ADMIN' ? roleFiltered : filterByMenuAccess(roleFiltered, company?.menuAccess);
 
   const handleClick = (id) => {
     setActiveTab(id);
