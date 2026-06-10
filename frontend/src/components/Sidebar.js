@@ -142,7 +142,7 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
   };
 
   const roleMenuMap = {
-    PLATFORM_ADMIN: allMenuItems,
+    PLATFORM_ADMIN: filterTree(allMenuItems, new Set(['dashboard', 'companies', 'leads', 'audit-logs', 'reports-ftp', 'invitation-mail'])),
     SUPER_ADMIN: allMenuItems,
     WAREHOUSE_MGR: allMenuItems,
     PICKER: filterTree(allMenuItems, new Set(['dashboard', 'scanning', 'waves'])),

@@ -94,7 +94,8 @@ const LoginPage = () => {
       login(
         { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId, id: res.data.userId },
         companyData,
-        res.data.token
+        res.data.token,
+        res.data.menuAccess
       );
       track('login_completed', { method: 'credentials', mfa: false, role: res.data.role });
     } catch (err) {
@@ -120,7 +121,8 @@ const LoginPage = () => {
       login(
         { email, role: res.data.role, name: res.data.name, warehouseId: res.data.warehouseId, id: res.data.userId },
         companyData,
-        res.data.token
+        res.data.token,
+        res.data.menuAccess
       );
       track('login_completed', { method: 'credentials', mfa: true, role: res.data.role });
     } catch (err) {

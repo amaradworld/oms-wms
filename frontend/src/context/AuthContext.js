@@ -45,19 +45,21 @@ export const AuthProvider = ({ children }) => {
     setCompaniesLoading(true);
     axios.get(`${API}/api/tenants?public=1`).then(res => {
       if (Array.isArray(res.data) && res.data.length > 0) {
-        setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive })));
+        setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive, menuAccess: t.menuAccess })));
       }
     }).catch(() => { /* use fallback */ })
       .finally(() => setCompaniesLoading(false));
   };
 
-  const login = (userData, companyData, token) => {
+  const getToken = () => localStorage.getItem('token');
+
+  const login = (userData, companyData, token, menuAccess) => {
     const tenant = companyData.tenantId || companyData.id;
     setUser(userData);
-    setCompany(companyData);
+    setCompany({ ...companyData, menuAccess: menuAccess || null });
     setTenantId(tenant);
     localStorage.setItem('token', token);
-    localStorage.setItem('auth', JSON.stringify({ user: userData, company: companyData, tenantId: tenant }));
+    localStorage.setItem('auth', JSON.stringify({ user: userData, company: { ...companyData, menuAccess: menuAccess || null }, tenantId: tenant }));
     if (userData?.id) setUserId(userData.id);
     setUserProperties({
       user_role: userData?.role || 'unknown',
@@ -118,7 +120,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, company, tenantId, loading, login, logout, resetWelcome,
+      user, company, tenantId, loading, login, logout, resetWelcome, getToken,
       detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, companiesLoading, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,

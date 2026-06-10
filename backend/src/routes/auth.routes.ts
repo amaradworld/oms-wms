@@ -54,7 +54,13 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
       { expiresIn: '24h' }
     );
 
-    res.json({ token, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId });
+    let menuAccess = null;
+    if (user.tenantId) {
+      const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { menuAccess: true } });
+      menuAccess = tenant?.menuAccess ?? null;
+    }
+
+    res.json({ token, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId, menuAccess });
   } catch (error) {
     next(error);
   }
@@ -94,7 +100,13 @@ router.post('/mfa-challenge', async (req, res, next) => {
       { expiresIn: '24h' }
     );
 
-    res.json({ token: jwtToken, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId });
+    let menuAccess = null;
+    if (user.tenantId) {
+      const tenant = await prisma.tenant.findUnique({ where: { id: user.tenantId }, select: { menuAccess: true } });
+      menuAccess = tenant?.menuAccess ?? null;
+    }
+
+    res.json({ token: jwtToken, role: user.role, name: user.fullName, tenantId: user.tenantId, warehouseId: user.warehouseId, menuAccess });
   } catch (error) {
     next(error);
   }
