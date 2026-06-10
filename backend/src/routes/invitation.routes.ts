@@ -11,14 +11,23 @@ router.post('/send', authenticate, authorize(['PLATFORM_ADMIN']), async (req: Re
       return res.status(400).json({ message: 'clientEmail and companyName are required' });
     }
 
+    const hasSmtp = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+    if (!hasSmtp) {
+      const html = generateInvitationHtml({ clientName, clientEmail, companyName, customMessage });
+      const subject = encodeURIComponent(`Invitation: 45-Day Complimentary Pilot Program — GlobalSupply`);
+      const body = encodeURIComponent(html);
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&to=${encodeURIComponent(clientEmail)}&body=${body}`;
+      return res.json({ message: 'SMTP not configured. Opening Gmail.', gmailUrl, fallback: true });
+    }
+
     const result = await sendInvitationMail({ clientName, clientEmail, companyName, customMessage });
     if (result.success) {
       res.json({ message: 'Invitation sent successfully', messageId: result.messageId });
     } else {
       res.status(500).json({ message: result.error || 'Failed to send email' });
     }
-  } catch (err: any) {
-    res.status(500).json({ message: err.message || 'Internal server error' });
+  } catch {
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 

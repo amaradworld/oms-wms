@@ -39,9 +39,14 @@ const InvitationMail = () => {
     if (!form.companyName.trim()) return toast.error('Company name is required');
     setSending(true);
     try {
-      await API.post('/invitations/send', form);
-      toast.success(`Invitation sent to ${form.clientEmail}`);
-      setHistory(prev => [{ name: form.clientName, email: form.clientEmail, company: form.companyName, time: new Date().toLocaleString() }, ...prev]);
+      const res = await API.post('/invitations/send', form);
+      if (res.data.fallback) {
+        toast.info('SMTP not configured — opening Gmail with pre-filled email');
+        window.open(res.data.gmailUrl, '_blank');
+      } else {
+        toast.success(`Invitation sent to ${form.clientEmail}`);
+      }
+      setHistory(prev => [{ name: form.clientName, email: form.clientEmail, company: form.companyName, time: new Date().toLocaleString(), fallback: !!res.data.fallback }, ...prev]);
       setForm({ clientName: '', clientEmail: '', companyName: '', customMessage: '' });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send email');
@@ -181,7 +186,7 @@ const InvitationMail = () => {
                   <div key={i} className="flex items-center gap-3 p-2 bg-green-50 rounded-lg text-xs">
                     <Check size={14} className="text-green-600 shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-medium text-slate-800 truncate">{h.company}</p>
+                      <p className="font-medium text-slate-800 truncate">{h.company}{h.fallback ? ' (Gmail)' : ''}</p>
                       <p className="text-slate-500">{h.email} &bull; {h.time}</p>
                     </div>
                   </div>
