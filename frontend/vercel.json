@@ -61,6 +61,7 @@
     { "source": "/app/batch-trace", "destination": "/app/index.html" },
     { "source": "/app/mobile-scan", "destination": "/app/index.html" },
     { "source": "/app/audit-logs", "destination": "/app/index.html" },
+    { "source": "/app/invitation-mail", "destination": "/app/index.html" },
     { "source": "/app/track/:trackingNumber", "destination": "/app/index.html" },
     { "source": "/app/track", "destination": "/app/index.html" }
   ],

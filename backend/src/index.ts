@@ -55,6 +55,7 @@ import webhookRoutes from './routes/webhook.routes';
 import codRoutes from './routes/cod.routes';
 import menuRoutes from './routes/menu.routes';
 import reportFtpRoutes from './routes/reportFtp.routes';
+import invitationRoutes from './routes/invitation.routes';
 import { errorHandler } from './middlewares/error.middleware';
 import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
@@ -149,6 +150,7 @@ app.use('/api/batch', batchRoutes);
   app.use('/api/cod', codRoutes);
   app.use('/api/menus', menuRoutes);
   app.use('/api/ftp', reportFtpRoutes);
+  app.use('/api/invitations', invitationRoutes);
 
 app.get('/api/search', authenticate, globalSearch);
 

@@ -8,7 +8,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 
   try {
     const orderWhere: any = { tenantId: tenant_id };
-    const invWhere: any = {};
+    const invWhere: any = { warehouse: { tenantId: tenant_id } };
     if (warehouseId) { orderWhere.warehouseId = warehouseId; invWhere.warehouseId = warehouseId; }
 
     const totalOrders = await prisma.order.count({ where: orderWhere });
@@ -30,6 +30,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     const lowStockItems = (await prisma.inventory.findMany({
       where: invWhere,
       include: { sku: true, warehouse: true },
+      take: 500,
     })).filter(i => i.reorderPoint > 0 && i.quantityAvailable <= i.reorderPoint).slice(0, 5);
 
     const now = new Date();
@@ -75,7 +76,7 @@ export const getDashboardDetails = async (req: AuthRequest, res: Response) => {
   const type = req.query.type as string;
 
   const orderWhere: any = { tenantId: tenant_id };
-  const invWhere: any = {};
+  const invWhere: any = { warehouse: { tenantId: tenant_id } };
   if (warehouseId) { orderWhere.warehouseId = warehouseId; invWhere.warehouseId = warehouseId; }
 
   const now = new Date();

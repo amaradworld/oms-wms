@@ -30,7 +30,7 @@ const MENU_CATALOG = [
   },
   {
     id: 'administration', label: 'Administration',
-    children: ['sku-master', 'integrations', 'parties', 'companies', 'leads', 'courier-routing', 'marketplace', 'analytics', 'productivity', 'bins', 'audit-logs', 'settings'],
+    children: ['sku-master', 'integrations', 'parties', 'companies', 'leads', 'courier-routing', 'marketplace', 'analytics', 'productivity', 'bins', 'audit-logs', 'reports-ftp', 'invitation-mail', 'settings'],
   },
 ];
 

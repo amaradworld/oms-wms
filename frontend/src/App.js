@@ -54,6 +54,7 @@ const MobileScan = lazy(() => import(/* webpackChunkName: "page-mobilescan" */ '
 const AsnPage = lazy(() => import(/* webpackChunkName: "page-asn" */ './pages/AsnPage'));
 const Productivity = lazy(() => import(/* webpackChunkName: "page-productivity" */ './pages/Productivity'));
 const ReportsFtp = lazy(() => import(/* webpackChunkName: "page-reports-ftp" */ './pages/ReportsFtp'));
+const InvitationMail = lazy(() => import(/* webpackChunkName: "page-invitation-mail" */ './pages/InvitationMail'));
 const LoginPage = lazy(() => import(/* webpackChunkName: "page-login" */ './pages/LoginPage'));
 
 const FallbackPage = () => (
@@ -77,7 +78,7 @@ const UNAUTHORIZED = () => (
 );
 
 const roleAccess = {
-  PLATFORM_ADMIN: ['dashboard','companies','leads','audit-logs','reports-ftp'],
+  PLATFORM_ADMIN: ['dashboard','companies','leads','audit-logs','reports-ftp','invitation-mail'],
   SUPER_ADMIN: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','marketplace','purchaseorders','stocktransfer','waves','manifests','ndr','courier-routing','inventory-alerts','analytics','settings','gatepass','integrations','grn','gatepass-order','putaway','bins','sku-history','sku-master','parties','stock-expiry','replenishment','asn','productivity','batch-trace','mobile-scan','reports-ftp'],
   WAREHOUSE_MGR: ['dashboard','orders','inventory','warehouse','cyclecount','picklist','packing','scanning','returns','gatepass','grn','putaway','bins','stocktransfer','manifests','ndr','courier-routing','inventory-alerts','settings','parties','stock-expiry','replenishment','asn','batch-trace','mobile-scan','sku-master','reports-ftp'],
   PICKER: ['dashboard','picklist','scanning','waves'],
@@ -93,7 +94,7 @@ const TAB_TO_PATH = {
   'inventory-alerts':'inventory-alerts', gatepass:'gatepass', 'gatepass-order':'gatepass-order',
   integrations:'integrations', grn:'grn', putaway:'putaway', bins:'bin-locations',
   'sku-history':'sku-history', 'sku-master':'sku-master', parties:'parties', companies:'companies', leads:'leads', settings:'settings',
-  'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan', 'reports-ftp':'reports-ftp',
+  'stock-expiry':'stock-expiry', replenishment:'replenishment', asn:'asn', productivity:'productivity', 'batch-trace':'batch-trace', 'mobile-scan':'mobile-scan', 'reports-ftp':'reports-ftp', 'invitation-mail':'invitation-mail',
 };
 
 const PATH_TO_TAB = Object.fromEntries(Object.entries(TAB_TO_PATH).map(([k, v]) => [v, k]));
@@ -264,6 +265,7 @@ const App = () => {
       case 'batch-trace': return <BatchTrace {...pageProps} />;
       case 'mobile-scan': return <MobileScan {...pageProps} />;
       case 'reports-ftp': return <ReportsFtp {...pageProps} />;
+      case 'invitation-mail': return <InvitationMail {...pageProps} />;
       case 'settings': return <Settings {...pageProps} />;
       default: return <FallbackPage />;
     }

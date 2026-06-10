@@ -1,0 +1,161 @@
+import nodemailer from 'nodemailer';
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+export interface InvitationPayload {
+  clientName: string;
+  clientEmail: string;
+  companyName: string;
+  customMessage?: string;
+}
+
+function buildInvitationHtml(p: InvitationPayload): string {
+  const greeting = p.clientName ? `Dear ${p.clientName},` : 'Hello,';
+  const customBlock = p.customMessage
+    ? `<p style="margin:16px 0 0;color:#475569;font-size:14px;line-height:1.7;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:16px;"><strong style="color:#92400E;">Personal Note:</strong> <span style="color:#78350F;">${p.customMessage}</span></p>`
+    : '';
+
+  return `
+<!DOCTYPE html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head><body style="margin:0;padding:0;background-color:#F1F5F9;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1F5F9;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.08);">
+<tr><td style="background:linear-gradient(135deg,#14B8A6 0%,#0D9488 50%,#0F766E 100%);padding:40px 40px 36px;text-align:center;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px;"><tr>
+<td style="background-color:rgba(255,255,255,0.2);border-radius:10px;padding:8px 14px;"><span style="color:#FFFFFF;font-size:18px;font-weight:800;">GS</span></td>
+<td style="padding-left:12px;"><span style="color:#FFFFFF;font-size:22px;font-weight:800;">GlobalSupply</span></td>
+</tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;"><tr>
+<td style="background-color:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:6px 20px;">
+<span style="color:#FFFFFF;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Exclusive Invitation</span></td>
+</tr></table>
+<h1 style="margin:0;color:#FFFFFF;font-size:26px;font-weight:800;line-height:1.2;">45-Day Complimentary<br/>Pilot Program</h1>
+<p style="margin:12px 0 0;color:rgba(255,255,255,0.85);font-size:15px;">OMS &bull; WMS &bull; Marketplace Enablement</p>
+</td></tr>
+<tr><td style="padding:36px 40px 12px;">
+<p style="margin:0;color:#334155;font-size:15px;line-height:1.7;">${greeting}</p>
+<p style="margin:16px 0 0;color:#475569;font-size:15px;line-height:1.7;">We are pleased to inform you that <strong style="color:#0F172A;">${p.companyName}</strong> has been selected for our exclusive <strong style="color:#0F172A;">45-Day Complimentary Pilot Program</strong> for the GlobalSupply OMS, WMS &amp; Marketplace Enablement Platform.</p>
+${customBlock}
+</td></tr>
+<tr><td style="padding:20px 40px 8px;"><p style="margin:0 0 4px;color:#94A3B8;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">What You Get</p></td></tr>
+<tr><td style="padding:0 40px 24px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td width="50%" valign="top" style="padding:8px 8px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#F0FDFA;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#9889;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Full Access — 45 Days</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">No cost, no commitment</p></td>
+</tr></table></td>
+<td width="50%" valign="top" style="padding:8px 0 8px 8px;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#F0FDFA;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128666;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Dedicated Onboarding</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Implementation support included</p></td>
+</tr></table></td>
+</tr>
+<tr>
+<td width="50%" valign="top" style="padding:8px 8px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#EFF6FF;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128230;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Order Management (OMS)</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">End-to-end order lifecycle</p></td>
+</tr></table></td>
+<td width="50%" valign="top" style="padding:8px 0 8px 8px;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#EFF6FF;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#127981;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Warehouse Management (WMS)</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Bins, putaway, picking, packing</p></td>
+</tr></table></td>
+</tr>
+<tr>
+<td width="50%" valign="top" style="padding:8px 8px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#FEF3C7;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128202;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Inventory Tracking</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Real-time stock visibility</p></td>
+</tr></table></td>
+<td width="50%" valign="top" style="padding:8px 0 8px 8px;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#FEF3C7;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128188;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Marketplace Integrations</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Flipkart, Nykaa, Myntra &amp; more</p></td>
+</tr></table></td>
+</tr>
+<tr>
+<td width="50%" valign="top" style="padding:8px 8px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#F5F3FF;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128270;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Barcode &amp; Fulfillment</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Scan, pick, pack, ship workflows</p></td>
+</tr></table></td>
+<td width="50%" valign="top" style="padding:8px 0 8px 8px;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#F5F3FF;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128200;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Analytics Dashboards</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Operational insights &amp; reports</p></td>
+</tr></table></td>
+</tr>
+<tr>
+<td width="50%" valign="top" style="padding:8px 8px 8px 0;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#ECFDF5;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#128172;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">WhatsApp &amp; Email Alerts</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Automated notifications</p></td>
+</tr></table></td>
+<td width="50%" valign="top" style="padding:8px 0 8px 8px;"><table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;"><tr>
+<td style="width:36px;height:36px;background-color:#ECFDF5;border-radius:10px;text-align:center;vertical-align:middle;"><span style="font-size:16px;line-height:36px;">&#127891;</span></td>
+<td style="padding-left:12px;"><p style="margin:0;color:#0F172A;font-size:14px;font-weight:700;">Training &amp; Support</p><p style="margin:2px 0 0;color:#64748B;font-size:12px;">Onboarding &amp; ongoing help</p></td>
+</tr></table></td>
+</tr>
+</table></td></tr>
+<tr><td style="padding:0 40px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:linear-gradient(135deg,#F0FDFA 0%,#ECFDF5 100%);border:1px solid #A7F3D0;border-radius:12px;padding:24px;">
+<p style="margin:0 0 8px;color:#0F172A;font-size:15px;font-weight:700;">&#127919; Our Objective</p>
+<p style="margin:0;color:#475569;font-size:14px;line-height:1.7;">Help your team evaluate how GlobalSupply can improve <strong>operational efficiency</strong>, <strong>inventory visibility</strong>, <strong>order fulfillment</strong>, and <strong>marketplace management</strong> within your organization.</p>
+<p style="margin:12px 0 0;color:#475569;font-size:14px;line-height:1.7;">There are <strong>no subscription charges</strong> during the 45-day pilot. We only request your feedback and operational insights to help us continuously improve.</p>
+</td></tr></table></td></tr>
+<tr><td style="padding:0 40px 32px;text-align:center;">
+<p style="margin:0 0 20px;color:#475569;font-size:14px;line-height:1.6;">We would be delighted to schedule a product demonstration and onboarding session at your convenience.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;"><tr>
+<td style="background:linear-gradient(135deg,#14B8A6 0%,#0D9488 100%);border-radius:12px;box-shadow:0 4px 14px rgba(20,184,166,0.35);">
+<a href="https://globalsupply.in/#contact" target="_blank" style="display:inline-block;padding:14px 32px;color:#FFFFFF;font-size:15px;font-weight:700;text-decoration:none;">Schedule a Demo &rarr;</a></td>
+</tr></table>
+<p style="margin:16px 0 0;color:#94A3B8;font-size:12px;">Or reply to this email to get started</p>
+</td></tr>
+<tr><td style="padding:0 40px 32px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:20px;">
+<p style="margin:0 0 12px;color:#0F172A;font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Explore the Platform</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td width="33%" style="padding:4px;"><a href="https://globalsupply.in/features" target="_blank" style="display:block;background-color:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center;text-decoration:none;"><span style="display:block;font-size:18px;margin-bottom:4px;">&#128736;</span><span style="display:block;color:#0F172A;font-size:12px;font-weight:600;">Features</span></a></td>
+<td width="33%" style="padding:4px;"><a href="https://globalsupply.in/pricing" target="_blank" style="display:block;background-color:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center;text-decoration:none;"><span style="display:block;font-size:18px;margin-bottom:4px;">&#128176;</span><span style="display:block;color:#0F172A;font-size:12px;font-weight:600;">Pricing</span></a></td>
+<td width="33%" style="padding:4px;"><a href="https://globalsupply.in/about" target="_blank" style="display:block;background-color:#FFFFFF;border:1px solid #E2E8F0;border-radius:8px;padding:12px;text-align:center;text-decoration:none;"><span style="display:block;font-size:18px;margin-bottom:4px;">&#127970;</span><span style="display:block;color:#0F172A;font-size:12px;font-weight:600;">About Us</span></a></td>
+</tr></table>
+</td></tr></table></td></tr>
+<tr><td style="padding:0 40px 32px;"><p style="margin:0;color:#475569;font-size:14px;line-height:1.7;">We look forward to partnering with you and supporting your growth journey.</p></td></tr>
+<tr><td style="padding:0 40px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="border-top:1px solid #E2E8F0;padding-top:24px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td style="width:52px;height:52px;background:linear-gradient(135deg,#14B8A6,#0D9488);border-radius:12px;text-align:center;vertical-align:middle;"><span style="color:#FFFFFF;font-size:20px;font-weight:800;line-height:52px;">AG</span></td>
+<td style="padding-left:16px;vertical-align:top;">
+<p style="margin:0;color:#0F172A;font-size:16px;font-weight:700;">Alok Garg</p>
+<p style="margin:2px 0 0;color:#14B8A6;font-size:13px;font-weight:600;">Founder &amp; CEO</p>
+<p style="margin:4px 0 0;color:#94A3B8;font-size:12px;"><a href="https://globalsupply.in" target="_blank" style="color:#14B8A6;text-decoration:none;">globalsupply.in</a></p>
+</td></tr></table>
+</td></tr></table></td></tr>
+<tr><td style="background-color:#0F172A;padding:24px 40px;text-align:center;">
+<p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;">GlobalSupply &bull; Gurgaon, HR, India</p>
+</td></tr>
+</table></td></tr></table>
+</body></html>`;
+}
+
+export async function sendInvitationMail(payload: InvitationPayload): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const fromName = process.env.SMTP_FROM_NAME || 'GlobalSupply Techno';
+  const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@globalsupply.in';
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: payload.clientEmail,
+      subject: `Invitation: 45-Day Complimentary Pilot Program — GlobalSupply`,
+      html: buildInvitationHtml(payload),
+      replyTo: 'alok@globalsupply.in',
+    });
+    return { success: true, messageId: info.messageId };
+  } catch (err: any) {
+    console.error('[invitation-email] Failed:', err.message);
+    return { success: false, error: err.message || 'Failed to send email' };
+  }
+}
+
+export function generateInvitationHtml(payload: InvitationPayload): string {
+  return buildInvitationHtml(payload);
+}

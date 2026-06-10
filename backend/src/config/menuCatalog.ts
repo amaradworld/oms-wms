@@ -70,6 +70,7 @@ export const MENU_CATALOG: MenuItem[] = [
       { id: 'bins', label: 'Bin Locations' },
       { id: 'audit-logs', label: 'Audit Logs' },
       { id: 'reports-ftp', label: 'Reports (FTP)' },
+      { id: 'invitation-mail', label: 'Invitation Mail' },
       { id: 'settings', label: 'Settings' },
     ],
   },
