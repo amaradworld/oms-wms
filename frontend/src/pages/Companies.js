@@ -7,7 +7,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { TableSkeleton } from '../components/Skeleton';
 
 const MENU_CATALOG = [
-  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'dashboard', label: 'Dashboard', children: ['dashboard'] },
   {
     id: 'order-management', label: 'Order Management',
     children: ['orders', 'returns', 'waves', 'packing', 'manifests', 'ndr'],
@@ -47,10 +47,11 @@ const MenuSelector = ({ value, onChange }) => {
   };
 
   const toggleGroup = (group) => {
+    const kids = group.children || [];
     const next = new Set(selected);
-    const allSelected = group.children.every(c => next.has(c));
-    if (allSelected) group.children.forEach(c => next.delete(c));
-    else group.children.forEach(c => next.add(c));
+    const allSelected = kids.every(c => next.has(c));
+    if (allSelected) kids.forEach(c => next.delete(c));
+    else kids.forEach(c => next.add(c));
     onChange(Array.from(next));
   };
 
@@ -77,8 +78,9 @@ const MenuSelector = ({ value, onChange }) => {
         <span className="text-xs text-slate-400">{selected.size}/{allLeafIds.length} menus</span>
       </div>
       {MENU_CATALOG.map(group => {
-        const groupSelected = group.children.every(c => selected.has(c));
-        const groupPartial = group.children.some(c => selected.has(c)) && !groupSelected;
+        const kids = group.children || [];
+        const groupSelected = kids.length > 0 && kids.every(c => selected.has(c));
+        const groupPartial = kids.some(c => selected.has(c)) && !groupSelected;
         return (
           <div key={group.id} className="border border-slate-200 rounded-lg overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => toggleGroup(group)}>
@@ -91,7 +93,7 @@ const MenuSelector = ({ value, onChange }) => {
               <span className="text-sm font-medium text-slate-700">{group.label}</span>
             </div>
             <div className="px-3 py-2 space-y-1.5 border-t border-slate-100">
-              {group.children.map(childId => (
+              {kids.map(childId => (
                 <label key={childId} className="flex items-center gap-2 cursor-pointer py-0.5 group">
                   <input
                     type="checkbox"
