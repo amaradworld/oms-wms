@@ -43,15 +43,32 @@ export const AuthProvider = ({ children }) => {
 
   const fetchCompanies = () => {
     setCompaniesLoading(true);
-    axios.get(`${API}/api/tenants?public=1`).then(res => {
+    axios.get(`${API}/api/tenants/public`).then(res => {
       if (Array.isArray(res.data) && res.data.length > 0) {
-        setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive, menuAccess: t.menuAccess })));
+        setCompanies(res.data.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive, menuAccess: t.menuAccess || null })));
       }
     }).catch(() => { /* use fallback */ })
       .finally(() => setCompaniesLoading(false));
   };
 
   const getToken = () => localStorage.getItem('token');
+
+  const refreshCompany = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await axios.get(`${API}/api/tenants/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data) {
+        const saved = localStorage.getItem('auth');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const updatedCompany = { ...parsed.company, menuAccess: res.data.menuAccess || null, name: res.data.name || parsed.company.name };
+          setCompany(updatedCompany);
+          localStorage.setItem('auth', JSON.stringify({ ...parsed, company: updatedCompany }));
+        }
+      }
+    } catch {}
+  };
 
   const login = (userData, companyData, token, menuAccess) => {
     const tenant = companyData.tenantId || companyData.id;
@@ -120,7 +137,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      user, company, tenantId, loading, login, logout, resetWelcome, getToken,
+      user, company, tenantId, loading, login, logout, resetWelcome, getToken, refreshCompany,
       detectSubdomain, findCompanyBySubdomain, isOnCompanySubdomain, companies, companiesLoading, refreshCompanies: fetchCompanies,
       selectedFacility, setSelectedFacility: handleSetFacility, clearSelectedFacility,
       isAuthenticated: !!user,

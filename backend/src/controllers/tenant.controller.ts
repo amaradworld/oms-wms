@@ -9,6 +9,11 @@ export const getTenants = async (req: AuthRequest, res: Response) => {
   res.json(tenants);
 };
 
+export const getPublicTenants = async (_req: AuthRequest, res: Response) => {
+  const tenants = await prisma.tenant.findMany({ where: { isActive: true }, orderBy: { createdAt: 'desc' } });
+  res.json(tenants.map(t => ({ id: t.id, name: t.name, slug: t.slug, isActive: t.isActive, menuAccess: t.menuAccess })));
+};
+
 export const getTenant = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const tenant = await prisma.tenant.findUnique({ where: { id } });

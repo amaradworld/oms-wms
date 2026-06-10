@@ -130,8 +130,10 @@ const Sidebar = ({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) => {
       .filter(Boolean);
 
   const filterByMenuAccess = (items, allowedIds) => {
-    if (!allowedIds) return items; // null = all menus allowed
-    const allowed = new Set(allowedIds);
+    let ids = allowedIds;
+    if (typeof ids === 'string') { try { ids = JSON.parse(ids); } catch { ids = null; } }
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return items; // null/empty = all menus allowed
+    const allowed = new Set(ids);
     return filterTree(items, allowed);
   };
 
