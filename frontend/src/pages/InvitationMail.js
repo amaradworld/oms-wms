@@ -9,8 +9,8 @@ const InvitationMail = () => {
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [history, setHistory] = useState<{ name: string; email: string; company: string; time: string }[]>([]);
+  const iframeRef = useRef(null);
+  const [history, setHistory] = useState([]);
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -27,7 +27,7 @@ const InvitationMail = () => {
       });
       setPreviewHtml(res.data.html);
       setShowPreview(true);
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to generate preview');
     } finally {
       setPreviewLoading(false);
@@ -43,7 +43,7 @@ const InvitationMail = () => {
       toast.success(`Invitation sent to ${form.clientEmail}`);
       setHistory(prev => [{ name: form.clientName, email: form.clientEmail, company: form.companyName, time: new Date().toLocaleString() }, ...prev]);
       setForm({ clientName: '', clientEmail: '', companyName: '', customMessage: '' });
-    } catch (err: any) {
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to send email');
     } finally {
       setSending(false);
@@ -56,7 +56,7 @@ const InvitationMail = () => {
         params: { name: form.clientName, email: form.clientEmail, company: form.companyName, message: form.customMessage },
       });
       window.open(res.data.url, '_blank');
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to generate Gmail link');
     }
   }, [form]);
