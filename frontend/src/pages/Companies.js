@@ -35,7 +35,7 @@ const MENU_CATALOG = [
 ];
 
 const MenuSelector = ({ value, onChange }) => {
-  const selected = new Set(value || []);
+  const selected = new Set(Array.isArray(value) ? value : []);
 
   const allLeafIds = MENU_CATALOG.flatMap(g => g.children);
 
@@ -110,7 +110,32 @@ const MenuSelector = ({ value, onChange }) => {
   );
 };
 
-const Companies = () => {
+class CompaniesErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) { console.error('Companies error:', error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 md:p-6 max-w-6xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <p className="text-red-700 font-medium mb-2">Companies module hit an error</p>
+            <p className="text-sm text-red-600 mb-4">{String(this.state.error?.message || 'Unknown error')}</p>
+            <button onClick={() => this.setState({ hasError: false, error: null })} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Try Again</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const safeStr = (v) => (v == null ? '' : String(v));
+
+const CompaniesInner = () => {
   const { refreshCompanies } = useAuth();
   const confirm = useConfirm();
   const [companies, setCompanies] = useState([]);
@@ -121,15 +146,21 @@ const Companies = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ id: '', name: '', slug: '' });
   const [adminForm, setAdminForm] = useState({ email: '', password: '', fullName: '' });
-  const [menuAccess, setMenuAccess] = useState(null); // null = all menus
+  const [menuAccess, setMenuAccess] = useState(null);
   const [createdCreds, setCreatedCreds] = useState(null);
 
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
       const res = await API.get('/tenants');
-      setCompanies(Array.isArray(res.data) ? res.data : []);
-    } catch { setCompanies([]); } finally { setLoading(false); }
+      const data = Array.isArray(res.data) ? res.data.filter(c => c && typeof c === 'object' && c.id) : [];
+      setCompanies(data);
+    } catch (e) {
+      console.error('Failed to fetch companies:', e);
+      setCompanies([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchCompanies(); }, [fetchCompanies]);
@@ -147,8 +178,10 @@ const Companies = () => {
   };
 
   const openEdit = (c) => {
-    setForm({ id: c.id, name: c.name, slug: c.slug });
-    setMenuAccess(c.menuAccess || null);
+    if (!c) return;
+    setForm({ id: c.id || '', name: c.name || '', slug: c.slug || '' });
+    const ma = c.menuAccess;
+    setMenuAccess(Array.isArray(ma) ? ma : null);
     setEditId(c.id);
     setShowModal(true);
   };
@@ -162,10 +195,12 @@ const Companies = () => {
         const payload = { name: form.name, slug: form.slug };
         if (menuAccess !== null) payload.menuAccess = menuAccess;
         const res = await API.put(`/tenants/${editId}`, payload);
-        setCompanies(prev => prev.map(c => c.id === editId ? res.data : c));
+        if (res.data && res.data.id) {
+          setCompanies(prev => prev.map(c => c.id === editId ? res.data : c));
+        }
         toast.success('Company updated');
       } else {
-        const payload = { ...form };
+        const payload = { id: form.id.trim(), name: form.name.trim(), slug: form.slug.trim() };
         if (menuAccess !== null) payload.menuAccess = menuAccess;
         if (adminForm.email && adminForm.password) {
           payload.adminEmail = adminForm.email;
@@ -173,55 +208,75 @@ const Companies = () => {
           payload.adminName = adminForm.fullName;
         }
         const res = await API.post('/tenants', payload);
-        setCompanies(prev => [res.data, ...prev]);
-        if (res.data.adminEmail) {
-          setCreatedCreds({ email: res.data.adminEmail, password: res.data.adminPassword, company: form.name });
+        if (res.data && res.data.id) {
+          setCompanies(prev => [res.data, ...prev]);
+          if (res.data.adminEmail) {
+            setCreatedCreds({ email: res.data.adminEmail, password: res.data.adminPassword || '', company: form.name });
+          } else {
+            toast.success('Company created');
+          }
         } else {
           toast.success('Company created');
+          fetchCompanies();
         }
       }
       setShowModal(false);
       resetForm();
-      refreshCompanies();
+      try { refreshCompanies(); } catch (_) {}
     } catch (err) {
+      console.error('Company save error:', err);
       toast.error(err.response?.data?.message || 'Operation failed');
     } finally { setSubmitting(false); }
   };
 
   const toggleActive = async (c) => {
+    if (!c || !c.id) return;
     try {
       const res = await API.put(`/tenants/${c.id}`, { isActive: !c.isActive });
-      setCompanies(prev => prev.map(x => x.id === c.id ? res.data : x));
-      toast.success(`Company ${res.data.isActive ? 'enabled' : 'disabled'}`);
-      refreshCompanies();
+      if (res.data && res.data.id) {
+        setCompanies(prev => prev.map(x => x.id === c.id ? res.data : x));
+        toast.success(`Company ${res.data.isActive ? 'enabled' : 'disabled'}`);
+      }
+      try { refreshCompanies(); } catch (_) {}
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to toggle');
     }
   };
 
   const handleDelete = async (c) => {
-    if (!await confirm({
-      title: `Delete "${c.name}"?`,
-      message: `This will permanently delete the tenant, all its users, warehouses, orders, inventory, and history. This CANNOT be undone. Type the company name to confirm.`,
-      confirmText: 'Delete permanently',
-      variant: 'danger',
-      requireText: c.name,
-    })) return;
+    if (!c || !c.id) return;
+    const cName = c.name || c.id;
     try {
+      const confirmed = await confirm({
+        title: `Delete "${cName}"?`,
+        message: `This will permanently delete the tenant, all its users, warehouses, orders, inventory, and history. This CANNOT be undone. Type the company name to confirm.`,
+        confirmText: 'Delete permanently',
+        variant: 'danger',
+        requireText: cName,
+      });
+      if (!confirmed) return;
       await API.delete(`/tenants/${c.id}`);
       setCompanies(prev => prev.filter(x => x.id !== c.id));
       toast.success('Company deleted');
-      refreshCompanies();
+      try { refreshCompanies(); } catch (_) {}
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete');
+      if (err) toast.error(err.response?.data?.message || 'Failed to delete');
     }
   };
 
-  const filtered = companies.filter(c =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.id.toLowerCase().includes(search.toLowerCase()) ||
-    c.slug.toLowerCase().includes(search.toLowerCase())
-  );
+  const searchLower = (search || '').toLowerCase();
+  const filtered = (companies || []).filter(c => {
+    if (!c) return false;
+    return safeStr(c.name).toLowerCase().includes(searchLower) ||
+      safeStr(c.id).toLowerCase().includes(searchLower) ||
+      safeStr(c.slug).toLowerCase().includes(searchLower);
+  });
+
+  const getMenusLabel = (c) => {
+    const ma = c?.menuAccess;
+    if (Array.isArray(ma)) return `${ma.length} menus`;
+    return 'All';
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-6xl mx-auto">
@@ -263,15 +318,13 @@ const Companies = () => {
                   <tr><td colSpan={6} className="text-center py-8 text-slate-400">No companies found</td></tr>
                 ) : filtered.map(c => (
                   <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{c.id}</td>
-                    <td className="px-4 py-3 font-medium">{c.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{safeStr(c.id)}</td>
+                    <td className="px-4 py-3 font-medium">{safeStr(c.name)}</td>
                     <td className="px-4 py-3">
-                      <span className="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">{c.slug}</span>
+                      <span className="text-xs bg-slate-100 px-2 py-0.5 rounded font-mono">{safeStr(c.slug)}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-xs text-slate-500">
-                        {c.menuAccess ? `${c.menuAccess.length} menus` : 'All'}
-                      </span>
+                      <span className="text-xs text-slate-500">{getMenusLabel(c)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${c.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -352,7 +405,7 @@ const Companies = () => {
                         type="email"
                         value={adminForm.email} onChange={e => setAdminForm({ ...adminForm, email: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="e.g. admin@leosales.com"
+                        placeholder="e.g. admin@company.com"
                       />
                     </div>
                     <div>
@@ -370,7 +423,7 @@ const Companies = () => {
                         type="text"
                         value={adminForm.fullName} onChange={e => setAdminForm({ ...adminForm, fullName: e.target.value })}
                         className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="e.g. Leo Sales Admin"
+                        placeholder="e.g. Company Admin"
                       />
                     </div>
                   </div>
@@ -403,16 +456,16 @@ const Companies = () => {
                 <Check size={28} className="text-emerald-600" />
               </div>
               <h2 className="text-lg font-bold">Company Created</h2>
-              <p className="text-sm text-slate-500 mt-1">One-time credentials for <strong>{createdCreds.company}</strong></p>
+              <p className="text-sm text-slate-500 mt-1">One-time credentials for <strong>{safeStr(createdCreds.company)}</strong></p>
             </div>
             <div className="bg-slate-50 rounded-xl p-4 space-y-3 mb-6">
               <div>
                 <label className="text-xs font-medium text-slate-500 block mb-0.5">Email</label>
-                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{createdCreds.email}</p>
+                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{safeStr(createdCreds.email)}</p>
               </div>
               <div>
                 <label className="text-xs font-medium text-slate-500 block mb-0.5">Password</label>
-                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{createdCreds.password}</p>
+                <p className="font-mono text-sm font-medium text-slate-900 bg-white px-3 py-2 rounded-lg border select-all">{safeStr(createdCreds.password)}</p>
               </div>
             </div>
             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4 text-center">
@@ -420,7 +473,7 @@ const Companies = () => {
             </p>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(`Email: ${createdCreds.email}\nPassword: ${createdCreds.password}`);
+                navigator.clipboard.writeText(`Email: ${safeStr(createdCreds.email)}\nPassword: ${safeStr(createdCreds.password)}`);
                 toast.success('Credentials copied');
                 setCreatedCreds(null);
                 setShowModal(false);
@@ -436,5 +489,11 @@ const Companies = () => {
     </div>
   );
 };
+
+const Companies = () => (
+  <CompaniesErrorBoundary>
+    <CompaniesInner />
+  </CompaniesErrorBoundary>
+);
 
 export default Companies;
