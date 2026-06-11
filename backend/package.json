@@ -13,7 +13,7 @@
     "seed": "node src/seed.js",
     "backfill-sla": "npx ts-node src/scripts/backfill-sla.ts",
     "backfill-sla-history": "npx ts-node src/scripts/backfill-sla-history.ts",
-    "test": "jest --testPathPattern='__tests__/'"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",

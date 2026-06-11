@@ -13,7 +13,7 @@
     "sourceMap": true,
     "moduleResolution": "node10",
     "ignoreDeprecations": "6.0",
-    "types": ["node"]
+    "types": ["node", "jest"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/seed.ts", "src/__tests__"]

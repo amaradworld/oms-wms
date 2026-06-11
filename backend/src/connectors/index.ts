@@ -3,9 +3,13 @@ import { NykaaConnector } from './nykaa';
 import { MyntraConnector } from './myntra';
 import { TataCliqConnector } from './tatacliq';
 import { FlipkartConnector } from './flipkart';
+import { AmazonConnector } from './amazon';
+import { ShopifyConnector } from './shopify';
 
 const registry: Record<string, MarketplaceConnector> = {
   FLIPKART: new FlipkartConnector(),
+  AMAZON: new AmazonConnector(),
+  SHOPIFY: new ShopifyConnector(),
   NYKAA: new NykaaConnector(),
   MYNTRA: new MyntraConnector(),
   TATACLIQ: new TataCliqConnector(),

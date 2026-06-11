@@ -19,7 +19,6 @@ import { Client } from 'pg';
 
 const BLOCKED_COUNTRIES = [];
 const BLOCKED_IPS = [];
-const rateLimitMap = new Map();
 
 // ── Data API handlers (served via Hyperdrive) ──────────────────────────
 
@@ -111,20 +110,41 @@ export default {
       return new Response('Access denied', { status: 403 });
     }
 
+    // ── Rate Limiting via KV ──────────────────────────────────────────
     const now = Date.now();
     const windowMs = 60_000;
     const maxReq = 200;
-    let entry = rateLimitMap.get(clientIP);
-    if (!entry || now - entry.windowStart > windowMs) {
-      entry = { windowStart: now, count: 0 };
-      rateLimitMap.set(clientIP, entry);
+    const rlKey = `rl:${clientIP}`;
+    
+    let count = 0;
+    let windowStart = now;
+    
+    try {
+      const existing = env.RATE_LIMIT_KV ? await env.RATE_LIMIT_KV.get(rlKey, { type: 'json' }) : null;
+      if (existing && now - existing.windowStart <= windowMs) {
+        count = existing.count;
+        windowStart = existing.windowStart;
+      }
+    } catch {
+      // KV read failed, proceed without rate limit
     }
-    entry.count++;
-    if (entry.count > maxReq) {
+    
+    count++;
+    if (count > maxReq) {
       return new Response('Too many requests', {
         status: 429,
         headers: { 'Retry-After': '60' },
       });
+    }
+    
+    try {
+      if (env.RATE_LIMIT_KV) {
+        await env.RATE_LIMIT_KV.put(rlKey, JSON.stringify({ windowStart, count }), {
+          expirationTtl: Math.ceil(windowMs / 1000) + 10,
+        });
+      }
+    } catch {
+      // KV write failed, proceed anyway
     }
 
     // ── Data API via Hyperdrive ────────────────────────────────────────

@@ -1,6 +1,6 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
-const NYKAA_API_BASE = 'https://api.nykaa.com/seller';
+const NYKAA_API_BASE = 'https://api.nykaa.com/seller/v1';
 
 export class NykaaConnector implements MarketplaceConnector {
   name = 'Nykaa';

@@ -1,6 +1,6 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
-const MYNTRA_API_BASE = 'https://partners.myntra.com/v1';
+const MYNTRA_API_BASE = 'https://partners.myntra.com/api/v1';
 
 export class MyntraConnector implements MarketplaceConnector {
   name = 'Myntra';

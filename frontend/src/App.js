@@ -12,6 +12,7 @@ import Welcome from './components/Welcome';
 import AssistantBot from './components/AssistantBot';
 import HelpButton from './components/HelpButton';
 import BottomNav from './components/BottomNav';
+import PageErrorBoundary from './components/PageErrorBoundary';
 import { useGPrefix } from './hooks/useKeyboardShortcuts';
 import { useAuth } from './context/AuthContext';
 
@@ -308,7 +309,9 @@ const App = () => {
           <HelpButton onNavigate={setActiveTab} />
         </header>
         <Suspense fallback={<div className="p-8 text-center text-slate-400">Loading…</div>}>
-          {renderContent()}
+          <PageErrorBoundary>
+            {renderContent()}
+          </PageErrorBoundary>
         </Suspense>
       </main>
       <VercelAnalytics />

@@ -1,6 +1,6 @@
 import { MarketplaceConnector, MarketplaceOrder } from './base';
 
-const TATACLIQ_API_BASE = 'https://api.tatacliq.com/seller';
+const TATACLIQ_API_BASE = 'https://seller.tatacliq.com/api/v2';
 
 export class TataCliqConnector implements MarketplaceConnector {
   name = 'TataCliq';
