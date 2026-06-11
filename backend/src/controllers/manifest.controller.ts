@@ -6,6 +6,7 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 import { generateBarcode, formatINR, extractCity, extractPincode, aggregateContents, totalWeightInGm } from '../utils/pdf-utils';
 import { logProductivity, durationMinutes } from '../services/productivityLogger.service';
 import { applyOrderStatus } from '../services/orderStage.service';
+import { sendDispatchNotification } from '../services/email.service';
 
 function drawBox(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number) {
   doc.lineWidth(0.5).rect(x, y, w, h).stroke();
@@ -156,6 +157,15 @@ export const closeManifest = async (req: AuthRequest, res: Response) => {
     await applyOrderStatus(oid, 'DISPATCHED', 'SHIPPED').catch((err) => {
       console.error(`[Manifest] Failed to apply DISPATCHED status for order ${oid}:`, err.message);
     });
+  }
+  const dispatchedOrders = await prisma.order.findMany({
+    where: { id: { in: orderIds } },
+    select: { orderNumber: true, customerName: true, notificationEmail: true, source: true },
+  });
+  for (const o of dispatchedOrders) {
+    if (o.notificationEmail) {
+      sendDispatchNotification(o.notificationEmail, o.orderNumber, o.customerName || 'Customer', o.source || 'MANUAL').catch(() => {});
+    }
   }
   await logProductivity({
     tenantId: req.user!.tenant_id,

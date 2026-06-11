@@ -1,6 +1,7 @@
 import prisma from './prisma';
 import { applyOrderStatus } from './orderStage.service';
 import { logProductivity } from './productivityLogger.service';
+import { sendDeliveryNotification } from './email.service';
 
 const COURIER_API_KEYS: Record<string, string> = {
   SHIPROCKET: process.env.SHIPROCKET_TOKEN || '',
@@ -96,6 +97,9 @@ export async function checkAllShipments(): Promise<{ updated: number; total: num
         await applyOrderStatus(order.id, 'DELIVERED', 'SHIPPED').catch((err) => {
           console.error(`[Delivery] Failed to apply DELIVERED status for order ${order.orderNumber}:`, err.message);
         });
+        if (order.notificationEmail) {
+          sendDeliveryNotification(order.notificationEmail, order.orderNumber, order.customerName || 'Customer', order.source || 'MANUAL').catch(() => {});
+        }
         updated++;
       }
     } catch (e) {
@@ -134,6 +138,9 @@ export async function deliverOrder(orderId: string) {
     quantity: 1,
     durationMin: null,
   });
+  if (order.notificationEmail) {
+    sendDeliveryNotification(order.notificationEmail, order.orderNumber, order.customerName || 'Customer', order.source || 'MANUAL').catch(() => {});
+  }
 
   return { id: orderId, orderNumber: order.orderNumber, orderStatus: 'DELIVERED', deliveredAt: now };
 }

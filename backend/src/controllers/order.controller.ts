@@ -3,6 +3,7 @@ import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { logAudit, logUpdateAudit, captureSnapshot } from '../services/audit.service';
 import { applyOrderStatus, buildOrderStatusUpdate } from '../services/orderStage.service';
+import { sendOrderConfirmation } from '../services/email.service';
 
 export const getOrders = async (req: AuthRequest, res: Response) => {
   try {
@@ -163,6 +164,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     res.status(201).json(order);
     logAudit({ tenantId, userId: req.user!.id, action: 'CREATE', entityType: 'Order', entityId: order.id, newValue: { orderNumber, source: src, itemCount: items.length } });
+    if (notificationEmail) {
+      const itemsSummary = items.map((i: any) => `${i.skuId} x${i.quantity}`).join(', ');
+      sendOrderConfirmation(notificationEmail, orderNumber, order.customerName || 'Customer', itemsSummary, src).catch(() => {});
+    }
   } catch (error) {
     res.status(400).json({ message: 'Error creating order', });
   }

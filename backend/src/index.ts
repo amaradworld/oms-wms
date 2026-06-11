@@ -61,6 +61,7 @@ import { httpsRedirect } from './middlewares/https.middleware';
 import { ensureDefaults } from './ensureDefaults';
 import { startSlaCron } from './services/slaCron.service';
 import { startReportCron } from './services/reportCron.service';
+import tenantRateLimit from './middlewares/tenantRateLimit';
 
 dotenv.config();
 
@@ -151,6 +152,8 @@ app.use('/api/batch', batchRoutes);
   app.use('/api/menus', menuRoutes);
   app.use('/api/ftp', reportFtpRoutes);
   app.use('/api/invitations', invitationRoutes);
+
+app.use('/api', tenantRateLimit());
 
 app.get('/api/search', authenticate, globalSearch);
 
