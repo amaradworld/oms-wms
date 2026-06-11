@@ -15,7 +15,9 @@ export const requireApiKey = (req: Request, res: Response, next: NextFunction) =
     try {
       jwt.verify(token, JWT_SECRET);
       return next();
-    } catch {}
+    } catch (err) {
+      // Token invalid/expired — fall through to 401
+    }
   }
 
   return res.status(401).json({ message: 'Authentication required (API key or valid token)' });

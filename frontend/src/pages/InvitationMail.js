@@ -12,7 +12,7 @@ const InvitationMail = () => {
   const iframeRef = useRef(null);
   const [history, setHistory] = useState([]);
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 

@@ -15,7 +15,9 @@ function tryAddLogo(doc: typeof PDFDocument.prototype) {
       doc.image(LOGO_PATH, doc.x, doc.y, { width: 80 });
       doc.moveDown(4);
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Transfer] Could not add logo to PDF:', err);
+  }
 }
 
 export const getTransfers = async (req: AuthRequest, res: Response) => {

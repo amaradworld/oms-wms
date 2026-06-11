@@ -37,7 +37,9 @@ export const createLead = async (req: Request, res: Response) => {
     if (recent) {
       return res.status(429).json({ message: 'A request from this email was received in the last hour. Our team will reach out shortly.' });
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Lead] Rate limit check failed, allowing lead through:', err);
+  }
 
   const lead = await prisma.lead.create({
     data: {

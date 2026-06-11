@@ -158,7 +158,9 @@ export const runBackup = async (req: AuthRequest, res: Response) => {
       tenantCount = await prisma.tenant.count();
       orderCount = await prisma.order.count();
       leadCount = await prisma.lead.count();
-    } catch {}
+    } catch (err) {
+      console.warn('[Backup] Could not count records:', err);
+    }
 
     res.json({
       message: 'Backup uploaded',
@@ -172,7 +174,7 @@ export const runBackup = async (req: AuthRequest, res: Response) => {
       stats: { tenants: tenantCount, orders: orderCount, leads: leadCount },
     });
   } catch (error: any) {
-    [tmpSql, tmpGz].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {} });
+    [tmpSql, tmpGz].forEach(f => { try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (err) { console.warn('[Backup] Cleanup failed:', err); } });
     res.status(500).json({ message: 'Backup failed', });
   }
 };

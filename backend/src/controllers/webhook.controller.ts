@@ -14,7 +14,7 @@ interface WebhookPayload {
   attemptCount?: number;
 }
 
-function mapMarketplaceStatus(mp: string, raw: string): string {
+export function mapMarketplaceStatus(mp: string, raw: string): string {
   const s = raw.toUpperCase().replace(/[\s-_]/g, '');
   const map: Record<string, Record<string, string>> = {
     FLIPKART: {
@@ -38,7 +38,7 @@ function mapMarketplaceStatus(mp: string, raw: string): string {
   return map[mp]?.[s] || raw.toUpperCase();
 }
 
-function isDeliveryFailure(status: string, reason?: string): boolean {
+export function isDeliveryFailure(status: string, reason?: string): boolean {
   const failStatuses = ['CANCELLED', 'RETURNED', 'RTO'];
   if (failStatuses.includes(status)) return true;
   if (reason) {

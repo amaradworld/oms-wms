@@ -47,7 +47,7 @@ class PageErrorBoundary extends React.Component {
               >
                 Go to Dashboard
               </button>
-            </button>
+            </div>
           </div>
         </div>
       );
