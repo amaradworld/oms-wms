@@ -1,0 +1,80 @@
+name: Deploy Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      component:
+        description: 'Component to deploy'
+        required: true
+        type: choice
+        options:
+          - all
+          - backend
+          - frontend
+          - workers
+          - shopify-app
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    if: inputs.component == 'all' || inputs.component == 'backend'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Render
+        run: |
+          echo "Deploying backend to ${{ inputs.environment }}..."
+          curl -s "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}"
+        continue-on-error: true
+
+  deploy-frontend:
+    name: Deploy Frontend
+    if: inputs.component == 'all' || inputs.component == 'frontend'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: frontend
+
+  deploy-workers:
+    name: Deploy Workers
+    if: inputs.component == 'all' || inputs.component == 'workers'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy workers/security.js --name oms-wms-security
+        continue-on-error: true
+
+  deploy-shopify:
+    name: Deploy Shopify App
+    if: inputs.component == 'all' || inputs.component == 'shopify-app'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: cd shopify-app/frontend && npm ci && npm run build
