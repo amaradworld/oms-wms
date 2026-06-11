@@ -31,7 +31,7 @@ router.post('/send', authenticate, authorize(['PLATFORM_ADMIN']), async (req: Re
   }
 });
 
-router.post('/preview', authenticate, authorize(['PLATFORM_ADMIN']), (req: Request, res: Response) => {
+router.post('/preview', (req: Request, res: Response) => {
   try {
     const { clientName, clientEmail, companyName, customMessage } = req.body;
     const html = generateInvitationHtml({ clientName: clientName || '[Client Name]', clientEmail: clientEmail || '', companyName: companyName || '[Company Name]', customMessage });
