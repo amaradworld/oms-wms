@@ -153,7 +153,9 @@ export const closeManifest = async (req: AuthRequest, res: Response) => {
     });
   });
   for (const oid of orderIds) {
-    await applyOrderStatus(oid, 'DISPATCHED', 'SHIPPED').catch(() => {});
+    await applyOrderStatus(oid, 'DISPATCHED', 'SHIPPED').catch((err) => {
+      console.error(`[Manifest] Failed to apply DISPATCHED status for order ${oid}:`, err.message);
+    });
   }
   await logProductivity({
     tenantId: req.user!.tenant_id,

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import prisma from '../services/prisma';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import { sendResetCode } from '../services/email.service';
+import { sendAlertEmail } from '../services/email.service';
 import { logAudit } from '../services/audit.service';
 import { runSlaCron } from '../services/slaCron.service';
 
@@ -41,8 +41,15 @@ export async function checkAndSendAlerts(tenantId: string) {
         const admins = await prisma.user.findMany({ where: { tenantId, role: { in: ['SUPER_ADMIN', 'WAREHOUSE_MGR'] } } });
         for (const admin of admins) {
           try {
-            await sendResetCode(admin.email, '', `[Alert] Stock expiring: ${item.sku?.skuCode} in ${item.warehouse?.name} expires in ${daysLeft} days`);
-          } catch {}
+            await sendAlertEmail(
+              admin.email,
+              'Stock Expiry Alert',
+              `Item ${item.sku?.skuCode} in ${item.warehouse?.name} expires in ${daysLeft} days`,
+              `SKU: ${item.sku?.skuCode}\nWarehouse: ${item.warehouse?.name}\nExpiry Date: ${item.expiryDate?.toISOString().split('T')[0]}\nDays Left: ${daysLeft}`
+            );
+          } catch (e) {
+            console.error(`[Notification] Failed to send expiry alert to ${admin.email}:`, e);
+          }
         }
         await prisma.inventory.update({ where: { id: item.id }, data: { expiryAlertSent: true } });
       }
@@ -64,8 +71,15 @@ export async function checkAndSendAlerts(tenantId: string) {
       const admins = await prisma.user.findMany({ where: { tenantId, role: 'SUPER_ADMIN' } });
       for (const admin of admins) {
         try {
-          await sendResetCode(admin.email, '', `[Alert] ${breached.length} orders have breached SLA deadline`);
-        } catch {}
+          await sendAlertEmail(
+            admin.email,
+            'SLA Breach Alert',
+            `${breached.length} orders have breached their SLA deadline`,
+            `Orders affected: ${breached.map(b => b.orderNumber).join(', ')}\nTotal: ${breached.length} orders`
+          );
+        } catch (e) {
+          console.error(`[Notification] Failed to send SLA breach alert to ${admin.email}:`, e);
+        }
       }
       if (admins.length > 0) {
         await logAudit({
@@ -98,8 +112,15 @@ export async function checkAndSendAlerts(tenantId: string) {
       const admins = await prisma.user.findMany({ where: { tenantId, role: { in: ['SUPER_ADMIN', 'WAREHOUSE_MGR'] } } });
       for (const admin of admins) {
         try {
-          await sendResetCode(admin.email, '', `[Alert] ${filtered.length} items running low on stock`);
-        } catch {}
+          await sendAlertEmail(
+            admin.email,
+            'Low Stock Alert',
+            `${filtered.length} items are running low on stock`,
+            `Items below reorder point:\n${filtered.map(i => `- ${i.sku?.skuCode}: ${i.quantityAvailable} units (reorder at ${i.reorderPoint})`).join('\n')}`
+          );
+        } catch (e) {
+          console.error(`[Notification] Failed to send low stock alert to ${admin.email}:`, e);
+        }
       }
     }
   }

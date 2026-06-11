@@ -44,7 +44,9 @@ async function checkDelhivery(awb: string): Promise<string> {
 function checkFallback(shippedAt: Date | null): string {
   if (!shippedAt) return 'UNKNOWN';
   const daysSinceShip = (Date.now() - new Date(shippedAt).getTime()) / (1000 * 60 * 60 * 24);
-  if (daysSinceShip >= 5) return 'DELIVERED';
+  // NOTE: Do NOT auto-mark as DELIVERED without courier confirmation.
+  // This was causing false delivery confirmations and inventory discrepancies.
+  // Instead, only track transit status. Manual confirmation required for delivery.
   if (daysSinceShip >= 2) return 'IN_TRANSIT';
   return 'PICKED_UP';
 }
@@ -91,7 +93,9 @@ export async function checkAllShipments(): Promise<{ updated: number; total: num
           }),
           prisma.courierTracking.update({ where: { orderId: order.id }, data: { shipmentStatus: 'DELIVERED', deliveredAt: now } }),
         ]);
-        await applyOrderStatus(order.id, 'DELIVERED', 'SHIPPED').catch(() => {});
+        await applyOrderStatus(order.id, 'DELIVERED', 'SHIPPED').catch((err) => {
+          console.error(`[Delivery] Failed to apply DELIVERED status for order ${order.orderNumber}:`, err.message);
+        });
         updated++;
       }
     } catch (e) {
@@ -117,7 +121,9 @@ export async function deliverOrder(orderId: string) {
       ? [prisma.courierTracking.update({ where: { orderId }, data: { shipmentStatus: 'DELIVERED', deliveredAt: now } })]
       : []),
   ]);
-  await applyOrderStatus(orderId, 'DELIVERED', 'SHIPPED').catch(() => {});
+  await applyOrderStatus(orderId, 'DELIVERED', 'SHIPPED').catch((err) => {
+    console.error(`[Delivery] Failed to apply DELIVERED status for order ${orderId}:`, err.message);
+  });
   await logProductivity({
     tenantId: order.tenantId,
     warehouseId: order.warehouseId,

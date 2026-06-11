@@ -19,6 +19,16 @@ export const checkDeliveries = async (req: AuthRequest, res: Response) => {
 
 export const markDelivered = async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
+  const { confirmed } = req.body;
+  
+  // Require explicit confirmation for manual delivery marking
+  if (!confirmed) {
+    return res.status(400).json({ 
+      message: 'Manual delivery requires explicit confirmation',
+      hint: 'Set "confirmed: true" in request body to confirm delivery'
+    });
+  }
+  
   try {
     const result = await deliverOrder(id);
     res.json(result);

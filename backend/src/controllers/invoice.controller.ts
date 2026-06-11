@@ -144,9 +144,15 @@ export const requestEinvoice = async (req: AuthRequest, res: Response) => {
   const irpApiKey = process.env.EINVOICE_API_KEY;
 
   if (!irpApiUrl || !irpApiKey) {
-    const mockIrn = `IRN${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    console.warn('[E-Invoice] EINVOICE_API_URL or EINVOICE_API_KEY not configured - generating demo IRN');
+    const mockIrn = `DEMO-IRN${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
     await prisma.invoice.update({ where: { id }, data: { irn: mockIrn, irnGeneratedAt: new Date() } });
-    return res.json({ irn: mockIrn, message: 'IRN generated (demo mode)', mode: 'demo' });
+    return res.json({ 
+      irn: mockIrn, 
+      message: 'IRN generated in DEMO mode - configure EINVOICE_API_URL and EINVOICE_API_KEY for production',
+      mode: 'demo',
+      warning: 'This IRN is not valid for GST compliance. Configure e-invoice API credentials for production use.'
+    });
   }
 
   try {
@@ -192,7 +198,9 @@ export const requestEinvoice = async (req: AuthRequest, res: Response) => {
     });
 
     // Also update order IRN
-    await prisma.order.update({ where: { id: order.id }, data: { irn } }).catch(() => {});
+    await prisma.order.update({ where: { id: order.id }, data: { irn } }).catch((err) => {
+      console.error(`[Invoice] Failed to update order IRN for order ${order.orderNumber}:`, err.message);
+    });
 
     res.json({ irn, ewayBillNo, message: 'E-invoice generated successfully' });
   } catch (err: any) {

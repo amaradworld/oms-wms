@@ -26,7 +26,6 @@
     "@aws-sdk/client-s3": "^3.1054.0",
     "@aws-sdk/lib-storage": "^3.1054.0",
     "@prisma/client": "^6.4.1",
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.77.2",
     "bwip-js": "^4.11.1",
@@ -48,7 +47,6 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/bwip-js": "^3.2.3",
     "@types/cors": "^2.8.19",

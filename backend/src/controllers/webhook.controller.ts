@@ -78,7 +78,9 @@ export const handleWebhook = async (req: Request, res: Response) => {
       await prisma.courierTracking.update({
         where: { orderId: order.id },
         data: { shipmentStatus: newStatus, courierStatus: payload.status },
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error(`[Webhook] Failed to update tracking for ${order.orderNumber}:`, err.message);
+      });
     }
 
     // Apply order status if it's a terminal/meaningful transition
@@ -122,7 +124,9 @@ export const handleWebhook = async (req: Request, res: Response) => {
             status: 'PENDING_QC',
           },
         });
-        await applyOrderStatus(order.id, 'RETURNED', order.orderStatus).catch(() => {});
+        await applyOrderStatus(order.id, 'RETURNED', order.orderStatus).catch((err) => {
+          console.error(`[Webhook] Failed to apply RETURNED status for ${order.orderNumber}:`, err.message);
+        });
         console.log(`[Webhook] Auto-created RTO for ${order.orderNumber} after ${attemptCount} attempts`);
       }
     }
