@@ -2,6 +2,7 @@ import prisma from './prisma';
 import { applyOrderStatus } from './orderStage.service';
 import { logProductivity } from './productivityLogger.service';
 import { sendDeliveryNotification } from './email.service';
+import logger from './logger';
 
 const COURIER_API_KEYS: Record<string, string> = {
   SHIPROCKET: process.env.SHIPROCKET_TOKEN || '',
@@ -95,7 +96,7 @@ export async function checkAllShipments(): Promise<{ updated: number; total: num
           prisma.courierTracking.update({ where: { orderId: order.id }, data: { shipmentStatus: 'DELIVERED', deliveredAt: now } }),
         ]);
         await applyOrderStatus(order.id, 'DELIVERED', 'SHIPPED').catch((err) => {
-          console.error(`[Delivery] Failed to apply DELIVERED status for order ${order.orderNumber}:`, err.message);
+          logger.error('Failed to apply DELIVERED status', { orderNumber: order.orderNumber, error: err.message });
         });
         if (order.notificationEmail) {
           sendDeliveryNotification(order.notificationEmail, order.orderNumber, order.customerName || 'Customer', order.source || 'MANUAL').catch(() => {});
@@ -126,7 +127,7 @@ export async function deliverOrder(orderId: string) {
       : []),
   ]);
   await applyOrderStatus(orderId, 'DELIVERED', 'SHIPPED').catch((err) => {
-    console.error(`[Delivery] Failed to apply DELIVERED status for order ${orderId}:`, err.message);
+    logger.error('Failed to apply DELIVERED status', { orderId, error: err.message });
   });
   await logProductivity({
     tenantId: order.tenantId,

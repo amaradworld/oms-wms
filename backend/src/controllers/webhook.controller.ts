@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import { applyOrderStatus } from '../services/orderStage.service';
+import logger from '../services/logger';
 
 const MAX_DELIVERY_ATTEMPTS = 3;
 
@@ -61,7 +62,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
       where: { marketplace, marketplaceOrderId: payload.orderId },
     });
     if (!mapping) {
-      console.log(`[Webhook] No mapping found for ${marketplace} order ${payload.orderId}`);
+      logger.info('No mapping found for marketplace order', { marketplace, orderId: payload.orderId });
       return res.status(200).json({ message: 'Order not found locally, acknowledged' });
     }
 
@@ -79,7 +80,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
         where: { orderId: order.id },
         data: { shipmentStatus: newStatus, courierStatus: payload.status },
       }).catch((err) => {
-        console.error(`[Webhook] Failed to update tracking for ${order.orderNumber}:`, err.message);
+        logger.error('Failed to update tracking', { orderNumber: order.orderNumber, error: err.message });
       });
     }
 
@@ -88,7 +89,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
     if (terminalStatuses.includes(newStatus) && order.orderStatus !== newStatus) {
       const prevStatus = order.orderStatus;
       await applyOrderStatus(order.id, newStatus, prevStatus).catch(err => {
-        console.error(`[Webhook] applyOrderStatus failed for ${order.orderNumber}:`, err.message);
+        logger.error('applyOrderStatus failed', { orderNumber: order.orderNumber, error: err.message });
       });
     }
 
@@ -108,7 +109,7 @@ export const handleWebhook = async (req: Request, res: Response) => {
             status: 'OPEN',
           },
         });
-        console.log(`[Webhook] Auto-created NDR for ${order.orderNumber} (${newStatus})`);
+        logger.info('Auto-created NDR', { orderNumber: order.orderNumber, status: newStatus });
       }
     }
 
@@ -125,15 +126,15 @@ export const handleWebhook = async (req: Request, res: Response) => {
           },
         });
         await applyOrderStatus(order.id, 'RETURNED', order.orderStatus).catch((err) => {
-          console.error(`[Webhook] Failed to apply RETURNED status for ${order.orderNumber}:`, err.message);
+          logger.error('Failed to apply RETURNED status', { orderNumber: order.orderNumber, error: err.message });
         });
-        console.log(`[Webhook] Auto-created RTO for ${order.orderNumber} after ${attemptCount} attempts`);
+        logger.info('Auto-created RTO', { orderNumber: order.orderNumber, attemptCount });
       }
     }
 
     res.status(200).json({ message: 'Webhook processed' });
   } catch (error: any) {
-    console.error(`[Webhook] Error processing ${marketplace} webhook:`, error.message);
+    logger.error('Error processing webhook', { marketplace, error: error.message });
     res.status(200).json({ message: 'Acknowledged' }); // Always 200 to avoid marketplace retries
   }
 };
