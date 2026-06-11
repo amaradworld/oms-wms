@@ -67,7 +67,9 @@ dotenv.config();
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+}));
 app.use(httpsRedirect);
 app.use(cors({
   origin: (origin, callback) => {

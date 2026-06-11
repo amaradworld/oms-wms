@@ -6,6 +6,7 @@ import os from 'os';
 import zlib from 'zlib';
 import { Readable } from 'stream';
 import { Client as PgClient } from 'pg';
+import crypto from 'crypto';
 import {
   S3Client,
   PutObjectCommand,
@@ -42,8 +43,8 @@ function isPlatformOwner(req: AuthRequest): boolean {
 }
 
 function checkCronOrOwner(req: AuthRequest, res: Response): boolean {
-  const secret = (req.query.secret as string) || (req.headers['x-cron-secret'] as string);
-  if (process.env.CRON_SECRET && secret === process.env.CRON_SECRET) return true;
+  const secret = (req.headers['x-cron-secret'] as string);
+  if (process.env.CRON_SECRET && secret && crypto.timingSafeEqual(Buffer.from(secret), Buffer.from(process.env.CRON_SECRET))) return true;
   if (isPlatformOwner(req)) return true;
   res.status(401).json({ message: 'Invalid credentials (cron secret or platform owner required)' });
   return false;
@@ -312,10 +313,13 @@ export const restoreBackup = async (req: AuthRequest, res: Response) => {
     await client.connect();
 
     const sqlText = sqlBuf.toString('utf8');
+    const ALLOWED_SQL_PATTERNS = /^(CREATE|ALTER|DROP|INSERT|UPDATE|DELETE|TRUNCATE|INDEX|GRANT|REVOKE)\s/i;
+    const FORBIDDEN_PATTERNS = /(EXEC\s|xp_|sp_|0x|UNION\s|INTO\s+OUTFILE|INTO\s+DUMPFILE|--\s*DELETE\s+FROM)/i;
+
     const statements = sqlText
       .split(/;\s*\n/)
       .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
+      .filter(s => s.length > 0 && !s.startsWith('--') && ALLOWED_SQL_PATTERNS.test(s) && !FORBIDDEN_PATTERNS.test(s));
 
     let executed = 0;
     let failed = 0;

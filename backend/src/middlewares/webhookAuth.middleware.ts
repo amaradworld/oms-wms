@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 
-const WEBHOOK_SECRETS: Record<string, string> = {
-  FLIPKART: process.env.FLIPKART_WEBHOOK_SECRET || '',
-  NYKAA: process.env.NYKAA_WEBHOOK_SECRET || '',
-  MYNTRA: process.env.MYNTRA_WEBHOOK_SECRET || '',
-  TATACLIQ: process.env.TATACLIQ_WEBHOOK_SECRET || '',
+const WEBHOOK_SECRETS: Record<string, string | undefined> = {
+  FLIPKART: process.env.FLIPKART_WEBHOOK_SECRET,
+  NYKAA: process.env.NYKAA_WEBHOOK_SECRET,
+  MYNTRA: process.env.MYNTRA_WEBHOOK_SECRET,
+  TATACLIQ: process.env.TATACLIQ_WEBHOOK_SECRET,
+  AMAZON: process.env.AMAZON_WEBHOOK_SECRET,
+  SHOPIFY: process.env.SHOPIFY_WEBHOOK_SECRET,
 };
 
 export function verifyWebhookSignature(req: Request, res: Response, next: NextFunction) {

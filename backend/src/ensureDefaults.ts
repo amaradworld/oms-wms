@@ -37,7 +37,7 @@ export async function ensureDefaults() {
           role: 'PLATFORM_ADMIN',
         },
       });
-      console.log(`[SEED] Platform admin created: owner@supplyhub.com / ${pw}`);
+      console.log(`[SEED] Platform admin created: owner@supplyhub.com / (password generated, check DB or reset via /api/auth/forgot-password)`);
     }
 
     const admin = await prisma.user.findUnique({ where: { email: 'admin@oms.com' } });
@@ -53,7 +53,7 @@ export async function ensureDefaults() {
           role: 'SUPER_ADMIN',
         },
       });
-      console.log(`[SEED] Default admin created: admin@oms.com / ${pw}`);
+      console.log(`[SEED] Default admin created: admin@oms.com / (password generated, check DB or reset via /api/auth/forgot-password)`);
     }
 
     const allTenants = await prisma.tenant.findMany({ where: { isActive: true } });
@@ -73,7 +73,7 @@ export async function ensureDefaults() {
             role: 'SUPER_ADMIN',
           },
         });
-        console.log(`[SEED] Tenant admin created: ${email} / ${pw}`);
+        console.log(`[SEED] Tenant admin created: ${email} / (password generated)`);
       }
     }
   } catch (err) {

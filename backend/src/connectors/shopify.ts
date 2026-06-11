@@ -4,7 +4,7 @@ export class ShopifyConnector implements MarketplaceConnector {
   name = 'Shopify';
 
   private getApiBase(shopDomain: string): string {
-    return `https://${shopDomain}/admin/api/2024-01`;
+    return `https://${shopDomain}/admin/api/2024-10`;
   }
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
@@ -100,6 +100,16 @@ export class ShopifyConnector implements MarketplaceConnector {
     if (!config.apiKey || config.apiKey === 'demo' || !config.sellerId) return true;
     try {
       const apiBase = this.getApiBase(config.sellerId);
+
+      // Fetch the first location ID from the shop
+      const locRes = await fetch(`${apiBase}/locations.json`, {
+        headers: { 'X-Shopify-Access-Token': config.apiKey, 'Content-Type': 'application/json' },
+      });
+      if (!locRes.ok) return false;
+      const locData = await locRes.json();
+      const locationId = locData.locations?.[0]?.id;
+      if (!locationId) return false;
+
       for (const item of items) {
         const res = await fetch(`${apiBase}/inventory_levels/set.json`, {
           method: 'POST',
@@ -108,7 +118,7 @@ export class ShopifyConnector implements MarketplaceConnector {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            location_id: 1,
+            location_id: locationId,
             inventory_item_id: item.skuCode,
             available: item.quantity,
           }),

@@ -7,7 +7,7 @@ export class TataCliqConnector implements MarketplaceConnector {
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
     if (config.apiKey && config.apiKey !== 'demo') {
-      const response = await fetch(`${TATACLIQ_API_BASE}/v2/orders`, {
+      const response = await fetch(`${TATACLIQ_API_BASE}/orders`, {
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
           'X-Seller-Id': config.sellerId || '',
@@ -59,7 +59,7 @@ export class TataCliqConnector implements MarketplaceConnector {
   async updateInventory(config: { apiKey?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
     try {
-      const res = await fetch(`${TATACLIQ_API_BASE}/v2/inventory`, {
+      const res = await fetch(`${TATACLIQ_API_BASE}/inventory`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Seller-Id': config.sellerId || '', 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: items.map(i => ({ article_code: i.skuCode, qty: i.quantity })) }),
@@ -73,7 +73,7 @@ export class TataCliqConnector implements MarketplaceConnector {
   async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
     if (!config.apiKey || config.apiKey === 'demo') return true;
     try {
-      const res = await fetch(`${TATACLIQ_API_BASE}/v2/orders/${orderId}/shipment`, {
+      const res = await fetch(`${TATACLIQ_API_BASE}/orders/${orderId}/shipment`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${config.apiKey}`,
@@ -102,7 +102,7 @@ export class TataCliqConnector implements MarketplaceConnector {
       };
       const tataStatus = statusMap[status];
       if (!tataStatus) return true;
-      const res = await fetch(`${TATACLIQ_API_BASE}/v2/orders/${orderId}/status`, {
+      const res = await fetch(`${TATACLIQ_API_BASE}/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Seller-Id': config.sellerId || '', 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: tataStatus, reason: reason || '' }),

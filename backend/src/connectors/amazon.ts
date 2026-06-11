@@ -29,11 +29,11 @@ export class AmazonConnector implements MarketplaceConnector {
   }
 
   async fetchOrders(config: { apiKey?: string; apiSecret?: string; sellerId?: string; lastSyncAt?: Date }): Promise<MarketplaceOrder[]> {
-    if (config.apiKey && config.apiKey !== 'demo' && config.apiSecret && config.sellerId) {
-      const accessToken = await this.getAccessToken(config.apiKey, config.apiSecret, config.sellerId);
+    if (config.apiKey && config.apiKey !== 'demo' && config.apiSecret) {
+      const accessToken = await this.getAccessToken(config.apiKey, config.apiSecret, config.apiSecret);
 
       const params = new URLSearchParams({
-        MarketplaceIds: config.sellerId,
+        MarketplaceIds: config.sellerId || '',
         OrderStatuses: 'Unshipped,PartiallyShipped,Shipped',
         CreatedAfter: config.lastSyncAt?.toISOString() || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         MaxResultsPerPage: '50',
