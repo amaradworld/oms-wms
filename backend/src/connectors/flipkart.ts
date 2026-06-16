@@ -1,4 +1,4 @@
-import { MarketplaceConnector, MarketplaceOrder } from './base';
+﻿import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const FLIPKART_API_BASE = 'https://api.flipkart.net/sellers';
 const FLIPKART_OAUTH_URL = 'https://api.flipkart.net/oauth-service/oauth/token';
@@ -143,7 +143,7 @@ export class FlipkartConnector implements MarketplaceConnector {
   }
 
   async updateInventory(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       let accessToken = config.apiKey;
       if (config.apiSecret) {
@@ -166,7 +166,7 @@ export class FlipkartConnector implements MarketplaceConnector {
   }
 
   async pushTracking(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       let accessToken = config.apiKey;
       if (config.apiSecret) {
@@ -193,7 +193,7 @@ export class FlipkartConnector implements MarketplaceConnector {
   }
 
   async pushStatus(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       let accessToken = config.apiKey;
       if (config.apiSecret) {
@@ -212,7 +212,7 @@ export class FlipkartConnector implements MarketplaceConnector {
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: fkStatus, reason: reason || '' }),
       });
-      console.log(`[Flipkart pushStatus] ${orderId} → ${status}: ${res.status}`);
+      console.log(`[Flipkart pushStatus] ${orderId} â†’ ${status}: ${res.status}`);
       return res.ok;
     } catch (err) {
       console.error(`[Flipkart pushStatus] ${orderId}:`, err);

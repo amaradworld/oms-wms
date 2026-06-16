@@ -130,10 +130,11 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         for (const inv of inventoryRecords) {
           if (remaining <= 0) break;
           const alloc = Math.min(remaining, inv.quantityAvailable);
-          await tx.inventory.update({
-            where: { id: inv.id },
+          const updated = await tx.inventory.updateMany({
+            where: { id: inv.id, quantityAvailable: { gte: alloc } },
             data: { quantityReserved: { increment: alloc }, quantityAvailable: { decrement: alloc } },
           });
+          if (updated.count === 0) continue;
           remaining -= alloc;
           totalAllocated += alloc;
           if (!firstBatchNo && inv.batch) firstBatchNo = inv.batch;
@@ -297,16 +298,11 @@ export const cancelOrder = async (req: Request, res: Response) => {
       // Release reserved inventory for each item
       for (const item of o.items) {
         if (!o.warehouseId) continue;
-        const reservedInv = await tx.inventory.findFirst({
-          where: { warehouseId: o.warehouseId, skuId: item.skuId, quantityReserved: { gt: 0 } },
+        const release = item.quantity;
+        await tx.inventory.updateMany({
+          where: { warehouseId: o.warehouseId, skuId: item.skuId, quantityReserved: { gte: release } },
+          data: { quantityReserved: { decrement: release }, quantityAvailable: { increment: release } },
         });
-        if (reservedInv) {
-          const release = Math.min(item.quantity, reservedInv.quantityReserved);
-          await tx.inventory.update({
-            where: { id: reservedInv.id },
-            data: { quantityReserved: { decrement: release }, quantityAvailable: { increment: release } },
-          });
-        }
       }
 
       return tx.order.update({

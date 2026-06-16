@@ -38,7 +38,7 @@ function getS3Client(): S3Client | null {
 }
 
 function isPlatformOwner(req: AuthRequest): boolean {
-  const owner = process.env.PLATFORM_OWNER_EMAIL || 'owner@supplyhub.com';
+  const owner = process.env.PLATFORM_OWNER_EMAIL || 'owner@globalsupply.in';
   return req.user?.role === 'PLATFORM_ADMIN' && req.user?.email === owner;
 }
 

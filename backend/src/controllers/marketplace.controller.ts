@@ -31,7 +31,7 @@ export const saveConfig = async (req: AuthRequest, res: Response) => {
     update: { apiKey, apiSecret, sellerId, safetyStockBuffer: safetyStockBuffer ?? undefined },
     create: { tenantId: req.user!.tenant_id, marketplace: mp, apiKey, apiSecret, sellerId, safetyStockBuffer: safetyStockBuffer ?? 0 },
   });
-  res.json(config);
+  res.json(maskSecrets(config));
 };
 
 export const deleteConfig = async (req: AuthRequest, res: Response) => {
@@ -73,11 +73,10 @@ export const syncOrders = async (req: AuthRequest, res: Response) => {
 
     let imported = 0;
     for (const ext of externalOrders) {
-      const existing = await prisma.order.findUnique({ where: { orderNumber: ext.id } });
-      if (existing) continue;
-
-      const order = await prisma.order.create({
-        data: {
+      const order = await prisma.order.upsert({
+        where: { orderNumber: ext.id },
+        update: {},
+        create: {
           orderNumber: ext.id,
           tenantId,
           source: connector.name,
@@ -88,6 +87,13 @@ export const syncOrders = async (req: AuthRequest, res: Response) => {
           createdAt: ext.orderDate,
         },
       });
+      if (!order) continue;
+
+      // Skip if order already existed (upsert returned existing)
+      const wasExisting = await prisma.marketplaceOrderMapping.findUnique({
+        where: { marketplaceOrderId: ext.id },
+      });
+      if (wasExisting) continue;
 
       for (const item of ext.items) {
         const sku = await prisma.skuMaster.findFirst({

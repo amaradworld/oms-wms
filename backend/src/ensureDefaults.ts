@@ -24,20 +24,20 @@ export async function ensureDefaults() {
       });
     }
 
-    const owner = await prisma.user.findUnique({ where: { email: 'owner@supplyhub.com' } });
+    const owner = await prisma.user.findUnique({ where: { email: 'owner@globalsupply.in' } });
     if (!owner) {
       const pw = generatePassword();
       const passwordHash = await bcrypt.hash(pw, 10);
       await prisma.user.create({
         data: {
           tenantId: null,
-          email: 'owner@supplyhub.com',
+          email: 'owner@globalsupply.in',
           passwordHash,
           fullName: 'Platform Owner',
           role: 'PLATFORM_ADMIN',
         },
       });
-      console.log(`[SEED] Platform admin created: owner@supplyhub.com / (password generated, check DB or reset via /api/auth/forgot-password)`);
+      console.log(`[SEED] Platform admin created: owner@globalsupply.in / (password generated, check DB or reset via /api/auth/forgot-password)`);
     }
 
     const admin = await prisma.user.findUnique({ where: { email: 'admin@oms.com' } });

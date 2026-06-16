@@ -84,3 +84,42 @@ export const scanVerifySchema = z.object({
   code: z.string().min(1, 'Scan code is required'),
   type: z.string().optional(),
 });
+
+export const createInventorySchema = z.object({
+  warehouseId: z.string().min(1, 'Warehouse is required'),
+  skuId: z.string().min(1, 'SKU is required'),
+  binLocation: z.string().min(1, 'Bin location is required'),
+  quantityOnHand: z.number().min(0, 'Quantity must be non-negative'),
+  quantityAvailable: z.number().min(0).optional(),
+  quantityReserved: z.number().min(0).optional(),
+  batch: z.string().optional(),
+  expiryDate: z.string().optional(),
+  type: z.string().optional(),
+  reorderPoint: z.number().min(0).optional(),
+});
+
+export const marketplaceConfigSchema = z.object({
+  marketplace: z.string().min(1, 'Marketplace is required'),
+  apiKey: z.string().min(1, 'API key is required'),
+  apiSecret: z.string().optional(),
+  sellerId: z.string().optional(),
+  safetyStockBuffer: z.number().min(0).optional(),
+});
+
+export const createWarehouseFullSchema = z.object({
+  name: z.string().min(1, 'Facility name is required'),
+  location: z.string().optional(),
+  address: z.string().optional(),
+  code: z.string().optional(),
+  type: z.string().optional(),
+  contactPerson: z.string().optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().optional(),
+  gstin: z.string().optional(),
+});
+
+export const createWarehouseSchema = z.object({
+  name: z.string().min(1, 'Warehouse name is required'),
+  location: z.string().optional(),
+  address: z.string().optional(),
+});

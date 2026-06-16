@@ -26,13 +26,12 @@ export function verifyWebhookSignature(req: Request, res: Response, next: NextFu
     return res.status(401).json({ message: 'Missing webhook signature or timestamp' });
   }
 
-  // Reject requests older than 5 minutes to prevent replay attacks
   const requestTime = parseInt(timestamp, 10);
   if (isNaN(requestTime) || Math.abs(Date.now() - requestTime) > 5 * 60 * 1000) {
     return res.status(401).json({ message: 'Webhook timestamp expired' });
   }
 
-  const rawBody = JSON.stringify(req.body);
+  const rawBody = (req as any).rawBody || JSON.stringify(req.body);
   const expectedSignature = crypto
     .createHmac('sha256', secret)
     .update(`${timestamp}.${rawBody}`)

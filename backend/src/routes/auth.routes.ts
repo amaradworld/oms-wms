@@ -16,9 +16,9 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const MFA_JWT_SECRET = process.env.JWT_SECRET + '_mfa';
+const MFA_JWT_SECRET = process.env.MFA_JWT_SECRET || (process.env.JWT_SECRET || '') + '_mfa';
 
-const RESET_SECRET = (process.env.JWT_SECRET || '') + '_reset';
+const RESET_SECRET = process.env.RESET_TOKEN_SECRET || (process.env.JWT_SECRET || '') + '_reset';
 const router = Router();
 
 router.post('/login', validate(loginSchema), async (req, res, next) => {
@@ -130,7 +130,7 @@ router.post('/forgot-password', async (req, res, next) => {
     const token = jwt.sign({ email, code, userId: user.id }, RESET_SECRET, { expiresIn: '15m' });
 
     try {
-      await sendResetCode(email, code, user.fullName ? undefined : undefined);
+      await sendResetCode(email, code, token, user.fullName ? undefined : undefined);
     } catch (mailErr) {
       console.error('Failed to send reset email:', mailErr);
     }
@@ -143,19 +143,19 @@ router.post('/forgot-password', async (req, res, next) => {
 
 router.post('/reset-password', async (req, res, next) => {
   try {
-    const { email, code, newPassword } = req.body;
-    if (!email || !code || !newPassword) return res.status(400).json({ message: 'Email, code, and new password are required' });
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) return res.status(400).json({ message: 'Email, reset token, and new password are required' });
     if (newPassword.length < 8) return res.status(400).json({ message: 'Password must be at least 8 characters' });
 
     let payload: any;
     try {
-      payload = jwt.verify(code, RESET_SECRET);
+      payload = jwt.verify(token, RESET_SECRET);
     } catch {
-      return res.status(400).json({ message: 'Invalid or expired reset code. Request a new one.' });
+      return res.status(400).json({ message: 'Invalid or expired reset token. Request a new one.' });
     }
 
-    if (payload.email !== email || payload.code !== code) {
-      return res.status(400).json({ message: 'Invalid reset code' });
+    if (payload.email !== email) {
+      return res.status(400).json({ message: 'Invalid reset token' });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -171,11 +171,14 @@ router.post('/change-password', authenticate, tenantScope, changePassword);
 router.get('/tenant/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    res.json({
-      tenantId: `tenant-${slug}`,
-      name: `${slug.charAt(0).toUpperCase() + slug.slice(1)}`,
-      slug,
+    const tenant = await prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true, name: true, slug: true, isActive: true },
     });
+    if (!tenant || !tenant.isActive) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+    res.json(tenant);
   } catch {
     res.status(404).json({ message: 'Tenant not found' });
   }

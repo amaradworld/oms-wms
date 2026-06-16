@@ -28,7 +28,7 @@ Thumbs.db
 *.log
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/ is committed to track schema changes
 
 # Temp
 temp/

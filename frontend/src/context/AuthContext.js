@@ -4,13 +4,7 @@ import { track, setUserId, setUserProperties, clearUser } from '../utils/analyti
 
 const API = process.env.REACT_APP_API_URL;
 
-const FALLBACK_COMPANIES = [
-  { id: 'tenant-1', name: 'InfiStyles', slug: 'infi' },
-  { id: 'tenant-4', name: 'PrimeWear', slug: 'primewear' },
-  { id: 'tenant-5', name: 'EcoThreads', slug: 'ecothreads' },
-  { id: 'leosales-corporation', name: 'Leosales', slug: 'leosales' },
-  { id: 'coyu2', name: 'Listkart', slug: 'coyu2lyst' },
-];
+const FALLBACK_COMPANIES: any[] = [];
 
 export const COMPANIES = FALLBACK_COMPANIES;
 

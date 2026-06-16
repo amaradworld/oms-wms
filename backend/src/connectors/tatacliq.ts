@@ -1,4 +1,4 @@
-import { MarketplaceConnector, MarketplaceOrder } from './base';
+﻿import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const TATACLIQ_API_BASE = 'https://seller.tatacliq.com/api/v2';
 
@@ -57,7 +57,7 @@ export class TataCliqConnector implements MarketplaceConnector {
   }
 
   async updateInventory(config: { apiKey?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const res = await fetch(`${TATACLIQ_API_BASE}/inventory`, {
         method: 'PUT',
@@ -71,7 +71,7 @@ export class TataCliqConnector implements MarketplaceConnector {
   }
 
   async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const res = await fetch(`${TATACLIQ_API_BASE}/orders/${orderId}/shipment`, {
         method: 'POST',
@@ -95,7 +95,7 @@ export class TataCliqConnector implements MarketplaceConnector {
   }
 
   async pushStatus(config: { apiKey?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const statusMap: Record<string, string> = {
         DELIVERED: 'delivered', CANCELLED: 'cancelled', RETURNED: 'returned', DISPATCHED: 'shipped',
@@ -107,7 +107,7 @@ export class TataCliqConnector implements MarketplaceConnector {
         headers: { Authorization: `Bearer ${config.apiKey}`, 'X-Seller-Id': config.sellerId || '', 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: tataStatus, reason: reason || '' }),
       });
-      console.log(`[TataCliq pushStatus] ${orderId} → ${status}: ${res.status}`);
+      console.log(`[TataCliq pushStatus] ${orderId} â†’ ${status}: ${res.status}`);
       return res.ok;
     } catch (err) {
       console.error(`[TataCliq pushStatus] ${orderId}:`, err);

@@ -74,22 +74,22 @@ app.use(httpsRedirect);
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    const allowed = [
-      'https://globalsupply.in',
-      'https://www.globalsupply.in',
-      'https://app.globalsupply.in',
-      'https://oms-wms-phi.vercel.app',
-      'https://oms-wms-git-main-amaradworlds-projects.vercel.app',
-      'http://localhost:3000',
-    ];
-    if (process.env.FRONTEND_URL) {
-      process.env.FRONTEND_URL.split(',').forEach(u => allowed.push(u.trim()));
-    }
     try {
       const url = new URL(origin);
       const host = url.hostname;
-      if (allowed.includes(origin)) return callback(null, true);
+
+      // Allow *.vercel.app previews
+      if (host.endsWith('.vercel.app')) return callback(null, true);
+
+      // Allow CORS_ALLOWED_ORIGINS from env (comma-separated)
+      const envOrigins = (process.env.CORS_ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (envOrigins.includes(origin)) return callback(null, true);
+
+      // Allow globalsupply.in and subdomains
       if (host === 'globalsupply.in' || host.endsWith('.globalsupply.in')) return callback(null, true);
+
+      // Allow localhost in development
+      if (process.env.NODE_ENV !== 'production' && (host === 'localhost' || host.startsWith('127.'))) return callback(null, true);
     } catch {}
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
@@ -149,7 +149,9 @@ app.use('/api/productivity', productivityRoutes);
 app.use('/api/asn', asnRoutes);
 app.use('/api/batch', batchRoutes);
   app.use('/api/notifications', notificationRoutes);
-  app.use('/api/webhooks', webhookRoutes);
+  app.use('/api/webhooks', express.json({
+    verify: (req: any, _res, buf) => { req.rawBody = buf.toString('utf8'); },
+  }), webhookRoutes);
   app.use('/api/cod', codRoutes);
   app.use('/api/menus', menuRoutes);
   app.use('/api/ftp', reportFtpRoutes);

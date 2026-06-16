@@ -38,6 +38,19 @@ const LoginPage = () => {
   };
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const rt = params.get('reset-token');
+    const re = params.get('reset-email');
+    if (rt && re) {
+      setResetToken(rt);
+      setEmail(re);
+      setResetSent(true);
+      setStep('forgot');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  useEffect(() => {
     const info = getSubdomainInfo();
     if (info.type === 'company' && info.company) {
       if (!selectedCompany || selectedCompany._pending || selectedCompany.id !== info.company.id) {
@@ -148,13 +161,14 @@ const LoginPage = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetCode || !resetNewPassword) return setError('Code and new password are required');
-    if (resetNewPassword.length < 4) return setError('Password must be at least 4 characters');
+    const tokenToSend = resetToken || resetCode;
+    if (!tokenToSend || !resetNewPassword) return setError('Reset token and new password are required');
+    if (resetNewPassword.length < 8) return setError('Password must be at least 8 characters');
     if (resetNewPassword !== resetConfirmPassword) return setError('Passwords do not match');
     setSubmitting(true);
     setError('');
     try {
-      await API.post('/auth/reset-password', { email, code: resetCode, newPassword: resetNewPassword });
+      await API.post('/auth/reset-password', { email, token: tokenToSend, newPassword: resetNewPassword });
       toast.success('Password reset successfully. Sign in with your new password.');
       track('password_reset_completed');
       setStep('credentials');
@@ -216,8 +230,8 @@ const LoginPage = () => {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Reset Code</label>
-                      <input type="text" required value={resetCode} onChange={e => setResetCode(e.target.value)} className="w-full text-center text-lg tracking-[0.3em] px-4 py-2.5 border rounded-lg font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="000000" />
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Reset Token</label>
+                      <input type="text" required value={resetToken || resetCode} onChange={e => { setResetCode(e.target.value); setResetToken(''); }} className="w-full text-center text-sm px-4 py-2.5 border rounded-lg font-mono focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Paste reset token from email" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>

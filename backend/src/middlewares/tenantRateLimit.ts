@@ -31,5 +31,6 @@ export const cleanupTenantRateLimits = setInterval(() => {
     if (now > entry.resetAt) tenantHits.delete(key);
   }
 }, 60_000);
+cleanupTenantRateLimits.unref();
 
 export default tenantRateLimit;

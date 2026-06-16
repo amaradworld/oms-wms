@@ -28,7 +28,10 @@ function emailWrapper(content: string): string {
     </div>`;
 }
 
-export async function sendResetCode(email: string, code: string, companyName?: string) {
+export async function sendResetCode(email: string, code: string, token?: string, companyName?: string) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://app.globalsupply.in';
+  const resetLink = token ? `${frontendUrl}/?reset-token=${encodeURIComponent(token)}&reset-email=${encodeURIComponent(email)}` : '';
+
   await transporter.sendMail({
     from: getFromAddress(),
     to: email,
@@ -41,7 +44,13 @@ export async function sendResetCode(email: string, code: string, companyName?: s
         <div style="background: #ffffff; border-radius: 8px; padding: 16px; text-align: center; border: 1px dashed #94a3b8;">
           <span style="font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #2563eb; font-family: 'Courier New', monospace;">${code}</span>
         </div>
-        <p style="color: #94a3b8; margin: 16px 0 0; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
+        ${resetLink ? `
+        <div style="text-align: center; margin-top: 20px;">
+          <a href="${resetLink}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Reset Password Now</a>
+        </div>
+        <p style="color: #94a3b8; margin: 12px 0 0; font-size: 11px; text-align: center;">Or copy the reset token from the email header if the button doesn&apos;t work.</p>
+        ` : ''}
+        <p style="color: #94a3b8; margin: 16px 0 0; font-size: 12px;">If you didn&apos;t request this, you can safely ignore this email.</p>
       </div>
     `),
   });

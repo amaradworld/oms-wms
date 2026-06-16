@@ -1,4 +1,4 @@
-import { MarketplaceConnector, MarketplaceOrder } from './base';
+﻿import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 export class ShopifyConnector implements MarketplaceConnector {
   name = 'Shopify';
@@ -97,7 +97,7 @@ export class ShopifyConnector implements MarketplaceConnector {
   }
 
   async updateInventory(config: { apiKey?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo' || !config.sellerId) return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production' || !config.sellerId) return true;
     try {
       const apiBase = this.getApiBase(config.sellerId);
 
@@ -133,7 +133,7 @@ export class ShopifyConnector implements MarketplaceConnector {
   }
 
   async pushTracking(config: { apiKey?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo' || !config.sellerId) return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production' || !config.sellerId) return true;
     try {
       const apiBase = this.getApiBase(config.sellerId);
       // Create fulfillment
@@ -161,7 +161,7 @@ export class ShopifyConnector implements MarketplaceConnector {
   }
 
   async pushStatus(config: { apiKey?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo' || !config.sellerId) return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production' || !config.sellerId) return true;
     try {
       const apiBase = this.getApiBase(config.sellerId);
       const numericId = orderId.replace('shopify-', '');
@@ -182,7 +182,7 @@ export class ShopifyConnector implements MarketplaceConnector {
           order: { id: numericId, note: reason || `Status changed to ${status}` },
         }),
       });
-      console.log(`[Shopify pushStatus] ${orderId} → ${status}: ${res.status}`);
+      console.log(`[Shopify pushStatus] ${orderId} â†’ ${status}: ${res.status}`);
       return res.ok;
     } catch (err) {
       console.error(`[Shopify pushStatus] ${orderId}:`, err);

@@ -17,10 +17,14 @@ export interface InvitationPayload {
   customMessage?: string;
 }
 
+function sanitizeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function buildInvitationHtml(p: InvitationPayload): string {
-  const greeting = p.clientName ? `Dear ${p.clientName},` : 'Hello,';
+  const greeting = p.clientName ? `Dear ${sanitizeHtml(p.clientName)},` : 'Hello,';
   const customBlock = p.customMessage
-    ? `<p style="margin:16px 0 0;color:#475569;font-size:14px;line-height:1.7;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:16px;"><strong style="color:#92400E;">Personal Note:</strong> <span style="color:#78350F;">${p.customMessage}</span></p>`
+    ? `<p style="margin:16px 0 0;color:#475569;font-size:14px;line-height:1.7;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:16px;"><strong style="color:#92400E;">Personal Note:</strong> <span style="color:#78350F;">${sanitizeHtml(p.customMessage)}</span></p>`
     : '';
 
   return `
@@ -41,7 +45,7 @@ function buildInvitationHtml(p: InvitationPayload): string {
 </td></tr>
 <tr><td style="padding:36px 40px 12px;">
 <p style="margin:0;color:#334155;font-size:15px;line-height:1.7;">${greeting}</p>
-<p style="margin:16px 0 0;color:#475569;font-size:15px;line-height:1.7;">We are pleased to inform you that <strong style="color:#0F172A;">${p.companyName}</strong> has been selected for our exclusive <strong style="color:#0F172A;">45-Day Complimentary Pilot Program</strong> for the GlobalSupply OMS, WMS &amp; Marketplace Enablement Platform.</p>
+<p style="margin:16px 0 0;color:#475569;font-size:15px;line-height:1.7;">We are pleased to inform you that <strong style="color:#0F172A;">${sanitizeHtml(p.companyName)}</strong> has been selected for our exclusive <strong style="color:#0F172A;">45-Day Complimentary Pilot Program</strong> for the GlobalSupply OMS, WMS &amp; Marketplace Enablement Platform.</p>
 ${customBlock}
 </td></tr>
 <tr><td style="padding:20px 40px 8px;"><p style="margin:0 0 4px;color:#94A3B8;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">What You Get</p></td></tr>

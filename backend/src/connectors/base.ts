@@ -1,4 +1,4 @@
-export interface MarketplaceOrder {
+﻿export interface MarketplaceOrder {
   id: string;
   orderNumber: string;
   customerName: string;

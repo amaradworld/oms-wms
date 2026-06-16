@@ -1,4 +1,4 @@
-import { MarketplaceConnector, MarketplaceOrder } from './base';
+﻿import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const NYKAA_API_BASE = 'https://api.nykaa.com/seller/v1';
 
@@ -54,7 +54,7 @@ export class NykaaConnector implements MarketplaceConnector {
   }
 
   async updateInventory(config: { apiKey?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const res = await fetch(`${NYKAA_API_BASE}/v1/inventory`, {
         method: 'PUT',
@@ -68,7 +68,7 @@ export class NykaaConnector implements MarketplaceConnector {
   }
 
   async pushTracking(config: { apiKey?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const res = await fetch(`${NYKAA_API_BASE}/v1/orders/${orderId}/tracking`, {
         method: 'POST',
@@ -88,7 +88,7 @@ export class NykaaConnector implements MarketplaceConnector {
   }
 
   async pushStatus(config: { apiKey?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const statusMap: Record<string, string> = {
         DELIVERED: 'delivered', CANCELLED: 'cancelled', RETURNED: 'returned', DISPATCHED: 'shipped',
@@ -100,7 +100,7 @@ export class NykaaConnector implements MarketplaceConnector {
         headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nykaaStatus, reason: reason || '' }),
       });
-      console.log(`[Nykaa pushStatus] ${orderId} → ${status}: ${res.status}`);
+      console.log(`[Nykaa pushStatus] ${orderId} â†’ ${status}: ${res.status}`);
       return res.ok;
     } catch (err) {
       console.error(`[Nykaa pushStatus] ${orderId}:`, err);

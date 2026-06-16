@@ -6,7 +6,7 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
 
-const PLATFORM_OWNER_EMAIL = process.env.PLATFORM_OWNER_EMAIL || 'owner@supplyhub.com';
+const PLATFORM_OWNER_EMAIL = process.env.PLATFORM_OWNER_EMAIL || 'owner@globalsupply.in';
 
 export interface AuthRequest extends Request {
   user?: { id: string; tenant_id: string; role: string; email?: string; warehouseId?: string };
@@ -42,7 +42,7 @@ export const requirePlatformOwner = (req: AuthRequest, res: Response, next: Next
 };
 
 export const tenantScope = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (!req.user) return next();
+  if (!req.user) return res.status(401).json({ message: 'Authentication required' });
   if (req.user.role === 'PLATFORM_ADMIN') return next();
   if (req.body && typeof req.body === 'object' && 'tenantId' in req.body) {
     const provided = (req.body as any).tenantId;

@@ -1,4 +1,4 @@
-import { MarketplaceConnector, MarketplaceOrder } from './base';
+﻿import { MarketplaceConnector, MarketplaceOrder } from './base';
 
 const AMAZON_SP_API_BASE = 'https://sellingpartnerapi-na.amazon.com';
 
@@ -127,7 +127,7 @@ export class AmazonConnector implements MarketplaceConnector {
   }
 
   async updateInventory(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, items: { skuCode: string; quantity: number }[]): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const accessToken = await this.getAccessToken(config.apiKey, config.apiSecret || '', config.sellerId || '');
       const payload = items.map(i => ({
@@ -152,7 +152,7 @@ export class AmazonConnector implements MarketplaceConnector {
   }
 
   async pushTracking(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, awb: string, courier: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const accessToken = await this.getAccessToken(config.apiKey, config.apiSecret || '', config.sellerId || '');
       const res = await fetch(`${AMAZON_SP_API_BASE}/orders/v0/orders/${orderId}/shipment`, {
@@ -178,7 +178,7 @@ export class AmazonConnector implements MarketplaceConnector {
   }
 
   async pushStatus(config: { apiKey?: string; apiSecret?: string; sellerId?: string }, orderId: string, status: string, reason?: string): Promise<boolean> {
-    if (!config.apiKey || config.apiKey === 'demo') return true;
+    if (!config.apiKey || config.apiKey === 'demo' && process.env.NODE_ENV !== 'production') return true;
     try {
       const accessToken = await this.getAccessToken(config.apiKey, config.apiSecret || '', config.sellerId || '');
       const statusMap: Record<string, string> = {
@@ -197,7 +197,7 @@ export class AmazonConnector implements MarketplaceConnector {
         },
         body: JSON.stringify({ order_status: amzStatus }),
       });
-      console.log(`[Amazon pushStatus] ${orderId} → ${status}: ${res.status}`);
+      console.log(`[Amazon pushStatus] ${orderId} â†’ ${status}: ${res.status}`);
       return res.ok;
     } catch (err) {
       console.error(`[Amazon pushStatus] ${orderId}:`, err);
