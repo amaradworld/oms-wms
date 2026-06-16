@@ -7,7 +7,7 @@
     "postinstall": "npx prisma generate",
     "build": "npx prisma generate && tsc",
     "prestart": "node scripts/validate-env.js",
-    "start": "npx prisma migrate deploy && node dist/index.js",
+    "start": "node scripts/start.js",
     "dev": "nodemon src/index.ts",
     "migrate": "npx prisma migrate dev",
     "migrate:deploy": "npx prisma migrate deploy",

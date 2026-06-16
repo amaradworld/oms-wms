@@ -17,4 +17,4 @@ RUN npx tsc
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["node", "scripts/start.js"]
