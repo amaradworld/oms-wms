@@ -9,10 +9,10 @@ import { toast } from '../components/Toast';
 import { TableSkeleton } from '../components/Skeleton';
 import { useConfirm } from '../components/ConfirmDialog';
 
-const SAMPLE_CSV = `skuCode,name,brand,category,size,color,mrp,hsnCode,weight,flipkartSku,amazonSku,myntraSku
-SKU001,Classic White T-Shirt,Globex,Apparel,M,White,499,6109,0.2,FK-FSN-001,AMZ-ASIN-001,MYN-001
-SKU002,Blue Denim Jeans,Globex,Apparel,32,Blue,1299,6203,0.5,FK-FSN-002,AMZ-ASIN-002,MYN-002
-SKU003,Black Hoodie,Globex,Apparel,L,Black,1499,6109,0.6,FK-FSN-003,AMZ-ASIN-003,MYN-003`;
+const SAMPLE_CSV = `skuCode,epcCode,name,brand,category,size,color,mrp,hsnCode,weight,flipkartSku,amazonSku,myntraSku
+SKU001,,Classic White T-Shirt,Globex,Apparel,M,White,499,6109,0.2,FK-FSN-001,AMZ-ASIN-001,MYN-001
+SKU002,,Blue Denim Jeans,Globex,Apparel,32,Blue,1299,6203,0.5,FK-FSN-002,AMZ-ASIN-002,MYN-002
+SKU003,,Black Hoodie,Globex,Apparel,L,Black,1499,6109,0.6,FK-FSN-003,AMZ-ASIN-003,MYN-003`;
 
 const MARKETPLACES = [
   { key: 'flipkartSku', label: 'Flipkart', color: 'bg-blue-100 text-blue-700', placeholder: 'FK-FSN-...' },

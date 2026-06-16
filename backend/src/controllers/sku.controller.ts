@@ -310,8 +310,8 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
     const file = (req as any).file;
     if (!file) return res.status(400).json({ message: 'CSV file is required' });
 
-    const csv = file.buffer.toString('utf-8');
-    const records: any[] = parse(csv, { columns: true, skip_empty_lines: true, trim: true });
+    const csv = file.buffer.toString('utf-8').replace(/^\uFEFF/, '');
+    const records: any[] = parse(csv, { columns: true, skip_empty_lines: true, trim: true, relax_column_count: true });
 
     let created = 0;
     let updated = 0;
@@ -319,7 +319,7 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
 
     for (let i = 0; i < records.length; i++) {
       const row = records[i];
-      const skuCode = row.skuCode || row.SKU || '';
+      const skuCode = row.skuCode || row.SKU || row.sku || row.code || '';
       if (!skuCode) { errors.push(`Row ${i + 2}: missing skuCode`); continue; }
 
       const marketplaceSkus: Record<string, string> = {};
@@ -329,20 +329,20 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
       }
 
       const data: any = {
-        name: row.name || row.Name || skuCode,
-        styleName: row.styleName || null,
-        size: row.size || null,
-        color: row.color || null,
-        brand: row.brand || null,
-        category: row.category || null,
-        material: row.material || null,
-        gender: row.gender || null,
-        unitType: row.unitType || null,
-        mrp: row.mrp ? parseFloat(row.mrp) : null,
-        hsnCode: row.hsnCode || null,
-        weight: row.weight ? parseFloat(row.weight) : null,
-        dimensions: row.dimensions || null,
-        description: row.description || null,
+        name: row.name || row.Name || row.productName || skuCode,
+        styleName: row.styleName || row.StyleName || null,
+        size: row.size || row.Size || null,
+        color: row.color || row.Color || null,
+        brand: row.brand || row.Brand || null,
+        category: row.category || row.Category || null,
+        material: row.material || row.Material || null,
+        gender: row.gender || row.Gender || null,
+        unitType: row.unitType || row.UnitType || null,
+        mrp: (row.mrp || row.MRP) ? parseFloat(row.mrp || row.MRP) : null,
+        hsnCode: row.hsnCode || row.HSN || row.hsn || null,
+        weight: (row.weight || row.Weight) ? parseFloat(row.weight || row.Weight) : null,
+        dimensions: row.dimensions || row.Dimensions || null,
+        description: row.description || row.Description || null,
         marketplaceSkus: Object.keys(marketplaceSkus).length ? marketplaceSkus : undefined,
       };
 
@@ -352,8 +352,9 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
           await prisma.skuMaster.update({ where: { id: existing.id }, data });
           updated++;
         } else {
+          const epcCode = row.epcCode || row.EPC || await generateEpcCode();
           await prisma.skuMaster.create({
-            data: { ...data, skuCode, tenantId },
+            data: { ...data, skuCode, epcCode, tenantId },
           });
           created++;
         }
@@ -369,6 +370,7 @@ export const bulkImportSkus = async (req: AuthRequest, res: Response) => {
 
     res.json({ message: `Imported ${created} new + updated ${updated} SKUs${errors.length ? ` (${errors.length} errors)` : ''}`, created, updated, errors });
   } catch (error: any) {
-    res.status(500).json({ message: 'Import failed', });
+    console.error('Bulk import error:', error);
+    res.status(500).json({ message: 'Import failed: ' + (error.message || 'Unknown error') });
   }
 };
