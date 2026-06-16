@@ -117,9 +117,3 @@ export const createWarehouseFullSchema = z.object({
   contactPhone: z.string().optional(),
   gstin: z.string().optional(),
 });
-
-export const createWarehouseSchema = z.object({
-  name: z.string().min(1, 'Warehouse name is required'),
-  location: z.string().optional(),
-  address: z.string().optional(),
-});
