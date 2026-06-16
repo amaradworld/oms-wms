@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: supplyhub-api
+    name: globalsupply-api
     env: node
     region: singapore
     plan: free
@@ -17,10 +17,20 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: FRONTEND_URL
-        value: https://app.globalsupply.in
+      - key: MFA_JWT_SECRET
+        sync: false
+      - key: RESET_TOKEN_SECRET
+        sync: false
+      - key: API_KEY
+        sync: false
       - key: CRON_SECRET
         sync: false
+      - key: PLATFORM_OWNER_EMAIL
+        value: owner@globalsupply.in
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://globalsupply.in,https://app.globalsupply.in
+      - key: FRONTEND_URL
+        value: https://app.globalsupply.in
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -32,19 +42,33 @@ services:
       - key: SMTP_PASS
         sync: false
       - key: SMTP_FROM_NAME
-        value: SupplyHub
+        value: GlobalSupply Techno
       - key: SMTP_FROM
-        value: noreply@supplyhub.com
-      - key: S3_BUCKET
+        value: noreply@globalsupply.in
+      - key: FLIPKART_WEBHOOK_SECRET
         sync: false
-      - key: S3_ENDPOINT
+      - key: NYKAA_WEBHOOK_SECRET
         sync: false
-      - key: S3_REGION
+      - key: MYNTRA_WEBHOOK_SECRET
+        sync: false
+      - key: TATACLIQ_WEBHOOK_SECRET
+        sync: false
+      - key: AMAZON_WEBHOOK_SECRET
+        sync: false
+      - key: SHOPIFY_WEBHOOK_SECRET
         sync: false
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
+      - key: AWS_REGION
+        value: ap-south-1
+      - key: BACKUP_S3_BUCKET
+        value: globalsupply-backups
+      - key: BACKUP_RESTORE_TOKEN
+        sync: false
+      - key: BACKUP_KEEP_COUNT
+        value: "14"
 
   - type: cron
     name: daily-s3-backup
@@ -58,13 +82,11 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: S3_BUCKET
-        sync: false
-      - key: S3_ENDPOINT
-        sync: false
-      - key: S3_REGION
-        sync: false
+      - key: BACKUP_S3_BUCKET
+        value: globalsupply-backups
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_SECRET_ACCESS_KEY
         sync: false
+      - key: AWS_REGION
+        value: ap-south-1
