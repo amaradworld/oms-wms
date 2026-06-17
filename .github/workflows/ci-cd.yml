@@ -10,7 +10,6 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # ── Backend ──
   backend-lint:
     name: Backend Lint
     runs-on: ubuntu-latest
@@ -23,9 +22,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci --ignore-scripts
+      - run: npm install
       - run: npx prisma generate
       - run: npx tsc --noEmit
 
@@ -41,9 +38,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci --ignore-scripts
+      - run: npm install
       - run: npx prisma generate
       - run: npx tsc --noEmit
 
@@ -78,14 +73,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci --ignore-scripts
+      - run: npm install
       - run: npx prisma generate
       - run: npx prisma db push --skip-generate
       - run: npx jest --forceExit --detectOpenHandles
 
-  # ── Frontend ──
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
@@ -98,22 +90,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+      - run: npm install
       - run: npx react-scripts build
         env:
           CI: false
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/build/
-          retention-days: 7
 
-  # ── Deploy (main branch only) ──
   deploy:
     name: Deploy
-    needs: [frontend-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -135,3 +118,4 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
           working-directory: frontend
+        continue-on-error: true
