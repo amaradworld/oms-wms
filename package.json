@@ -1,0 +1,12 @@
+{
+  "name": "globalsupply-techno",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GlobalSupply Techno — OMS & WMS platform",
+  "scripts": {
+    "android:keystore": "node scripts/build-android.js keystore",
+    "android:init": "node scripts/build-android.js init",
+    "android:build": "node scripts/build-android.js build",
+    "android:all": "node scripts/build-android.js"
+  }
+}

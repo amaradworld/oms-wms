@@ -32,3 +32,15 @@ Thumbs.db
 
 # Temp
 temp/
+
+# Android / TWA build
+android/
+android.keystore
+*.aab
+*.apk
+android-sdk/
+.twa-build/
+
+# Workers (Cloudflare)
+workers/.wrangler/
+
