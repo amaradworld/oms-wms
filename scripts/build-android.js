@@ -3,49 +3,150 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
+const os = require('os');
 
-const TWA_MANIFEST = path.join(__dirname, '..', 'twa-manifest.json');
-const ANDROID_DIR = path.join(__dirname, '..', 'android');
-const KEYSTORE_PATH = path.join(__dirname, '..', 'android.keystore');
+const ROOT = path.join(__dirname, '..');
+const TWA_MANIFEST = path.join(ROOT, 'twa-manifest.json');
+const ANDROID_DIR = path.join(ROOT, 'android');
+const KEYSTORE_PATH = path.join(ROOT, 'android.keystore');
+const PUBLIC = path.join(ROOT, 'frontend', 'public');
 
 function log(msg) {
-  console.log(`[android-build] ${msg}`);
+  console.log(`[android] ${msg}`);
 }
 
 function error(msg) {
-  console.error(`[android-build] ERROR: ${msg}`);
+  console.error(`[android] FATAL: ${msg}`);
   process.exit(1);
 }
 
 function exec(cmd, opts = {}) {
   log(`$ ${cmd}`);
   try {
-    return execSync(cmd, { stdio: 'inherit', ...opts });
+    return execSync(cmd, { stdio: 'inherit', shell: true, ...opts });
   } catch (e) {
     error(`Command failed: ${cmd}`);
   }
 }
 
+function execOutput(cmd) {
+  try {
+    return execSync(cmd, { encoding: 'utf-8', shell: true }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function findJavaHome() {
+  // 1. Check JAVA_HOME env var
+  const envHome = process.env.JAVA_HOME || execOutput('echo $env:JAVA_HOME');
+  if (envHome && fs.existsSync(envHome)) return envHome;
+
+  // 2. Try common Windows locations
+  const adoptium = 'C:\\Program Files\\Eclipse Adoptium';
+  if (fs.existsSync(adoptium)) {
+    const jdk = fs.readdirSync(adoptium).find(d => d.startsWith('jdk-'));
+    if (jdk) return path.join(adoptium, jdk);
+  }
+
+  // 3. Try Program Files/Java
+  const pfJava = 'C:\\Program Files\\Java';
+  if (fs.existsSync(pfJava)) {
+    const jdk = fs.readdirSync(pfJava).find(d => d.startsWith('jdk'));
+    if (jdk) return path.join(pfJava, jdk);
+  }
+
+  // 4. Try where java
+  const javaPath = execOutput('where java 2>$null');
+  if (javaPath) {
+    const dir = path.dirname(javaPath.split('\n')[0]);
+    // Go up from bin/ to JDK root
+    return path.resolve(dir, '..');
+  }
+
+  return null;
+}
+
+function findKeytool() {
+  const javaHome = findJavaHome();
+  if (javaHome) {
+    const ext = os.platform() === 'win32' ? '.exe' : '';
+    const kt = path.join(javaHome, 'bin', `keytool${ext}`);
+    if (fs.existsSync(kt)) return `"${kt}"`;
+  }
+  return 'keytool';
+}
+
 function checkPrereqs() {
   log('Checking prerequisites...');
 
+  const node = execOutput('node --version');
+  if (!node) error('Node.js is not installed. Install from https://nodejs.org');
+  log(`  Node.js: ${node}`);
+
+  const javaHome = findJavaHome();
+  if (!javaHome) {
+    error('Java JDK 17+ not found.\n  Install from https://adoptium.net\n  Or set JAVA_HOME to your JDK directory.');
+  }
+  log(`  JAVA_HOME: ${javaHome}`);
+  process.env.JAVA_HOME = javaHome;
+
+  // Verify keytool exists
+  const keytool = findKeytool();
   try {
-    execSync('node --version', { stdio: 'pipe' });
+    execSync(`${keytool} -help`, { stdio: 'pipe', shell: true });
   } catch {
-    error('Node.js is not installed. Please install Node.js 18+');
+    error(`keytool not found at ${keytool}. Check your JDK installation.`);
+  }
+  log(`  keytool: ${keytool}`);
+
+  // Check ANDROID_HOME (optional — Bubblewrap can download SDK)
+  const androidHome = process.env.ANDROID_HOME;
+  if (androidHome && fs.existsSync(androidHome)) {
+    log(`  ANDROID_HOME: ${androidHome}`);
+  } else {
+    log('  ANDROID_HOME: not set (Bubblewrap will download SDK if needed)');
   }
 
-  try {
-    execSync('java -version', { stdio: 'pipe' });
-  } catch {
-    error('Java JDK is not installed. Install JDK 17+ (https://adoptium.net/)');
+  // Validate TWA assets
+  log('Validating TWA assets...');
+  const assets = [
+    { name: 'android-launch-icon-512.png', desc: 'TWA splash icon' },
+    { name: 'android-monochrome-icon-512.png', desc: 'TWA monochrome icon' },
+    { name: 'logo-512.png', desc: 'App icon (source)' },
+    { name: 'icon-512-maskable.png', desc: 'PWA maskable icon' },
+  ];
+  let missing = false;
+  for (const a of assets) {
+    const fp = path.join(PUBLIC, a.name);
+    if (fs.existsSync(fp)) {
+      const size = fs.statSync(fp).size;
+      if (size < 100) {
+        log(`  ${a.name}: PLACEHOLDER (${size} bytes) — replace with real icon`);
+      } else {
+        log(`  ${a.name}: OK (${size} bytes)`);
+      }
+    } else {
+      log(`  ${a.name}: MISSING — ${a.desc}`);
+      missing = true;
+    }
+  }
+  if (missing) {
+    log('Run: node scripts/generate-icons.js to create placeholder icons');
   }
 
-  try {
-    execSync('echo %ANDROID_HOME%', { stdio: 'pipe', shell: 'cmd.exe' });
-  } catch {
-    log('ANDROID_HOME not set. Bubblewrap will download build tools automatically.');
+  // Validate assetlinks.json
+  const alPath = path.join(PUBLIC, '.well-known', 'assetlinks.json');
+  if (fs.existsSync(alPath)) {
+    const al = JSON.parse(fs.readFileSync(alPath, 'utf-8'));
+    const fp = al[0]?.target?.sha256_cert_fingerprints?.[0] || '';
+    if (fp.includes('REPLACE')) {
+      log('  assetlinks.json: PLACEHOLDER — run build script to auto-fill fingerprint');
+    } else {
+      log(`  assetlinks.json: fingerprint ${fp.substring(0, 10)}...`);
+    }
+  } else {
+    log('  assetlinks.json: MISSING');
   }
 
   log('Prerequisites OK');
@@ -53,7 +154,7 @@ function checkPrereqs() {
 
 function checkBubblewrap() {
   try {
-    execSync('npx @bubblewrap/cli --version', { stdio: 'pipe' });
+    execSync('npx @bubblewrap/cli --version', { stdio: 'pipe', shell: true });
     return true;
   } catch {
     return false;
@@ -61,7 +162,7 @@ function checkBubblewrap() {
 }
 
 function installBubblewrap() {
-  log('Installing Bubblewrap CLI globally...');
+  log('Installing Bubblewrap CLI...');
   exec('npm install -g @bubblewrap/cli --silent');
 }
 
@@ -71,55 +172,56 @@ function generateKeystore() {
     return;
   }
 
-  log('Generating Android keystore (for signing the AAB)...');
-  log('You will be prompted for passwords. REMEMBER THEM — you need them for every future upload.');
+  log('Generating Android keystore...');
+  const keytool = findKeytool();
 
-  const keytoolCmd = [
-    'keytool -genkey -v',
-    '-keystore android.keystore',
-    '-alias android',
-    '-keyalg RSA -keysize 2048 -validity 25000',
-    '-storepass changeit -keypass changeit',
-    '-dname "CN=GlobalSupply Techno, OU=Engineering, O=GlobalSupply, L=Gurgaon, ST=Haryana, C=IN"'
-  ].join(' ');
+  const dname = '"CN=GlobalSupply Techno, OU=Engineering, O=GlobalSupply, L=Gurgaon, ST=Haryana, C=IN"';
+  const cmd = `${keytool} -genkeypair -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 25000 -storepass supplydev2026 -keypass supplydev2026 -dname ${dname}`;
 
   try {
-    execSync(keytoolCmd, { stdio: 'inherit' });
+    exec(cmd);
   } catch {
-    log('Auto-generation failed. Please run manually:');
-    log('  keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 25000');
-    error('Keystore generation failed');
+    error('Keystore generation failed. Run manually:\n  keytool -genkeypair -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 25000');
   }
+
+  if (!fs.existsSync(KEYSTORE_PATH)) {
+    error('Keystore file was not created. Check keytool output above.');
+  }
+
+  log('Keystore generated successfully.');
+  log('BACKUP this file! Without it, you CANNOT update your app on Play Store.');
 }
 
 function getSha256Fingerprint() {
-  log('Extracting SHA-256 fingerprint from keystore...');
-  try {
-    const output = execSync(
-      'keytool -list -v -keystore android.keystore -alias android -storepass changeit',
-      { encoding: 'utf-8' }
-    );
-    const match = output.match(/SHA256:\s*([A-F0-9:]+)/i);
-    if (match) {
-      return match[1].trim();
-    }
-  } catch (e) {
-    // ignore
+  log('Extracting SHA-256 fingerprint...');
+  const keytool = findKeytool();
+
+  const output = execOutput(`${keytool} -list -v -keystore android.keystore -alias android -storepass supplydev2026`);
+  if (!output) {
+    log('WARNING: Could not extract fingerprint. Run manually:');
+    log('  keytool -list -v -keystore android.keystore -alias android -storepass supplydev2026');
+    return null;
   }
+
+  const match = output.match(/SHA256:\s*([A-F0-9:\s]+)/i);
+  if (match) {
+    return match[1].replace(/\s/g, '').trim();
+  }
+  log('WARNING: SHA256 fingerprint not found in keytool output');
   return null;
 }
 
 function updateAssetLinks(fingerprint) {
-  const assetLinksPath = path.join(__dirname, '..', 'frontend', 'public', '.well-known', 'assetlinks.json');
-  if (!fs.existsSync(assetLinksPath)) {
-    log('assetlinks.json not found, skipping update');
+  const alPath = path.join(PUBLIC, '.well-known', 'assetlinks.json');
+  if (!fs.existsSync(alPath)) {
+    log('assetlinks.json not found, skipping');
     return;
   }
 
-  const content = JSON.parse(fs.readFileSync(assetLinksPath, 'utf-8'));
+  const content = JSON.parse(fs.readFileSync(alPath, 'utf-8'));
   content[0].target.sha256_cert_fingerprints = [fingerprint];
-  fs.writeFileSync(assetLinksPath, JSON.stringify(content, null, 2));
-  log(`Updated assetlinks.json with fingerprint: ${fingerprint}`);
+  fs.writeFileSync(alPath, JSON.stringify(content, null, 2) + '\n');
+  log(`Updated assetlinks.json with fingerprint: ${fingerprint.substring(0, 10)}...`);
 }
 
 function initProject() {
@@ -147,12 +249,78 @@ function showOutput() {
     log(`Size: ${(size / 1024 / 1024).toFixed(2)} MB`);
     log('');
     log('Next steps:');
-    log('1. Go to https://play.google.com/console');
-    log('2. Create app → Production → Upload this AAB');
-    log('3. Fill in store listing (see docs/PLAY_STORE_LISTING.md)');
-    log('4. Submit for review');
+    log('  1. Push assetlinks.json to git: git add frontend/public/.well-known/assetlinks.json && git push');
+    log('  2. Wait 2 min for Vercel to deploy');
+    log('  3. Go to https://play.google.com/console');
+    log('  4. Create app → Production → Create new release');
+    log('  5. Upload the AAB file');
+    log('  6. Fill in store listing (see docs/PLAY_STORE_LISTING.md)');
+    log('  7. Submit for review (3-7 days for new apps)');
   } else {
-    log('Build may have failed. Check android/ directory for errors.');
+    error('AAB not found. Check android/ directory for build errors.');
+  }
+}
+
+function validate() {
+  log('Running TWA validator...');
+
+  // Check all required files exist
+  const required = [
+    'twa-manifest.json',
+    'android.keystore',
+    'frontend/public/.well-known/assetlinks.json',
+    'frontend/public/manifest.json',
+    'frontend/public/sw.js',
+    'frontend/public/logo-512.png',
+    'frontend/public/favicon-192.png',
+  ];
+
+  let ok = true;
+  for (const f of required) {
+    const fp = path.join(ROOT, f);
+    if (!fs.existsSync(fp)) {
+      log(`  MISSING: ${f}`);
+      ok = false;
+    } else {
+      log(`  OK: ${f}`);
+    }
+  }
+
+  // Check assetlinks fingerprint
+  const alPath = path.join(PUBLIC, '.well-known', 'assetlinks.json');
+  if (fs.existsSync(alPath)) {
+    const al = JSON.parse(fs.readFileSync(alPath, 'utf-8'));
+    const fp = al[0]?.target?.sha256_cert_fingerprints?.[0] || '';
+    if (fp.includes('REPLACE')) {
+      log('  ISSUE: assetlinks.json has placeholder fingerprint');
+      ok = false;
+    }
+  }
+
+  // Check manifest.json validity
+  const manifestPath = path.join(PUBLIC, 'manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const m = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      if (m.display_override) {
+        log('  ISSUE: manifest.json has display_override (remove it)');
+        ok = false;
+      }
+      if (m.screenshots?.some(s => s.src && !fs.existsSync(path.join(PUBLIC, s.src)))) {
+        log('  ISSUE: manifest.json references missing screenshot files');
+        ok = false;
+      }
+    } catch {
+      log('  ISSUE: manifest.json is not valid JSON');
+      ok = false;
+    }
+  }
+
+  if (ok) {
+    log('Validation PASSED');
+  } else {
+    log('Validation FAILED — fix issues above before building');
+    process.exit(1);
   }
 }
 
@@ -167,16 +335,15 @@ Usage:
   node scripts/build-android.js [command]
 
 Commands:
-  init      Generate Android project from twa-manifest.json (first time only)
-  keystore  Generate signing keystore
-  build     Build the AAB (Android App Bundle)
-  all       Run full pipeline: keystore → init → build
-  (no arg)  Same as 'all'
+  keystore    Generate signing keystore + update assetlinks.json
+  init        Generate Android project (first time only)
+  build       Build the AAB
+  all         Full pipeline: validate → keystore → init → build
+  validate    Check all prerequisites and assets
+  (no arg)    Same as 'all'
 
-Prerequisites:
-  - Node.js 18+
-  - Java JDK 17+
-  - Android SDK (auto-downloaded by Bubblewrap if ANDROID_HOME not set)
+Environment:
+  JAVA_HOME   Path to JDK 17+ (auto-detected from common locations)
 
 Output:
   android/app/build/outputs/bundle/release/app-release-bundle.aab
@@ -190,17 +357,20 @@ Output:
     installBubblewrap();
   }
 
+  if (arg === 'validate') {
+    validate();
+    return;
+  }
+
   if (arg === 'keystore') {
     generateKeystore();
     const fp = getSha256Fingerprint();
-    if (fp) {
-      log(`Fingerprint: ${fp}`);
-      updateAssetLinks(fp);
-    }
+    if (fp) updateAssetLinks(fp);
     return;
   }
 
   if (arg === 'init') {
+    validate();
     generateKeystore();
     initProject();
     return;
@@ -212,13 +382,11 @@ Output:
     return;
   }
 
-  log('Running full pipeline (keystore → init → build)...');
+  log('Running full pipeline: validate → keystore → init → build');
+  validate();
   generateKeystore();
   const fp = getSha256Fingerprint();
-  if (fp) {
-    log(`Fingerprint: ${fp}`);
-    updateAssetLinks(fp);
-  }
+  if (fp) updateAssetLinks(fp);
   initProject();
   buildApp();
   showOutput();

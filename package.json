@@ -7,6 +7,8 @@
     "android:keystore": "node scripts/build-android.js keystore",
     "android:init": "node scripts/build-android.js init",
     "android:build": "node scripts/build-android.js build",
-    "android:all": "node scripts/build-android.js"
+    "android:validate": "node scripts/build-android.js validate",
+    "android:all": "node scripts/build-android.js",
+    "icons": "node scripts/generate-icons.js"
   }
 }

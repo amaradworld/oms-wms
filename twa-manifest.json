@@ -14,26 +14,13 @@
   "enableLocation": false,
   "enableCamera": true,
   "enableMicrophone": false,
-  "enableBluetooth": true,
-  "enablenfc": true,
+  "enableBluetooth": false,
   "fallbackType": "customtabs",
   "splashScreenFadeOutDuration": 300,
-  "splashScreenImage": "android-launch-icon-512.png",
-  "monochromeIcon": "android-monochrome-icon-512.png",
   "splashColor": "#0F172A",
   "startColor": "#0F172A",
   "endColor": "#0F172A",
   "webManifestUrl": "/manifest.json",
-  "shareTarget": {
-    "action": "/app/share-target",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
   "appVersion": "1.0.0",
   "appVersionCode": 1,
   "signingKey": {
@@ -42,14 +29,8 @@
   },
   "minSdkVersion": 24,
   "targetSdkVersion": 34,
-  "metafiles": false,
+  "metafiles": true,
   "additionalTrustedOrigins": [],
-  "launchHandler": {
-    "clientMode": "auto",
-    "navigateExistingClient": "always"
-  },
-  "pullNotification": {
-    "delayed": true,
-    "minInterval": 60
-  }
+  "monochromeIcon": "android-monochrome-icon-512.png",
+  "splashScreenImage": "android-launch-icon-512.png"
 }

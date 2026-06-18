@@ -1,15 +1,17 @@
-const CACHE = 'supplyhub-v1';
+const CACHE = 'globalsupply-v2';
 const PRECACHE = [
   '/',
   '/app',
   '/index.html',
   '/manifest.json',
+  '/sw.js',
   '/logo.png',
   '/logo-512.png',
   '/favicon-32.png',
   '/favicon-192.png',
   '/apple-touch-icon.png',
   '/og-image.png',
+  '/icon-512-maskable.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,6 +37,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // API calls — network only, return offline error on failure
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() =>
@@ -47,6 +50,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Static assets — cache first, network fallback
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2)$/)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        return fetch(request).then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return res;
+        });
+      })
+    );
+    return;
+  }
+
+  // Navigation — network first, cache fallback
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -56,12 +77,13 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() =>
-          caches.match('/index.html').then((cached) => cached || new Response('Offline', { status: 503 }))
+          caches.match('/app').then((cached) => cached || new Response('Offline', { status: 503 }))
         )
     );
     return;
   }
 
+  // Everything else — stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
